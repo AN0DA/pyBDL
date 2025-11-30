@@ -283,7 +283,7 @@ This allows sync and async limiters to share quota state.
 Exception Hierarchy
 ~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: python
+.. code-block:: text
 
     GUSBDLError (base exception)
     └── RateLimitError

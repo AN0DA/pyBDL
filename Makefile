@@ -1,4 +1,4 @@
-.PHONY: lint mypy test
+.PHONY: lint mypy test docs
 
 all: lint mypy test
 
@@ -12,3 +12,6 @@ mypy:
 
 test:
 	uv run pytest --cov --cov-report term-missing:skip-covered
+
+docs:
+	uv run sphinx-build -W --keep-going -b html docs docs/_build/html

@@ -22,12 +22,13 @@ def rate_limit(
     Args:
         quotas: Dictionary of {period_seconds: limit or (anon_limit, reg_limit)}.
         is_registered: Whether the user is registered (affects quota).
-        **limiter_kwargs: Additional arguments to pass to RateLimiter (e.g., max_delay, raise_on_limit).
+        ``**limiter_kwargs``: Additional arguments to pass to RateLimiter (e.g., max_delay, raise_on_limit).
 
     Returns:
         Decorator function.
 
-    Example:
+    Example::
+
         @rate_limit(quotas={60: 100}, is_registered=True, max_delay=30)
         def fetch_dataset(dataset_id):
             return api.get(f"/datasets/{dataset_id}")
@@ -56,12 +57,13 @@ def async_rate_limit(
     Args:
         quotas: Dictionary of {period_seconds: limit or (anon_limit, reg_limit)}.
         is_registered: Whether the user is registered (affects quota).
-        **limiter_kwargs: Additional arguments to pass to AsyncRateLimiter (e.g., max_delay, raise_on_limit).
+        ``**limiter_kwargs``: Additional arguments to pass to AsyncRateLimiter (e.g., max_delay, raise_on_limit).
 
     Returns:
         Decorator function.
 
-    Example:
+    Example::
+
         @async_rate_limit(quotas={60: 100}, is_registered=True)
         async def async_fetch_dataset(dataset_id):
             return await api.get(f"/datasets/{dataset_id}")
