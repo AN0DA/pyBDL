@@ -99,8 +99,32 @@ skip-magic-trailing-comma = false
 
 
 [tool.pytest]
-python_files = "tests.py test_*.py *_tests.py"
-norecursedirs = ".git .env venv"
+# Async support
+asyncio_mode = "auto"
+
+# Parallel testing configuration
+addopts = [
+    "--strict-config",
+    "-n=auto",  # Enable parallel testing with auto worker count
+    "--dist=worksteal",  # Use worksteal distribution for better load balancing
+]
+
+# xdist configuration for parallel testing
+# These settings ensure proper isolation when running tests in parallel
+xfail_strict = true
+
+# Disable warnings about test collection to reduce noise in parallel runs
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+# Test discovery
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+norecursedirs = [".git", ".env", "venv"]
 
 
 [tool.mypy]
@@ -117,30 +141,6 @@ disable_error_code = "abstract"
 
 [tool.bandit]
 exclude_dirs = ['tests/*']
-
-[tool.pytest.ini_options]
-# Async support
-asyncio_mode = "auto"
-
-# Parallel testing configuration
-addopts = [
-    "--strict-config",
-    "-n=auto",  # Enable parallel testing with auto worker count
-    "--dist=worksteal",  # Use worksteal distribution for better load balancing
-]
-# xdist configuration for parallel testing
-# These settings ensure proper isolation when running tests in parallel
-xfail_strict = true
-# Disable warnings about test collection to reduce noise in parallel runs
-filterwarnings = [
-    "ignore::DeprecationWarning",
-    "ignore::PendingDeprecationWarning",
-]
-# Test discovery
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
 
 [tool.coverage.paths]
 source = ["pyldb/"]
