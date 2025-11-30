@@ -59,7 +59,7 @@ class AsyncRateLimiter:
     def _load_from_cache(self, merge: bool = True) -> None:
         """
         Load quota state from cache.
-        
+
         Args:
             merge: If True, merge cached calls with current calls. If False, replace current with cached.
         """
@@ -202,7 +202,7 @@ class AsyncRateLimiter:
         # Record call
         async with self.lock:
             now = time.monotonic()  # Refresh after potential sleep
-            
+
             # Use atomic cache operation to prevent race conditions
             if self.cache and self.cache.enabled:
                 # Try to atomically record the call in cache for each period
@@ -211,12 +211,10 @@ class AsyncRateLimiter:
                     limit = self._get_limit(period)
                     cache_key = f"{self.cache_key}_{period}"
                     cleanup_before = now - period  # Remove calls older than this
-                    
+
                     # Try atomic append - this checks limits and records atomically
-                    success = self.cache.try_append_if_under_limit(
-                        cache_key, now, limit, cleanup_before
-                    )
-                    
+                    success = self.cache.try_append_if_under_limit(cache_key, now, limit, cleanup_before)
+
                     if not success:
                         # Failed to record - we're at the limit
                         # Reload to get current state for error message
@@ -224,8 +222,10 @@ class AsyncRateLimiter:
                         q = self.calls[period]
                         while q and q[0] <= now - period:
                             q.popleft()
-                        wait_time = (period - (now - q[0]) + self.buffer_seconds) if q and q[0] > now - period else period
-                        
+                        wait_time = (
+                            (period - (now - q[0]) + self.buffer_seconds) if q and q[0] > now - period else period
+                        )
+
                         if self.raise_on_limit:
                             raise RateLimitError(
                                 retry_after=wait_time,
@@ -241,22 +241,22 @@ class AsyncRateLimiter:
                         now = time.monotonic()  # Refresh after sleep
                         cleanup_before = now - period
                         # Retry after waiting
-                        success = self.cache.try_append_if_under_limit(
-                            cache_key, now, limit, cleanup_before
-                        )
+                        success = self.cache.try_append_if_under_limit(cache_key, now, limit, cleanup_before)
                         if not success:
                             # Still at limit after waiting - reload and raise
                             self._load_from_cache(merge=False)
                             q = self.calls[period]
                             while q and q[0] <= now - period:
                                 q.popleft()
-                            wait_time = (period - (now - q[0]) + self.buffer_seconds) if q and q[0] > now - period else period
+                            wait_time = (
+                                (period - (now - q[0]) + self.buffer_seconds) if q and q[0] > now - period else period
+                            )
                             if self.raise_on_limit:
                                 raise RateLimitError(
                                     retry_after=wait_time,
                                     limit_info=self._get_limit_info(),
                                 )
-                
+
                 # Reload from cache to sync local state with what was actually recorded
                 self._load_from_cache(merge=False)
             else:

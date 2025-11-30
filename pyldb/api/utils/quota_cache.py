@@ -106,16 +106,16 @@ class PersistentQuotaCache:
     ) -> bool:
         """
         Atomically try to append a value to a cached list if it wouldn't exceed max_length.
-        
+
         This prevents race conditions when multiple limiters try to record calls simultaneously.
         The entire operation (get, check, append, save) happens atomically under the cache lock.
-        
+
         Args:
             key: Cache key.
             value: Value to append (typically a timestamp).
             max_length: Maximum length allowed.
             cleanup_older_than: If provided, remove values older than this timestamp.
-            
+
         Returns:
             True if append succeeded, False if it would exceed the limit.
         """
@@ -123,15 +123,15 @@ class PersistentQuotaCache:
             return True  # If cache disabled, allow the append
         with self._lock:
             current = list(self._data.get(key, []))
-            
+
             # Cleanup old values if requested
             if cleanup_older_than is not None:
                 current = [v for v in current if isinstance(v, (int, float)) and v > cleanup_older_than]
-            
+
             # Check if we can append
             if len(current) >= max_length:
                 return False
-            
+
             # Append and save atomically
             current.append(value)
             self._data[key] = current
