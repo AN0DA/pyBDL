@@ -1,231 +1,82 @@
-import asyncio
-import json
-import threading
-import time
-from collections import deque
-from typing import Any
+"""
+Rate limiting utilities for pyLDB API client.
 
-from platformdirs import user_cache_dir as _user_cache_dir
+This module provides thread-safe rate limiting for both synchronous and asynchronous
+API requests. It enforces multiple quota periods simultaneously and supports persistent
+quota tracking across process restarts.
 
-from pyldb.utils.cache import get_cache_file_path
+Key Components:
+    - RateLimiter: Thread-safe synchronous rate limiter
+    - AsyncRateLimiter: Asyncio-compatible asynchronous rate limiter
+    - PersistentQuotaCache: Thread-safe persistent storage for quota usage
+    - rate_limit: Decorator for rate-limiting synchronous functions
+    - async_rate_limit: Decorator for rate-limiting asynchronous functions
 
-user_cache_dir: Any | None = _user_cache_dir
+Exceptions:
+    - GUSBDLError: Base exception for all GUS BDL API errors
+    - RateLimitError: Raised when rate limit is exceeded
+    - RateLimitDelayExceeded: Raised when required delay exceeds max_delay
 
+Example:
+    Basic usage with automatic rate limiting::
 
-class PersistentQuotaCache:
-    """
-    Persistent cache for API quota usage, stored on disk.
+        from pyldb import LDB, LDBConfig
+        ldb = LDB(LDBConfig(api_key="your-api-key"))
+        data = ldb.api.data.get_data_by_variable(variable_id="3643", year=2021)
 
-    This class provides thread-safe, persistent storage for quota usage data,
-    allowing rate limiters to survive process restarts and share state between sessions.
-    """
+    Using a custom rate limiter with wait behavior::
 
-    def __init__(self, enabled: bool = True) -> None:
-        """
-        Initialize the persistent quota cache.
+        from pyldb.api.utils.rate_limiter import RateLimiter, PersistentQuotaCache
+        from pyldb.config import DEFAULT_QUOTAS
 
-        Args:
-            enabled: Whether to enable persistent caching.
-        """
-        self.enabled = enabled
-        self.cache_file = get_cache_file_path("quota_cache.json")
-        self._lock = threading.Lock()
-        self._data: dict[str, Any] = {}
-        if self.enabled:
-            self._load()
+        cache = PersistentQuotaCache(enabled=True)
+        quotas = {k: v[1] for k, v in DEFAULT_QUOTAS.items()}
+        limiter = RateLimiter(
+            quotas=quotas,
+            is_registered=True,
+            cache=cache,
+            raise_on_limit=False,
+            max_delay=30.0
+        )
 
-    def _load(self) -> None:
-        """
-        Load quota data from the cache file.
-        """
-        try:
-            with open(self.cache_file) as f:
-                self._data = json.load(f)
-        except Exception:
-            self._data = {}
+        with limiter:
+            # Make API call here
+            pass
 
-    def _save(self) -> None:
-        """
-        Save quota data to the cache file.
-        """
-        if not self.enabled:
-            return
-        try:
-            with open(self.cache_file, "w") as f:
-                json.dump(self._data, f)
-        except Exception as e:
-            raise RuntimeError(f"Failed to save quota cache to {self.cache_file}") from e
+    Using decorators::
 
-    def get(self, key: str) -> Any:
-        """
-        Retrieve a cached value by key.
+        from pyldb.api.utils.rate_limiter import rate_limit
 
-        Args:
-            key: Cache key.
-        Returns:
-            Cached value, or [] if not found or disabled.
-        """
-        if not self.enabled:
-            return []
-        with self._lock:
-            return self._data.get(key, [])
+        @rate_limit(quotas={1: 10, 900: 500}, is_registered=True)
+        def fetch_data():
+            return api_call()
 
-    def set(self, key: str, value: Any) -> None:
-        """
-        Set a cached value by key and persist it.
+See Also:
+    - :doc:`rate_limiting` for comprehensive documentation
+    - :doc:`config` for configuration options
+"""
 
-        Args:
-            key: Cache key.
-            value: Value to store.
-        """
-        if not self.enabled:
-            return
-        with self._lock:
-            self._data[key] = value
-            self._save()
+# Re-export all public API for backward compatibility
+from pyldb.api.exceptions import (
+    GUSBDLError,
+    RateLimitDelayExceeded,
+    RateLimitError,
+)
+from pyldb.api.utils.quota_cache import PersistentQuotaCache
+from pyldb.api.utils.rate_limiter_async import AsyncRateLimiter
+from pyldb.api.utils.rate_limiter_decorators import (
+    async_rate_limit,
+    rate_limit,
+)
+from pyldb.api.utils.rate_limiter_sync import RateLimiter
 
-
-class RateLimiter:
-    """
-    Thread-safe synchronous rate limiter for API requests.
-
-    Enforces multiple quota periods (e.g., per second, per minute) and persists usage if a cache is provided.
-    """
-
-    def __init__(
-        self, quotas: dict[int, int | tuple], is_registered: bool, cache: PersistentQuotaCache | None = None
-    ) -> None:
-        """
-        Initialize the rate limiter.
-
-        Args:
-            quotas: Dictionary of {period_seconds: limit or (anon_limit, reg_limit)}.
-            is_registered: Whether the user is registered (affects quota).
-            cache: Optional persistent cache for quota usage.
-        """
-        self.quotas = quotas
-        self.is_registered = is_registered
-        self.lock = threading.Lock()
-        self.calls: dict[int, deque[float]] = {period: deque() for period in quotas}
-        self.cache = cache
-        self.cache_key = f"sync_{'reg' if is_registered else 'anon'}"
-        if self.cache and self.cache.enabled:
-            self._load_from_cache()
-
-    def _get_limit(self, period: int) -> int:
-        # quotas: {period: tuple of (anonymous_limit, registered_limit) or int}
-        limit_value = self.quotas[period]
-        if isinstance(limit_value, tuple):
-            return limit_value[1] if self.is_registered else limit_value[0]
-        return limit_value
-
-    def _load_from_cache(self) -> None:
-        if self.cache is not None:
-            for period in self.quotas:
-                cached = self.cache.get(f"{self.cache_key}_{period}")
-                self.calls[period] = deque(cached)
-
-    def _save_to_cache(self) -> None:
-        if not self.cache or not self.cache.enabled:
-            return
-        for period in self.quotas:
-            self.cache.set(f"{self.cache_key}_{period}", list(self.calls[period]))
-
-    def acquire(self) -> None:
-        """
-        Acquire a slot for an API request, blocking if over quota.
-
-        Raises:
-            RuntimeError: If the rate limit is exceeded for any period.
-        """
-        now = time.time()
-        with self.lock:
-            for period in self.quotas:
-                q = self.calls[period]
-                limit = self._get_limit(period)
-                # Remove old calls
-                while q and q[0] <= now - period:
-                    q.popleft()
-                if len(q) >= limit:
-                    wait = period - (now - q[0])
-                    self._save_to_cache()
-                    raise RuntimeError(
-                        f"Rate limit exceeded: {limit} requests per {period}s. Try again in {wait:.1f}s."
-                    )
-            # Record this call
-            for period in self.quotas:
-                self.calls[period].append(now)
-            self._save_to_cache()
-
-
-class AsyncRateLimiter:
-    """
-    Asyncio-compatible rate limiter for API requests.
-
-    Enforces multiple quota periods and persists usage if a cache is provided.
-    """
-
-    def __init__(
-        self, quotas: dict[int, int | tuple], is_registered: bool, cache: PersistentQuotaCache | None = None
-    ) -> None:
-        """
-        Initialize the async rate limiter.
-
-        Args:
-            quotas: Dictionary of {period_seconds: limit or (anon_limit, reg_limit)}.
-            is_registered: Whether the user is registered (affects quota).
-            cache: Optional persistent cache for quota usage.
-        """
-        self.quotas = quotas
-        self.is_registered = is_registered
-        self.locks = {period: asyncio.Lock() for period in quotas}
-        self.calls: dict[int, deque[float]] = {period: deque() for period in quotas}
-        self.cache = cache
-        self.cache_key = f"async_{'reg' if is_registered else 'anon'}"
-        if self.cache and self.cache.enabled:
-            self._load_from_cache()
-
-    def _get_limit(self, period: int) -> int:
-        # quotas: {period: tuple of (anonymous_limit, registered_limit) or int}
-        limit_value = self.quotas[period]
-        if isinstance(limit_value, tuple):
-            return limit_value[1] if self.is_registered else limit_value[0]
-        return limit_value
-
-    def _load_from_cache(self) -> None:
-        if self.cache is not None:
-            for period in self.quotas:
-                cached = self.cache.get(f"{self.cache_key}_{period}")
-                self.calls[period] = deque(cached)
-
-    def _save_to_cache(self) -> None:
-        if not self.cache or not self.cache.enabled:
-            return
-        for period in self.quotas:
-            self.cache.set(f"{self.cache_key}_{period}", list(self.calls[period]))
-
-    async def acquire(self) -> None:
-        """
-        Acquire a slot for an API request asynchronously, raising if over quota.
-
-        Raises:
-            RuntimeError: If the rate limit is exceeded for any period.
-        """
-        now = time.time()
-        # Check all periods and raise immediately if any limit is exceeded
-        for period in self.quotas:
-            async with self.locks[period]:
-                q = self.calls[period]
-                limit = self._get_limit(period)
-                while q and q[0] <= now - period:
-                    q.popleft()
-                if len(q) >= limit:
-                    wait = period - (now - q[0])
-                    self._save_to_cache()
-                    raise RuntimeError(
-                        f"Rate limit exceeded: {limit} requests per {period}s. Try again in {wait:.1f}s."
-                    )
-        # Record this call for all periods
-        for period in self.quotas:
-            self.calls[period].append(now)
-        self._save_to_cache()
+__all__ = [
+    "GUSBDLError",
+    "RateLimitError",
+    "RateLimitDelayExceeded",
+    "PersistentQuotaCache",
+    "RateLimiter",
+    "AsyncRateLimiter",
+    "rate_limit",
+    "async_rate_limit",
+]
