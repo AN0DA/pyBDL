@@ -13,6 +13,7 @@ The :class:`pyldb.config.LDBConfig` class manages all configuration for authenti
 .. seealso::
    - :doc:`main_client` for main client usage
    - :doc:`api_clients` for API endpoint usage
+   - :doc:`rate_limiting` for comprehensive rate limiting documentation
 
 Caching
 -------
@@ -68,9 +69,14 @@ Rate Limiting & Quotas
 
 pyLDB enforces API rate limits using both synchronous and asynchronous rate limiters. These limits are based on the official BDL API provider's policy, as described in the `BDL API Manual <https://api.stat.gov.pl/Home/BdlApi>`_ (see the "Manual" tab).
 
-**Limits and API key**
+**Quick Overview**
 
-For API security reasons, quantitative limits are imposed on the number of requests. Users who need larger limits may register and get an automatically generated personal API key.
+- **Automatic enforcement**: Rate limiting is built into all API calls
+- **Multiple quota periods**: Enforces limits across different time windows simultaneously
+- **Persistent cache**: Quota usage survives process restarts
+- **Sync & async support**: Works seamlessly with both synchronous and asynchronous code
+
+**Default Quotas**
 
 The following user limits apply:
 
@@ -86,36 +92,27 @@ The following user limits apply:
 | 7d      | 10,000           | 50,000            |
 +---------+------------------+-------------------+
 
-- **Quota periods**: Multiple periods (per second, per 15 minutes, etc.) are enforced, matching the BDL provider's policy.
-- **Persistent quota cache**: Usage is stored on disk to survive restarts.
-- **Custom quotas**: Pass a `custom_quotas` dict to `LDBConfig` or set the `LDB_QUOTAS` environment variable (JSON) for testing or special deployments.
-
 **Custom Quotas**
 
 To override default rate limits, provide a `custom_quotas` dictionary with integer keys representing the period in seconds:
-
-- `1` (1 second)
-- `900` (15 minutes)
-- `43200` (12 hours)
-- `604800` (7 days)
-
-Example:
 
 .. code-block:: python
 
     config = LDBConfig(api_key="...", custom_quotas={1: 10, 900: 200, 43200: 2000, 604800: 20000})
 
-If any period is omitted from `custom_quotas`, the default quota for a registered user is used for that period.
-
-.. code-block:: python
-
-    # Only override 1s and 15m, others use default registered user quotas
-    config = LDBConfig(api_key="...", custom_quotas={1: 20, 900: 500})
-
-The four supported keys are required for full override: `1`, `900`, `43200`, `604800`.
+Or via environment variable:
 
 .. code-block:: bash
 
     export LDB_QUOTAS='{"1": 20, "900": 500}'
 
-For more details, see the `BDL API Manual <https://api.stat.gov.pl/Home/BdlApi>`_ (Manual tab).
+**Comprehensive Documentation**
+
+For detailed information on rate limiting, including:
+- How to handle rate limit errors
+- Configuring wait vs. raise behavior
+- Using context managers and decorators
+- Checking remaining quota
+- Technical implementation details
+
+See :doc:`rate_limiting` for the complete guide.

@@ -69,6 +69,7 @@ API Reference
    main_client
    api_clients
    config
+   rate_limiting
 
 Contributing & License
 ----------------------
