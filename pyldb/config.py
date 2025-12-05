@@ -5,6 +5,9 @@ from dataclasses import dataclass, field
 # API Constants
 LDB_API_BASE_URL = "https://bdl.stat.gov.pl/api/v1"
 
+# Sentinel value to distinguish "not provided" from "explicitly None"
+_NOT_PROVIDED = object()
+
 
 class Language(enum.Enum):
     PL = "pl"
@@ -16,7 +19,7 @@ DEFAULT_CACHE_EXPIRY = 3600  # 1 hour in seconds
 
 # Define constant quota periods (in seconds)
 QUOTA_PERIODS = {"1s": 1, "15m": 15 * 60, "12h": 12 * 3600, "7d": 7 * 24 * 3600}
-DEFAULT_QUOTAS = {
+DEFAULT_QUOTAS = { # (anon_limit, reg_limit)
     QUOTA_PERIODS["1s"]: (5, 10),
     QUOTA_PERIODS["15m"]: (100, 500),
     QUOTA_PERIODS["12h"]: (1000, 5000),
@@ -33,7 +36,7 @@ class LDBConfig:
     direct parameter passing, environment variable overrides, and sensible defaults.
 
     Attributes:
-        api_key: API key for authentication (required).
+        api_key: API key for authentication (optional, None for anonymous access).
         language: Language code for API responses (default: "en").
         use_cache: Whether to use request caching (default: True).
         cache_expire_after: Cache expiration time in seconds (default: 3600).
@@ -46,7 +49,7 @@ class LDBConfig:
         use_global_cache: Store quota cache in OS-specific location (default: False).
     """
 
-    api_key: str | None = field(default=None)
+    api_key: str | None = field(default=_NOT_PROVIDED)  # type: ignore[assignment]
     language: Language = field(default=DEFAULT_LANGUAGE)
     use_cache: bool = field(default=True)
     cache_expire_after: int = field(default=DEFAULT_CACHE_EXPIRY)
@@ -63,13 +66,14 @@ class LDBConfig:
         Initialize configuration values from environment variables if not set directly.
 
         Raises:
-            ValueError: If required configuration (e.g., API key) is missing or invalid.
+            ValueError: If configuration values are invalid (e.g., invalid language code).
         """
         # Get API key from environment if not provided directly
-        if self.api_key is None:
+        # If api_key is _NOT_PROVIDED, check environment variable
+        # If api_key is explicitly None, use None (anonymous access)
+        if self.api_key is _NOT_PROVIDED:
             self.api_key = os.getenv("LDB_API_KEY")
-            if not self.api_key:
-                raise ValueError("API key must be provided either directly or through LDB_API_KEY environment variable")
+        # If explicitly None, keep it as None (anonymous access, stronger than env)
 
         # Get language from environment if not provided directly
         # Convert provided language string to Language enum if necessary
@@ -133,7 +137,8 @@ class LDBConfig:
             except Exception as e:
                 raise ValueError("LDB_QUOTAS must be a valid JSON string representing a dictionary") from e
         # Validate and merge custom_quotas
-        merged_quotas = {k: v[1] for k, v in DEFAULT_QUOTAS.items()}
+        # If custom_quotas is provided, use those values (single ints)
+        # Otherwise, keep DEFAULT_QUOTAS format (tuples) for rate limiter to choose based on registration
         if self.custom_quotas is not None:
             if not isinstance(self.custom_quotas, dict):
                 raise ValueError("custom_quotas must be a dictionary of {period_seconds: int}")
@@ -142,5 +147,6 @@ class LDBConfig:
                     raise ValueError(
                         f"custom_quotas keys must be one of {list(QUOTA_PERIODS.values())} and values positive int"
                     )
-                merged_quotas[k] = v
-        self.custom_quotas = merged_quotas
+        else:
+            # No custom quotas, keep None so API client can use DEFAULT_QUOTAS with tuple format
+            self.custom_quotas = None

@@ -20,8 +20,8 @@ class BaseAPIClient:
     - Paginated fetching with optional progress bars (sync & async)
     """
 
-    _global_sync_limiter = None
-    _global_async_limiter = None
+    _global_sync_limiters: dict[bool, RateLimiter] = {}
+    _global_async_limiters: dict[bool, AsyncRateLimiter] = {}
     _quota_cache = None
 
     def __init__(self, config: LDBConfig, extra_headers: dict[str, str] | None = None):
@@ -74,21 +74,40 @@ class BaseAPIClient:
             # Ensure all header values are strings
             self.session.headers.update({k: str(v) for k, v in extra_headers.items() if v is not None})
 
+        # Determine registration status based on api_key presence
+        is_registered = bool(config.api_key)
+        
         # Determine quotas
-        quotas = getattr(config, "quotas", None)
-        if quotas is None:
-            is_registered = bool(getattr(config, "api_key", None))
-            quotas = {k: v[1] if is_registered else v[0] for k, v in DEFAULT_QUOTAS.items()}
+        # If custom_quotas is set, use those (single int values)
+        # Otherwise, use DEFAULT_QUOTAS (tuple format, rate limiter will select based on is_registered)
+        if config.custom_quotas is not None:
+            quotas = config.custom_quotas
+        else:
+            quotas = DEFAULT_QUOTAS
+        
         if BaseAPIClient._quota_cache is None:
-            BaseAPIClient._quota_cache = PersistentQuotaCache(getattr(config, "quota_cache_enabled", True))
+            BaseAPIClient._quota_cache = PersistentQuotaCache(config.quota_cache_enabled)
 
-        if BaseAPIClient._global_sync_limiter is None:
-            BaseAPIClient._global_sync_limiter = RateLimiter(quotas, is_registered, BaseAPIClient._quota_cache)
-        if BaseAPIClient._global_async_limiter is None:
-            BaseAPIClient._global_async_limiter = AsyncRateLimiter(quotas, is_registered, BaseAPIClient._quota_cache)
+        # Use separate limiters for registered vs anonymous users
+        # When custom_quotas are provided, create per-instance limiters (not shared)
+        # Otherwise, reuse shared limiters based on registration status
+        if config.custom_quotas is not None:
+            # Custom quotas are client-specific, create per-instance limiters
+            self._sync_limiter = RateLimiter(quotas, is_registered, BaseAPIClient._quota_cache)
+            self._async_limiter = AsyncRateLimiter(quotas, is_registered, BaseAPIClient._quota_cache)
+        else:
+            # Use shared limiters for DEFAULT_QUOTAS (keyed by registration status)
+            if is_registered not in BaseAPIClient._global_sync_limiters:
+                BaseAPIClient._global_sync_limiters[is_registered] = RateLimiter(
+                    quotas, is_registered, BaseAPIClient._quota_cache
+                )
+            if is_registered not in BaseAPIClient._global_async_limiters:
+                BaseAPIClient._global_async_limiters[is_registered] = AsyncRateLimiter(
+                    quotas, is_registered, BaseAPIClient._quota_cache
+                )
 
-        self._sync_limiter = BaseAPIClient._global_sync_limiter
-        self._async_limiter = BaseAPIClient._global_async_limiter
+            self._sync_limiter = BaseAPIClient._global_sync_limiters[is_registered]
+            self._async_limiter = BaseAPIClient._global_async_limiters[is_registered]
 
     def _build_url(self, endpoint: str) -> str:
         """

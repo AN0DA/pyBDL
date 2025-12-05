@@ -12,7 +12,7 @@ class LDB:
     attributes, data, levels, measures, subjects, units, variables, version, and years.
     """
 
-    def __init__(self, config: LDBConfig | None = None):
+    def __init__(self, config: LDBConfig | dict | None = None):
         """
         Initialize the LDB client and all API endpoint namespaces.
 
@@ -29,10 +29,12 @@ class LDB:
             2. Environment variables (LDB_API_KEY, LDB_LANGUAGE, etc.)
             3. Default values
         """
-        if isinstance(config, dict):
+        if config is None:
+            config_obj = LDBConfig()
+        elif isinstance(config, dict):
             config_obj = LDBConfig(**config)
-        elif isinstance(config, LDBConfig) or config is None:
-            config_obj = config or LDBConfig()
+        elif isinstance(config, LDBConfig):
+            config_obj = config
         else:
             raise TypeError(f"config must be a dict, LDBConfig, or None, got {type(config)}")
         self.config = config_obj
