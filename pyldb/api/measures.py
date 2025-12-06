@@ -1,6 +1,12 @@
 from typing import Any
 
-from pyldb.api.client import BaseAPIClient
+from pyldb.api.client import (
+    DEFAULT_FORMAT,
+    DEFAULT_LANG,
+    FormatLiteral,
+    LanguageLiteral,
+    BaseAPIClient,
+)
 
 
 class MeasuresAPI(BaseAPIClient):
@@ -14,6 +20,12 @@ class MeasuresAPI(BaseAPIClient):
     def list_measures(
         self,
         sort: str | None = None,
+        page_size: int = 100,
+        max_pages: int | None = None,
+        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = DEFAULT_FORMAT,
+        if_none_match: str | None = None,
+        if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         """
@@ -23,21 +35,42 @@ class MeasuresAPI(BaseAPIClient):
 
         Args:
             sort: Optional sorting order, e.g. 'Id', '-Id', 'Name', '-Name'.
+            page_size: Number of results per page.
+            max_pages: Maximum number of pages to fetch (None for all).
+            lang: Expected response content language (default: "en").
+            format: Expected response content type (default: "json").
+            if_none_match: Conditional request header If-None-Match (entity tag).
+            if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
 
         Returns:
             List of measure unit metadata dictionaries.
         """
-        params: dict[str, Any] = {}
+        extra_params: dict[str, Any] = {}
         if sort:
-            params["sort"] = sort
+            extra_params["sort"] = sort
         if extra_query:
-            params.update(extra_query)
-        return self.fetch_all_results("measures", params=params)
+            extra_params.update(extra_query)
+
+        params, headers = self._prepare_api_params_and_headers(
+            lang=lang,
+            format=format,
+            if_none_match=if_none_match,
+            if_modified_since=if_modified_since,
+            extra_params=extra_params,
+        )
+
+        return self.fetch_all_results(
+            "measures", params=params, headers=headers if headers else None, page_size=page_size, max_pages=max_pages
+        )
 
     def get_measure(
         self,
         measure_id: int,
+        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = DEFAULT_FORMAT,
+        if_none_match: str | None = None,
+        if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """
@@ -47,28 +80,71 @@ class MeasuresAPI(BaseAPIClient):
 
         Args:
             measure_id: Measure unit identifier (integer).
+            lang: Expected response content language (default: "en").
+            format: Expected response content type (default: "json").
+            if_none_match: Conditional request header If-None-Match (entity tag).
+            if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
 
         Returns:
             Dictionary with measure unit metadata.
         """
-        params = extra_query if extra_query else None
-        return self.fetch_single_result(f"measures/{measure_id}", params=params)
+        params, headers = self._prepare_api_params_and_headers(
+            lang=lang,
+            format=format,
+            if_none_match=if_none_match,
+            if_modified_since=if_modified_since,
+            extra_params=extra_query,
+        )
 
-    def get_measures_metadata(self) -> dict[str, Any]:
+        return self.fetch_single_result(
+            f"measures/{measure_id}", params=params if params else None, headers=headers if headers else None
+        )
+
+    def get_measures_metadata(
+        self,
+        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = DEFAULT_FORMAT,
+        if_none_match: str | None = None,
+        if_modified_since: str | None = None,
+        extra_query: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Retrieve general metadata and version information for the /measures endpoint.
 
         Maps to: GET /measures/metadata
 
+        Args:
+            lang: Expected response content language (default: "en").
+            format: Expected response content type (default: "json").
+            if_none_match: Conditional request header If-None-Match (entity tag).
+            if_modified_since: Conditional request header If-Modified-Since.
+            extra_query: Additional query parameters.
+
         Returns:
             Dictionary with endpoint metadata and versioning info.
         """
-        return self.fetch_single_result("measures/metadata")
+        params, headers = self._prepare_api_params_and_headers(
+            lang=lang,
+            format=format,
+            if_none_match=if_none_match,
+            if_modified_since=if_modified_since,
+            extra_params=extra_query,
+        )
+
+        return self.fetch_single_result(
+            "measures/metadata", params=params if params else None, headers=headers if headers else None
+        )
 
     async def alist_measures(
         self,
         sort: str | None = None,
+        page_size: int = 100,
+        max_pages: int | None = None,
+        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = DEFAULT_FORMAT,
+        if_none_match: str | None = None,
+        if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         """
@@ -78,21 +154,42 @@ class MeasuresAPI(BaseAPIClient):
 
         Args:
             sort: Optional sorting order, e.g. 'Id', '-Id', 'Name', '-Name'.
+            page_size: Number of results per page.
+            max_pages: Maximum number of pages to fetch (None for all).
+            lang: Expected response content language (default: "en").
+            format: Expected response content type (default: "json").
+            if_none_match: Conditional request header If-None-Match (entity tag).
+            if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
 
         Returns:
             List of measure unit metadata dictionaries.
         """
-        params: dict[str, Any] = {}
+        extra_params: dict[str, Any] = {}
         if sort:
-            params["sort"] = sort
+            extra_params["sort"] = sort
         if extra_query:
-            params.update(extra_query)
-        return await self.afetch_single_result("measures", results_key="results", params=params)
+            extra_params.update(extra_query)
+
+        params, headers = self._prepare_api_params_and_headers(
+            lang=lang,
+            format=format,
+            if_none_match=if_none_match,
+            if_modified_since=if_modified_since,
+            extra_params=extra_params,
+        )
+
+        return await self.afetch_all_results(
+            "measures", params=params, headers=headers if headers else None, page_size=page_size, max_pages=max_pages
+        )
 
     async def aget_measure(
         self,
         measure_id: int,
+        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = DEFAULT_FORMAT,
+        if_none_match: str | None = None,
+        if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """
@@ -102,21 +199,58 @@ class MeasuresAPI(BaseAPIClient):
 
         Args:
             measure_id: Measure unit identifier (integer).
+            lang: Expected response content language (default: "en").
+            format: Expected response content type (default: "json").
+            if_none_match: Conditional request header If-None-Match (entity tag).
+            if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
 
         Returns:
             Dictionary with measure unit metadata.
         """
-        params = extra_query if extra_query else None
-        return await self.afetch_single_result(f"measures/{measure_id}", params=params)
+        params, headers = self._prepare_api_params_and_headers(
+            lang=lang,
+            format=format,
+            if_none_match=if_none_match,
+            if_modified_since=if_modified_since,
+            extra_params=extra_query,
+        )
 
-    async def aget_measures_metadata(self) -> dict[str, Any]:
+        return await self.afetch_single_result(
+            f"measures/{measure_id}", params=params if params else None, headers=headers if headers else None
+        )
+
+    async def aget_measures_metadata(
+        self,
+        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = DEFAULT_FORMAT,
+        if_none_match: str | None = None,
+        if_modified_since: str | None = None,
+        extra_query: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Asynchronously retrieve general metadata and version information for the /measures endpoint.
 
         Maps to: GET /measures/metadata
 
+        Args:
+            lang: Expected response content language (default: "en").
+            format: Expected response content type (default: "json").
+            if_none_match: Conditional request header If-None-Match (entity tag).
+            if_modified_since: Conditional request header If-Modified-Since.
+            extra_query: Additional query parameters.
+
         Returns:
             Dictionary with endpoint metadata and versioning info.
         """
-        return await self.afetch_single_result("measures/metadata")
+        params, headers = self._prepare_api_params_and_headers(
+            lang=lang,
+            format=format,
+            if_none_match=if_none_match,
+            if_modified_since=if_modified_since,
+            extra_params=extra_query,
+        )
+
+        return await self.afetch_single_result(
+            "measures/metadata", params=params if params else None, headers=headers if headers else None
+        )

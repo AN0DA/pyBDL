@@ -9,6 +9,15 @@ from tqdm import tqdm
 from pyldb.api.utils.rate_limiter import AsyncRateLimiter, PersistentQuotaCache, RateLimiter
 from pyldb.config import DEFAULT_QUOTAS, LDB_API_BASE_URL, LDBConfig
 
+# Centralized type literals for API parameters
+LanguageLiteral = Literal["pl", "en"]
+FormatLiteral = Literal["json", "jsonapi", "xml"]
+AcceptHeaderLiteral = Literal["application/json", "application/vnd.api+json", "application/xml"]
+
+# Default values
+DEFAULT_LANG: LanguageLiteral = "en"
+DEFAULT_FORMAT: FormatLiteral = "json"
+
 
 class BaseAPIClient:
     """Base client for LDB API interactions with both sync and async support.
@@ -76,15 +85,12 @@ class BaseAPIClient:
 
         # Determine registration status based on api_key presence
         is_registered = bool(config.api_key)
-        
+
         # Determine quotas
         # If custom_quotas is set, use those (single int values)
         # Otherwise, use DEFAULT_QUOTAS (tuple format, rate limiter will select based on is_registered)
-        if config.custom_quotas is not None:
-            quotas = config.custom_quotas
-        else:
-            quotas = DEFAULT_QUOTAS
-        
+        quotas = config.custom_quotas if config.custom_quotas is not None else DEFAULT_QUOTAS
+
         if BaseAPIClient._quota_cache is None:
             BaseAPIClient._quota_cache = PersistentQuotaCache(config.quota_cache_enabled)
 
@@ -108,6 +114,74 @@ class BaseAPIClient:
 
             self._sync_limiter = BaseAPIClient._global_sync_limiters[is_registered]
             self._async_limiter = BaseAPIClient._global_async_limiters[is_registered]
+
+    @staticmethod
+    def _format_to_accept_header(format: FormatLiteral | FormatLiteralVersion | None) -> str | None:
+        """
+        Convert format parameter to Accept header value.
+
+        Args:
+            format: Format string ("json", "jsonapi", or "xml").
+
+        Returns:
+            Accept header value or None if format is None.
+        """
+        if format is None:
+            return None
+        format_to_accept = {
+            "json": "application/json",
+            "jsonapi": "application/vnd.api+json",
+            "xml": "application/xml",
+        }
+        return format_to_accept.get(format)
+
+    @staticmethod
+    def _prepare_api_params_and_headers(
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | FormatLiteralVersion | None = None,
+        if_none_match: str | None = None,
+        if_modified_since: str | None = None,
+        extra_params: dict[str, Any] | None = None,
+    ) -> tuple[dict[str, Any], dict[str, str]]:
+        """
+        Prepare query parameters and headers for API requests.
+
+        Args:
+            lang: Language code (defaults to "en" if not provided).
+            format: Format string (defaults to "json" if not provided).
+            if_none_match: If-None-Match header value.
+            if_modified_since: If-Modified-Since header value.
+            extra_params: Additional query parameters to merge.
+
+        Returns:
+            Tuple of (params dict, headers dict).
+        """
+        # Set defaults
+        lang = lang if lang is not None else DEFAULT_LANG
+        format = format if format is not None else DEFAULT_FORMAT
+
+        params: dict[str, Any] = {}
+        if lang:
+            params["lang"] = lang
+        if format:
+            params["format"] = format
+        if extra_params:
+            params.update(extra_params)
+
+        headers: dict[str, str] = {}
+        # Set Accept-Language header from lang parameter
+        if lang:
+            headers["Accept-Language"] = lang
+        # Set Accept header from format parameter
+        accept_header = BaseAPIClient._format_to_accept_header(format)
+        if accept_header:
+            headers["Accept"] = accept_header
+        if if_none_match:
+            headers["If-None-Match"] = if_none_match
+        if if_modified_since:
+            headers["If-Modified-Since"] = if_modified_since
+
+        return params, headers
 
     def _build_url(self, endpoint: str) -> str:
         """
@@ -310,7 +384,7 @@ class BaseAPIClient:
         all_results = []
         metadata: dict[str, Any] = {}
         progress_bar = (
-            tqdm(desc=f"Fetching {endpoint.split('/')[-1]}", unit="pages", leave=True) if show_progress else None
+            tqdm(desc=f"Fetching {endpoint.split('/')[-1]}", unit=" pages", leave=True) if show_progress else None
         )
 
         first_page = True
@@ -604,7 +678,7 @@ class BaseAPIClient:
         metadata: dict[str, Any] = {}
         first_page = True
         progress_bar = (
-            tqdm(desc=f"Fetching {endpoint.split('/')[-1]} (async)", unit="pages", leave=True)
+            tqdm(desc=f"Fetching {endpoint.split('/')[-1]} (async)", unit=" pages", leave=True)
             if show_progress
             else None
         )

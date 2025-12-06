@@ -1,6 +1,11 @@
-from typing import Any
+from typing import Any, Literal
 
-from pyldb.api.client import BaseAPIClient
+from pyldb.api.client import (
+    DEFAULT_FORMAT,
+    DEFAULT_LANG,
+    LanguageLiteral,
+    BaseAPIClient,
+)
 
 
 class VersionAPI(BaseAPIClient):
@@ -10,24 +15,72 @@ class VersionAPI(BaseAPIClient):
     Provides access to version and build information for the Local Data Bank (LDB) API.
     """
 
-    def get_version(self) -> dict[str, Any]:
+    def get_version(
+        self,
+        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: Literal["json", "xml"] | None = DEFAULT_FORMAT, # /version endpoint doesn't support jsonapi
+        if_none_match: str | None = None,
+        if_modified_since: str | None = None,
+        extra_query: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Retrieve the API version and build information.
 
         Maps to: GET /version
 
+        Args:
+            lang: Expected response content language (default: "en").
+            format: Expected response content type (default: "json"). Note: only "json" and "xml" are supported for this endpoint.
+            if_none_match: Conditional request header If-None-Match (entity tag).
+            if_modified_since: Conditional request header If-Modified-Since.
+            extra_query: Additional query parameters.
+
         Returns:
             Dictionary with version and build metadata.
         """
-        return self.fetch_single_result("version")
+        params, headers = self._prepare_api_params_and_headers(
+            lang=lang,
+            format=format,
+            if_none_match=if_none_match,
+            if_modified_since=if_modified_since,
+            extra_params=extra_query,
+        )
 
-    async def aget_version(self) -> dict[str, Any]:
+        return self.fetch_single_result(
+            "version", params=params if params else None, headers=headers if headers else None
+        )
+
+    async def aget_version(
+        self,
+        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: Literal["json", "xml"] | None = DEFAULT_FORMAT, # /version endpoint doesn't support jsonapi
+        if_none_match: str | None = None,
+        if_modified_since: str | None = None,
+        extra_query: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Asynchronously retrieve the API version and build information.
 
         Maps to: GET /version
 
+        Args:
+            lang: Expected response content language (default: "en").
+            format: Expected response content type (default: "json"). Note: only "json" and "xml" are supported for this endpoint.
+            if_none_match: Conditional request header If-None-Match (entity tag).
+            if_modified_since: Conditional request header If-Modified-Since.
+            extra_query: Additional query parameters.
+
         Returns:
             Dictionary with version and build metadata.
         """
-        return await self.afetch_single_result("version")
+        params, headers = self._prepare_api_params_and_headers(
+            lang=lang,
+            format=format,
+            if_none_match=if_none_match,
+            if_modified_since=if_modified_since,
+            extra_params=extra_query,
+        )
+
+        return await self.afetch_single_result(
+            "version", params=params if params else None, headers=headers if headers else None
+        )
