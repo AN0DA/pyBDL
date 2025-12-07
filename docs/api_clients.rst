@@ -1,6 +1,20 @@
 API Clients
 ===========
 
+.. note::
+   **For most users, the access layer is recommended.** This section documents the low-level API client interface that returns raw dictionaries. The access layer (documented in :doc:`access_layer`) returns pandas DataFrames and is easier to use for data analysis.
+
+   Use the API layer (``ldb.api.*``) when you need:
+   - Raw API response structure
+   - Custom response processing
+   - Direct access to API metadata
+   - Integration with non-pandas workflows
+
+   Use the access layer (``ldb.*``) when you need:
+   - Pandas DataFrames for data analysis
+   - Automatic column normalization and type inference
+   - Nested data flattening
+
 The pyLDB library provides a comprehensive set of API clients for interacting with the Local Data Bank (LDB) API.
 All API endpoints are accessible through the main client's `.api` attribute. See :doc:`Main Client <main_client>` for details about the main client.
 
@@ -60,13 +74,51 @@ All API clients support async methods for high-performance and concurrent applic
 
     async def main():
         ldb = LDB()
-        data = await ldb.api.data.aget_data_by_variable(variable_id="3643", year=2021)
+        data = await ldb.api.data.aget_data_by_variable(variable_id="3643", years=[2021])
         print(data)
 
     asyncio.run(main())
 
 .. note::
    Async methods are available for all endpoints. See the API reference below for details.
+
+Format and Language Parameters
+-------------------------------
+
+API clients support format and language parameters for controlling response content:
+
+**Format Options** (``FormatLiteral``):
+- ``"json"`` - JSON format (default)
+- ``"jsonapi"`` - JSON:API format
+- ``"xml"`` - XML format
+
+**Language Options** (``LanguageLiteral``):
+- ``"pl"`` - Polish (default if configured)
+- ``"en"`` - English
+
+The format and language parameters automatically set the appropriate HTTP headers:
+- ``Accept`` header is set based on the format parameter
+- ``Accept-Language`` header is set based on the language parameter
+
+.. code-block:: python
+
+    from pyldb import LDB
+    
+    ldb = LDB()
+    
+    # Request data in XML format
+    data = ldb.api.data.get_data_by_variable(
+        variable_id="3643",
+        years=[2021],
+        format="xml"
+    )
+    
+    # Request data in Polish
+    data = ldb.api.data.get_data_by_variable(
+        variable_id="3643",
+        years=[2021],
+        lang="pl"
+    )
 
 Aggregates
 ~~~~~~~~~~

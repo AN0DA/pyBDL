@@ -39,9 +39,17 @@ Quick Start
 .. code-block:: python
 
     from pyldb import LDB, LDBConfig
+    
+    # Initialize client
     ldb = LDB(LDBConfig(api_key="your-api-key"))  # Reads config from environment or defaults
-    df = ldb.api.data.get_data_by_variable(variable_id="3643", year=2021)
+    
+    # Use the access layer (returns pandas DataFrames)
+    df = ldb.data.get_data_by_variable(variable_id="3643", years=[2021])
     print(df.head())
+    
+    # Data is ready for analysis
+    print(df.dtypes)
+    print(df.columns)
 
 Configuration
 -------------
@@ -59,17 +67,25 @@ Or set environment variables::
     export LDB_API_KEY=your-api-key
     export LDB_LANGUAGE=en
 
-API Reference
+Documentation
 -------------
 
 .. toctree::
    :maxdepth: 2
-   :caption: API Reference
+   :caption: User Guide
 
    main_client
+   access_layer
+   examples
    api_clients
    config
    rate_limiting
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Reference
+
+   appendix
 
 Contributing & License
 ----------------------

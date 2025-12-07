@@ -37,6 +37,15 @@ The rate limiter enforces the following default quotas based on user registratio
 
 These limits are automatically applied based on whether you provide an API key (registered user) or not (anonymous user).
 
+**Registration Status Detection**
+
+The library automatically determines your registration status:
+
+- **Anonymous user**: When ``api_key`` is ``None`` or not provided in ``LDBConfig``
+- **Registered user**: When ``api_key`` is provided in ``LDBConfig``
+
+The rate limiter uses separate quota tracking for registered and anonymous users, ensuring that each user type gets the correct limits.
+
 User Guide
 ----------
 
@@ -53,7 +62,7 @@ Rate limiting is automatically handled by the library. Simply use the API client
     ldb = LDB(config)
     
     # Rate limiting is automatic - no extra code needed
-    data = ldb.api.data.get_data_by_variable(variable_id="3643", year=2021)
+    data = ldb.api.data.get_data_by_variable(variable_id="3643", years=[2021])
 
 The rate limiter will automatically:
 - Track your API usage across all calls
@@ -70,7 +79,7 @@ By default, the rate limiter raises a :class:`RateLimitError` when quota is exce
     from pyldb.api.utils.rate_limiter import RateLimitError
     
     try:
-        data = ldb.api.data.get_data_by_variable(variable_id="3643", year=2021)
+        data = ldb.api.data.get_data_by_variable(variable_id="3643", years=[2021])
     except RateLimitError as e:
         print(f"Rate limit exceeded. Retry after {e.retry_after:.1f} seconds")
         print(f"Limit info: {e.limit_info}")
@@ -102,7 +111,7 @@ You can configure the rate limiter to wait automatically instead of raising exce
     
     # Use the limiter before making API calls
     limiter.acquire()
-    data = ldb.api.data.get_data_by_variable(variable_id="3643", year=2021)
+    data = ldb.api.data.get_data_by_variable(variable_id="3643", years=[2021])
 
 Using Context Managers
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -120,7 +129,7 @@ Rate limiters can be used as context managers for cleaner code:
     
     # Automatically acquires quota when entering context
     with limiter:
-        data = ldb.api.data.get_data_by_variable(variable_id="3643", year=2021)
+        data = ldb.api.data.get_data_by_variable(variable_id="3643", years=[2021])
 
 Using Decorators
 ~~~~~~~~~~~~~~~~
@@ -136,7 +145,7 @@ You can decorate functions to automatically rate limit them:
     
     @rate_limit(quotas=quotas, is_registered=True, max_delay=10)
     def fetch_data(variable_id: str, year: int):
-        return ldb.api.data.get_data_by_variable(variable_id=variable_id, year=year)
+        return ldb.api.data.get_data_by_variable(variable_id=variable_id, years=[year])
     
     # Function is automatically rate limited
     data = fetch_data("3643", 2021)
@@ -152,7 +161,7 @@ For async functions:
     
     @async_rate_limit(quotas=quotas, is_registered=True)
     async def async_fetch_data(variable_id: str, year: int):
-        return await ldb.api.data.aget_data_by_variable(variable_id=variable_id, year=year)
+        return await ldb.api.data.aget_data_by_variable(variable_id=variable_id, years=[year])
 
 Checking Remaining Quota
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -222,88 +231,10 @@ Both synchronous and asynchronous rate limiters share the same quota state via t
 - Quota usage persists across different execution contexts
 - Process restarts maintain quota state
 
-Technical Documentation
-------------------------
+Technical Details
+-----------------
 
-Architecture
-~~~~~~~~~~~~
-
-The rate limiting system consists of three main components:
-
-1. **RateLimiter**: Thread-safe synchronous rate limiter
-2. **AsyncRateLimiter**: Asyncio-compatible asynchronous rate limiter
-3. **PersistentQuotaCache**: Thread-safe persistent storage for quota usage
-
-Algorithm
-~~~~~~~~~
-
-The rate limiter uses a **sliding window** algorithm with multiple time periods:
-
-1. Each quota period maintains a deque of timestamps for recent API calls
-2. When ``acquire()`` is called:
-   - Old timestamps (outside the current window) are removed
-   - If current count >= limit, calculate wait time or raise exception
-   - Record current timestamp for all periods
-   - Save state to persistent cache
-
-3. The longest wait time across all periods is used (most restrictive limit)
-
-Time Handling
-~~~~~~~~~~~~~
-
-The rate limiter uses ``time.monotonic()`` instead of ``time.time()`` to ensure:
-- Clock adjustments (NTP, daylight saving) don't affect quota calculations
-- Accurate elapsed time measurements
-- Consistent behavior across different system clock configurations
-
-Thread Safety
-~~~~~~~~~~~~~
-
-- **RateLimiter**: Uses ``threading.Lock()`` for thread-safe operations
-- **AsyncRateLimiter**: Uses ``asyncio.Lock()`` for async-safe operations
-- **PersistentQuotaCache**: Uses ``threading.Lock()`` for thread-safe cache access
-
-Both limiters can be safely used in concurrent environments.
-
-Cache Implementation
-~~~~~~~~~~~~~~~~~~~~
-
-The persistent cache uses atomic file writes:
-
-1. Write quota data to a temporary file (``quota_cache.json.tmp``)
-2. Atomically rename temp file to final location (``quota_cache.json``)
-3. This ensures cache integrity even if the process crashes during write
-
-Cache keys are unified for sync and async limiters:
-- Anonymous users: ``anon_<period>``
-- Registered users: ``reg_<period>``
-
-This allows sync and async limiters to share quota state.
-
-Exception Hierarchy
-~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: text
-
-    GUSBDLError (base exception)
-    └── RateLimitError
-        └── RateLimitDelayExceeded
-
-- **GUSBDLError**: Base exception for all GUS BDL API errors
-- **RateLimitError**: Raised when rate limit is exceeded
-- **RateLimitDelayExceeded**: Raised when required delay exceeds ``max_delay``
-
-Configuration Options
-~~~~~~~~~~~~~~~~~~~~~
-
-RateLimiter and AsyncRateLimiter support the following parameters:
-
-- **quotas**: Dictionary mapping period (seconds) to limit or (anon_limit, reg_limit) tuple
-- **is_registered**: Whether the user is registered (affects quota selection)
-- **cache**: Optional PersistentQuotaCache instance for persistent storage
-- **max_delay**: Maximum seconds to wait (None = wait forever, 0 = raise immediately)
-- **raise_on_limit**: If True, raise exception immediately; if False, wait
-- **buffer_seconds**: Small buffer time added to wait calculations (default: 0.05s)
+For technical implementation details, including architecture, algorithm, thread safety, cache implementation, and configuration options, see :doc:`appendix`.
 
 API Reference
 -------------
@@ -354,7 +285,7 @@ Example: Handling Rate Limit Errors
     ldb = LDB(LDBConfig(api_key="your-api-key"))
     
     try:
-        data = ldb.api.data.get_data_by_variable(variable_id="3643", year=2021)
+        data = ldb.api.data.get_data_by_variable(variable_id="3643", years=[2021])
     except RateLimitError as e:
         if isinstance(e, RateLimitDelayExceeded):
             print(f"Would need to wait {e.actual_delay:.1f}s, exceeds max {e.max_delay:.1f}s")
@@ -379,7 +310,7 @@ Example: Checking Quota Before Making Calls
         # Consider waiting or reducing request rate
     
     # Make API call
-    data = ldb.api.data.get_data_by_variable(variable_id="3643", year=2021)
+    data = ldb.api.data.get_data_by_variable(variable_id="3643", years=[2021])
 
 Example: Resetting Quota (for testing)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -427,4 +358,5 @@ A: The cache file is automatically recreated if corrupted. Old quota data will b
 .. seealso::
    - :doc:`config` for configuration options
    - :doc:`api_clients` for API usage examples
+   - :doc:`appendix` for technical implementation details
 

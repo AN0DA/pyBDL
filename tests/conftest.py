@@ -1,4 +1,6 @@
+import os
 from typing import Any
+from unittest.mock import MagicMock
 from urllib.parse import urlencode
 
 import pytest
@@ -18,6 +20,18 @@ def api_url() -> str:
     return "https://bdl.stat.gov.pl/api/v1"
 
 
+@pytest.fixture
+def mock_api_client() -> MagicMock:
+    """Provide a mock API client for testing access classes."""
+    return MagicMock()
+
+
+@pytest.fixture
+def api_key() -> str | None:
+    """Get API key from environment for e2e tests."""
+    return os.getenv("LDB_API_KEY")
+
+
 def paginated_mock(
     base_url: str, data: list[dict[str, Any]], page_size: int = 100, extra_params: dict[str, Any] | None = None
 ) -> None:
@@ -30,6 +44,7 @@ def paginated_mock(
     params = extra_params.copy() if extra_params else {}
     params["page-size"] = str(page_size)
     params["lang"] = "en"
+    params["format"] = "json"
 
     # First page: no 'page' param
     url_0 = f"{base_url}?{urlencode(params)}"

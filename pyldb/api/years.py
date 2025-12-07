@@ -1,6 +1,10 @@
 from typing import Any
 
-from pyldb.api.client import BaseAPIClient
+from pyldb.api.client import (
+    BaseAPIClient,
+    FormatLiteral,
+    LanguageLiteral,
+)
 
 
 class YearsAPI(BaseAPIClient):
@@ -14,6 +18,12 @@ class YearsAPI(BaseAPIClient):
     def list_years(
         self,
         sort: str | None = None,
+        page_size: int = 100,
+        max_pages: int | None = None,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
+        if_none_match: str | None = None,
+        if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         """
@@ -22,22 +32,47 @@ class YearsAPI(BaseAPIClient):
         Maps to: GET /years
 
         Args:
-            extra_query: Additional query parameters.
             sort: Optional sort parameter.
+            page_size: Number of results per page.
+            max_pages: Maximum number of pages to fetch (None for all).
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format).
+            if_none_match: Conditional request header If-None-Match (entity tag).
+            if_modified_since: Conditional request header If-Modified-Since.
+            extra_query: Additional query parameters.
 
         Returns:
             List of available years as dicts.
         """
-        params: dict[str, Any] = {}
+        extra_params: dict[str, Any] = {}
         if sort:
-            params["sort"] = sort
+            extra_params["sort"] = sort
         if extra_query:
-            params.update(extra_query)
-        return self.fetch_all_results("years", params=params)
+            extra_params.update(extra_query)
+
+        params, headers = self._prepare_api_params_and_headers(
+            lang=lang,
+            format=format,
+            if_none_match=if_none_match,
+            if_modified_since=if_modified_since,
+            extra_params=extra_params,
+        )
+
+        return self.fetch_all_results(
+            "years",
+            params=params if params else None,
+            headers=headers if headers else None,
+            page_size=page_size,
+            max_pages=max_pages,
+        )
 
     def get_year(
         self,
         year_id: int,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
+        if_none_match: str | None = None,
+        if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """
@@ -47,28 +82,71 @@ class YearsAPI(BaseAPIClient):
 
         Args:
             year_id: Year identifier (integer, e.g. 2020).
-            extra_query: Additional query parameters, e.g. {'lang': 'en'}.
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format).
+            if_none_match: Conditional request header If-None-Match (entity tag).
+            if_modified_since: Conditional request header If-Modified-Since.
+            extra_query: Additional query parameters.
 
         Returns:
             Dictionary with year metadata.
         """
-        params = extra_query if extra_query else None
-        return self.fetch_single_result(f"years/{year_id}", params=params)
+        params, headers = self._prepare_api_params_and_headers(
+            lang=lang,
+            format=format,
+            if_none_match=if_none_match,
+            if_modified_since=if_modified_since,
+            extra_params=extra_query,
+        )
 
-    def get_years_metadata(self) -> dict[str, Any]:
+        return self.fetch_single_result(
+            f"years/{year_id}", params=params if params else None, headers=headers if headers else None
+        )
+
+    def get_years_metadata(
+        self,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
+        if_none_match: str | None = None,
+        if_modified_since: str | None = None,
+        extra_query: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Retrieve general metadata and version information for the /years endpoint.
 
         Maps to: GET /years/metadata
 
+        Args:
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format).
+            if_none_match: Conditional request header If-None-Match (entity tag).
+            if_modified_since: Conditional request header If-Modified-Since.
+            extra_query: Additional query parameters.
+
         Returns:
             Dictionary with endpoint metadata and versioning info.
         """
-        return self.fetch_single_result("years/metadata")
+        params, headers = self._prepare_api_params_and_headers(
+            lang=lang,
+            format=format,
+            if_none_match=if_none_match,
+            if_modified_since=if_modified_since,
+            extra_params=extra_query,
+        )
+
+        return self.fetch_single_result(
+            "years/metadata", params=params if params else None, headers=headers if headers else None
+        )
 
     async def alist_years(
         self,
         sort: str | None = None,
+        page_size: int = 100,
+        max_pages: int | None = None,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
+        if_none_match: str | None = None,
+        if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         """
@@ -77,32 +155,108 @@ class YearsAPI(BaseAPIClient):
         Maps to: GET /years
 
         Args:
-            extra_query: Additional query parameters.
             sort: Optional sort parameter.
+            page_size: Number of results per page.
+            max_pages: Maximum number of pages to fetch (None for all).
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format).
+            if_none_match: Conditional request header If-None-Match (entity tag).
+            if_modified_since: Conditional request header If-Modified-Since.
+            extra_query: Additional query parameters.
 
         Returns:
             List of available years as dicts.
         """
-        params: dict[str, Any] = {}
+        extra_params: dict[str, Any] = {}
         if sort:
-            params["sort"] = sort
+            extra_params["sort"] = sort
         if extra_query:
-            params.update(extra_query)
-        return await self.afetch_all_results("years", params=params)
+            extra_params.update(extra_query)
+
+        params, headers = self._prepare_api_params_and_headers(
+            lang=lang,
+            format=format,
+            if_none_match=if_none_match,
+            if_modified_since=if_modified_since,
+            extra_params=extra_params,
+        )
+
+        return await self.afetch_all_results(
+            "years",
+            params=params if params else None,
+            headers=headers if headers else None,
+            page_size=page_size,
+            max_pages=max_pages,
+        )
 
     async def aget_year(
         self,
         year_id: int,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
+        if_none_match: str | None = None,
+        if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """
-        Async version of get_year.
-        """
-        params = extra_query if extra_query else None
-        return await self.afetch_single_result(f"years/{year_id}", params=params)
+        Asynchronously retrieve metadata for a specific year.
 
-    async def aget_years_metadata(self) -> dict[str, Any]:
+        Maps to: GET /years/{id}
+
+        Args:
+            year_id: Year identifier (integer, e.g. 2020).
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format).
+            if_none_match: Conditional request header If-None-Match (entity tag).
+            if_modified_since: Conditional request header If-Modified-Since.
+            extra_query: Additional query parameters.
+
+        Returns:
+            Dictionary with year metadata.
         """
-        Async version of get_years_metadata.
+        params, headers = self._prepare_api_params_and_headers(
+            lang=lang,
+            format=format,
+            if_none_match=if_none_match,
+            if_modified_since=if_modified_since,
+            extra_params=extra_query,
+        )
+
+        return await self.afetch_single_result(
+            f"years/{year_id}", params=params if params else None, headers=headers if headers else None
+        )
+
+    async def aget_years_metadata(
+        self,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
+        if_none_match: str | None = None,
+        if_modified_since: str | None = None,
+        extra_query: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
-        return await self.afetch_single_result("years/metadata")
+        Asynchronously retrieve general metadata and version information for the /years endpoint.
+
+        Maps to: GET /years/metadata
+
+        Args:
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format).
+            if_none_match: Conditional request header If-None-Match (entity tag).
+            if_modified_since: Conditional request header If-Modified-Since.
+            extra_query: Additional query parameters.
+
+        Returns:
+            Dictionary with endpoint metadata and versioning info.
+        """
+        params, headers = self._prepare_api_params_and_headers(
+            lang=lang,
+            format=format,
+            if_none_match=if_none_match,
+            if_modified_since=if_modified_since,
+            extra_params=extra_query,
+        )
+
+        return await self.afetch_single_result(
+            "years/metadata", params=params if params else None, headers=headers if headers else None
+        )

@@ -9,6 +9,11 @@ from tqdm import tqdm
 from pyldb.api.utils.rate_limiter import AsyncRateLimiter, PersistentQuotaCache, RateLimiter
 from pyldb.config import DEFAULT_QUOTAS, LDB_API_BASE_URL, LDBConfig
 
+# Centralized type literals for API parameters
+LanguageLiteral = Literal["pl", "en"]
+FormatLiteral = Literal["json", "jsonapi", "xml"]
+AcceptHeaderLiteral = Literal["application/json", "application/vnd.api+json", "application/xml"]
+
 
 class BaseAPIClient:
     """Base client for LDB API interactions with both sync and async support.
@@ -20,8 +25,8 @@ class BaseAPIClient:
     - Paginated fetching with optional progress bars (sync & async)
     """
 
-    _global_sync_limiter = None
-    _global_async_limiter = None
+    _global_sync_limiters: dict[bool, RateLimiter] = {}
+    _global_async_limiters: dict[bool, AsyncRateLimiter] = {}
     _quota_cache = None
 
     def __init__(self, config: LDBConfig, extra_headers: dict[str, str] | None = None):
@@ -74,21 +79,112 @@ class BaseAPIClient:
             # Ensure all header values are strings
             self.session.headers.update({k: str(v) for k, v in extra_headers.items() if v is not None})
 
+        # Determine registration status based on api_key presence
+        is_registered = bool(config.api_key)
+
         # Determine quotas
-        quotas = getattr(config, "quotas", None)
-        if quotas is None:
-            is_registered = bool(getattr(config, "api_key", None))
-            quotas = {k: v[1] if is_registered else v[0] for k, v in DEFAULT_QUOTAS.items()}
+        # If custom_quotas is set, use those (single int values)
+        # Otherwise, use DEFAULT_QUOTAS (tuple format, rate limiter will select based on is_registered)
+        if config.custom_quotas is not None:  # noqa: SIM108
+            quotas = config.custom_quotas
+        else:
+            quotas = DEFAULT_QUOTAS
+
         if BaseAPIClient._quota_cache is None:
-            BaseAPIClient._quota_cache = PersistentQuotaCache(getattr(config, "quota_cache_enabled", True))
+            BaseAPIClient._quota_cache = PersistentQuotaCache(config.quota_cache_enabled)
 
-        if BaseAPIClient._global_sync_limiter is None:
-            BaseAPIClient._global_sync_limiter = RateLimiter(quotas, is_registered, BaseAPIClient._quota_cache)
-        if BaseAPIClient._global_async_limiter is None:
-            BaseAPIClient._global_async_limiter = AsyncRateLimiter(quotas, is_registered, BaseAPIClient._quota_cache)
+        # Use separate limiters for registered vs anonymous users
+        # When custom_quotas are provided, create per-instance limiters (not shared)
+        # Otherwise, reuse shared limiters based on registration status
+        if config.custom_quotas is not None:
+            # Custom quotas are client-specific, create per-instance limiters
+            self._sync_limiter = RateLimiter(quotas, is_registered, BaseAPIClient._quota_cache)
+            self._async_limiter = AsyncRateLimiter(quotas, is_registered, BaseAPIClient._quota_cache)
+        else:
+            # Use shared limiters for DEFAULT_QUOTAS (keyed by registration status)
+            if is_registered not in BaseAPIClient._global_sync_limiters:
+                BaseAPIClient._global_sync_limiters[is_registered] = RateLimiter(
+                    quotas, is_registered, BaseAPIClient._quota_cache
+                )
+            if is_registered not in BaseAPIClient._global_async_limiters:
+                BaseAPIClient._global_async_limiters[is_registered] = AsyncRateLimiter(
+                    quotas, is_registered, BaseAPIClient._quota_cache
+                )
 
-        self._sync_limiter = BaseAPIClient._global_sync_limiter
-        self._async_limiter = BaseAPIClient._global_async_limiter
+            self._sync_limiter = BaseAPIClient._global_sync_limiters[is_registered]
+            self._async_limiter = BaseAPIClient._global_async_limiters[is_registered]
+
+    @staticmethod
+    def _format_to_accept_header(format: FormatLiteral | None) -> str | None:
+        """
+        Convert format parameter to Accept header value.
+
+        Args:
+            format: Format string ("json", "jsonapi", or "xml").
+
+        Returns:
+            Accept header value or None if format is None.
+        """
+        if format is None:
+            return None
+        format_to_accept = {
+            "json": "application/json",
+            "jsonapi": "application/vnd.api+json",
+            "xml": "application/xml",
+        }
+        return format_to_accept.get(format)
+
+    def _prepare_api_params_and_headers(
+        self,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
+        if_none_match: str | None = None,
+        if_modified_since: str | None = None,
+        extra_params: dict[str, Any] | None = None,
+    ) -> tuple[dict[str, Any], dict[str, str]]:
+        """
+        Prepare query parameters and headers for API requests.
+
+        Args:
+            lang: Language code (defaults to config.language if not provided).
+            format: Format string (defaults to config.format if not provided).
+            if_none_match: If-None-Match header value.
+            if_modified_since: If-Modified-Since header value.
+            extra_params: Additional query parameters to merge.
+
+        Returns:
+            Tuple of (params dict, headers dict).
+        """
+        # Set defaults from config
+        if lang is None:
+            lang_val = self.config.language.value if hasattr(self.config.language, "value") else self.config.language
+            lang = lang_val if isinstance(lang_val, str) else lang_val.value  # type: ignore[assignment]
+        if format is None:
+            format_val = self.config.format.value if hasattr(self.config.format, "value") else self.config.format
+            format = format_val if isinstance(format_val, str) else format_val.value  # type: ignore[assignment]
+
+        params: dict[str, Any] = {}
+        if lang:
+            params["lang"] = lang
+        if format:
+            params["format"] = format
+        if extra_params:
+            params.update(extra_params)
+
+        headers: dict[str, str] = {}
+        # Set Accept-Language header from lang parameter
+        if lang:
+            headers["Accept-Language"] = lang
+        # Set Accept header from format parameter
+        accept_header = BaseAPIClient._format_to_accept_header(format)
+        if accept_header:
+            headers["Accept"] = accept_header
+        if if_none_match:
+            headers["If-None-Match"] = if_none_match
+        if if_modified_since:
+            headers["If-Modified-Since"] = if_modified_since
+
+        return params, headers
 
     def _build_url(self, endpoint: str) -> str:
         """
@@ -291,7 +387,7 @@ class BaseAPIClient:
         all_results = []
         metadata: dict[str, Any] = {}
         progress_bar = (
-            tqdm(desc=f"Fetching {endpoint.split('/')[-1]}", unit="pages", leave=True) if show_progress else None
+            tqdm(desc=f"Fetching {endpoint.split('/')[-1]}", unit=" pages", leave=True) if show_progress else None
         )
 
         first_page = True
@@ -585,7 +681,7 @@ class BaseAPIClient:
         metadata: dict[str, Any] = {}
         first_page = True
         progress_bar = (
-            tqdm(desc=f"Fetching {endpoint.split('/')[-1]} (async)", unit="pages", leave=True)
+            tqdm(desc=f"Fetching {endpoint.split('/')[-1]} (async)", unit=" pages", leave=True)
             if show_progress
             else None
         )
