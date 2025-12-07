@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 
+import pyldb.access as access
 import pyldb.api as api
 from pyldb.config import LDBConfig
 
@@ -10,6 +11,9 @@ class LDB:
 
     This class provides a unified entry point to all LDB API endpoints, including aggregates,
     attributes, data, levels, measures, subjects, units, variables, version, and years.
+
+    The access layer (default interface) returns pandas DataFrames with proper column labels
+    and data types. The API layer (via .api) returns raw dictionaries for advanced use cases.
     """
 
     def __init__(self, config: LDBConfig | dict | None = None):
@@ -39,7 +43,7 @@ class LDB:
             raise TypeError(f"config must be a dict, LDBConfig, or None, got {type(config)}")
         self.config = config_obj
 
-        # Initialize API namespace first
+        # Initialize API namespace (for raw API access)
         self.api = SimpleNamespace()
         self.api.aggregates = api.AggregatesAPI(self.config)
         self.api.attributes = api.AttributesAPI(self.config)
@@ -51,3 +55,14 @@ class LDB:
         self.api.variables = api.VariablesAPI(self.config)
         self.api.version = api.VersionAPI(self.config)
         self.api.years = api.YearsAPI(self.config)
+
+        # Initialize access layer (default interface, returns DataFrames)
+        self.aggregates = access.AggregatesAccess(self.api.aggregates)
+        self.attributes = access.AttributesAccess(self.api.attributes)
+        self.data = access.DataAccess(self.api.data)
+        self.levels = access.LevelsAccess(self.api.levels)
+        self.measures = access.MeasuresAccess(self.api.measures)
+        self.subjects = access.SubjectsAccess(self.api.subjects)
+        self.units = access.UnitsAccess(self.api.units)
+        self.variables = access.VariablesAccess(self.api.variables)
+        self.years = access.YearsAccess(self.api.years)
