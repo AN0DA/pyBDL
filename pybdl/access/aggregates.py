@@ -11,7 +11,8 @@ class AggregatesAccess(BaseAccess):
     """
     Access layer for aggregates API, converting responses to DataFrames.
 
-    Example column renaming:
+    Example column renaming::
+
         _column_renames = {
             "list_aggregates": {
                 "id": "aggregate_id",
