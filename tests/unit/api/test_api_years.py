@@ -1,12 +1,12 @@
 import pytest
 import responses
 
-from pyldb.api.years import YearsAPI
-from pyldb.config import LDBConfig
+from pybdl.api.years import YearsAPI
+from pybdl.config import BDLConfig
 
 
 @pytest.fixture
-def years_api(dummy_config: LDBConfig) -> YearsAPI:
+def years_api(dummy_config: BDLConfig) -> YearsAPI:
     return YearsAPI(dummy_config)
 
 

@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pandas as pd
 import pytest
 
-from pyldb.access.subjects import SubjectsAccess
+from pybdl.access.subjects import SubjectsAccess
 
 
 @pytest.mark.unit

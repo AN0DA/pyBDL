@@ -45,19 +45,19 @@ jobs:
 
       - name: Run Ruff linter
         if: always()
-        run: uv run ruff check --config pyproject.toml --output-format=github pyldb/ tests/
+        run: uv run ruff check --config pyproject.toml --output-format=github pybdl/ tests/
 
       - name: Run Ruff formatter
         if: always()
-        run: uv run ruff format --config pyproject.toml --check pyldb/ tests/
+        run: uv run ruff format --config pyproject.toml --check pybdl/ tests/
 
       - name: Run Bandit security checks
         if: always()
-        run: uv run bandit -c pyproject.toml -r pyldb/
+        run: uv run bandit -c pyproject.toml -r pybdl/
 
       - name: Run Mypy type checker
         if: always()
-        run: uv run mypy pyldb/ tests/
+        run: uv run mypy pybdl/ tests/
 
   test:
     name: Test (Python ${{ matrix.python-version }})
@@ -195,7 +195,7 @@ jobs:
     
     environment:
       name: pypi
-      url: https://pypi.org/p/pyldb
+      url: https://pypi.org/p/pybdl
     
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing

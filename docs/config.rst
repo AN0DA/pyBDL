@@ -1,14 +1,14 @@
 Configuration
 =============
 
-.. automodule:: pyldb.config
+.. automodule:: pybdl.config
     :members:
     :undoc-members:
     :show-inheritance:
     :inherited-members:
     :noindex:
 
-The :class:`pyldb.config.LDBConfig` class manages all configuration for authentication, language, caching, proxy settings, and quota/rate limiting.
+The :class:`pybdl.config.BDLConfig` class manages all configuration for authentication, language, caching, proxy settings, and quota/rate limiting.
 
 Common Configuration Scenarios
 -------------------------------
@@ -18,14 +18,14 @@ Basic Setup
 
 .. code-block:: python
 
-    from pyldb import LDB, LDBConfig
+    from pybdl import BDL, BDLConfig
     
     # Minimal configuration (reads API key from environment)
-    ldb = LDB()
+    bdl = BDL()
     
     # Or provide API key directly
-    config = LDBConfig(api_key="your-api-key")
-    ldb = LDB(config)
+    config = BDLConfig(api_key="your-api-key")
+    bdl = BDL(config)
 
 Anonymous Access
 ~~~~~~~~~~~~~~~~
@@ -34,19 +34,19 @@ The API supports anonymous access without an API key. When ``api_key`` is explic
 
 .. code-block:: python
 
-    from pyldb import LDB, LDBConfig
+    from pybdl import BDL, BDLConfig
     
     # Anonymous access (explicitly None - overrides environment variables)
-    config = LDBConfig(api_key=None)
-    ldb = LDB(config)
+    config = BDLConfig(api_key=None)
+    bdl = BDL(config)
     
     # Or simply pass None
-    ldb = LDB(config=None)  # Creates default config with api_key=None
+    bdl = BDL(config=None)  # Creates default config with api_key=None
     
     # Or use dict
-    ldb = LDB(config={"api_key": None})
+    bdl = BDL(config={"api_key": None})
 
-**Important**: Explicitly passing ``api_key=None`` is stronger than environment variables. If you want to use the environment variable ``LDB_API_KEY``, simply don't provide the ``api_key`` parameter (or use ``LDBConfig()``).
+**Important**: Explicitly passing ``api_key=None`` is stronger than environment variables. If you want to use the environment variable ``BDL_API_KEY``, simply don't provide the ``api_key`` parameter (or use ``BDLConfig()``).
 
 **Note**: Anonymous users have lower rate limits than registered users. See :doc:`rate_limiting` for details on quota differences.
 
@@ -56,12 +56,12 @@ Development Setup
 .. code-block:: python
 
     # Enable caching for faster development
-    config = LDBConfig(
+    config = BDLConfig(
         api_key="your-api-key",
         use_cache=True,
         cache_expire_after=3600  # 1 hour
     )
-    ldb = LDB(config)
+    bdl = BDL(config)
 
 Production Setup
 ~~~~~~~~~~~~~~~~
@@ -69,13 +69,13 @@ Production Setup
 .. code-block:: python
 
     # Production configuration with rate limiting
-    config = LDBConfig(
+    config = BDLConfig(
         api_key="your-api-key",
         use_cache=False,  # Disable cache for real-time data
         language="en",
         quota_cache_enabled=True  # Enable quota tracking
     )
-    ldb = LDB(config)
+    bdl = BDL(config)
 
 Corporate Network Setup
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -83,13 +83,13 @@ Corporate Network Setup
 .. code-block:: python
 
     # Behind corporate proxy
-    config = LDBConfig(
+    config = BDLConfig(
         api_key="your-api-key",
         proxy_url="http://proxy.company.com:8080",
         proxy_username="username",  # Or use environment variables
         proxy_password="password"
     )
-    ldb = LDB(config)
+    bdl = BDL(config)
 
 Environment Variables
 ---------------------
@@ -98,21 +98,21 @@ All configuration options can be set via environment variables:
 
 .. code-block:: bash
 
-    export LDB_API_KEY="your-api-key"
-    export LDB_LANGUAGE="en"
-    export LDB_USE_CACHE="true"
-    export LDB_CACHE_EXPIRE_AFTER="3600"
-    export LDB_PROXY_URL="http://proxy.example.com:8080"
-    export LDB_PROXY_USERNAME="user"
-    export LDB_PROXY_PASSWORD="pass"
-    export LDB_QUOTAS='{"1": 20, "900": 500}'
+    export BDL_API_KEY="your-api-key"
+    export BDL_LANGUAGE="en"
+    export BDL_USE_CACHE="true"
+    export BDL_CACHE_EXPIRE_AFTER="3600"
+    export BDL_PROXY_URL="http://proxy.example.com:8080"
+    export BDL_PROXY_USERNAME="user"
+    export BDL_PROXY_PASSWORD="pass"
+    export BDL_QUOTAS='{"1": 20, "900": 500}'
 
 Then use defaults in code:
 
 .. code-block:: python
 
     # Reads from environment variables
-    ldb = LDB()
+    bdl = BDL()
 
 .. seealso::
    - :doc:`main_client` for main client usage
@@ -123,21 +123,21 @@ Then use defaults in code:
 Caching
 -------
 
-pyLDB supports transparent request caching to speed up repeated queries and reduce API usage. Caching can be enabled or disabled via the `use_cache` option in `LDBConfig`.
+pyBDL supports transparent request caching to speed up repeated queries and reduce API usage. Caching can be enabled or disabled via the `use_cache` option in `BDLConfig`.
 
 **Basic Usage**
 
 .. code-block:: python
 
     # Enable caching with 10-minute expiry
-    config = LDBConfig(api_key="...", use_cache=True, cache_expire_after=600)
-    ldb = LDB(config)
+    config = BDLConfig(api_key="...", use_cache=True, cache_expire_after=600)
+    bdl = BDL(config)
     
     # First call hits the API
-    data1 = ldb.data.get_data_by_variable("3643", years=[2021])
+    data1 = bdl.data.get_data_by_variable("3643", years=[2021])
     
     # Second call uses cache (if within expiry time)
-    data2 = ldb.data.get_data_by_variable("3643", years=[2021])
+    data2 = bdl.data.get_data_by_variable("3643", years=[2021])
 
 **Configuration Options**
 
@@ -168,13 +168,13 @@ The library supports HTTP/HTTPS proxy configuration for environments behind corp
 .. code-block:: python
 
     # Direct configuration
-    config = LDBConfig(
+    config = BDLConfig(
         api_key="your-api-key",
         proxy_url="http://proxy.example.com:8080",
         proxy_username="user",  # Optional
         proxy_password="pass"   # Optional
     )
-    ldb = LDB(config)
+    bdl = BDL(config)
 
 **Using Environment Variables**
 
@@ -182,17 +182,17 @@ For security, prefer environment variables over hardcoded credentials:
 
 .. code-block:: bash
 
-    export LDB_PROXY_URL="http://proxy.example.com:8080"
-    export LDB_PROXY_USERNAME="user"
-    export LDB_PROXY_PASSWORD="pass"
+    export BDL_PROXY_URL="http://proxy.example.com:8080"
+    export BDL_PROXY_USERNAME="user"
+    export BDL_PROXY_PASSWORD="pass"
 
 Then use in Python:
 
 .. code-block:: python
 
     # Configuration is read from environment variables
-    config = LDBConfig(api_key="your-api-key")
-    ldb = LDB(config)
+    config = BDLConfig(api_key="your-api-key")
+    bdl = BDL(config)
 
 **Configuration Precedence**
 
@@ -212,7 +212,7 @@ For technical details about proxy implementation, see :doc:`appendix`.
 Rate Limiting & Quotas
 ----------------------
 
-pyLDB enforces API rate limits using both synchronous and asynchronous rate limiters. These limits are based on the official BDL API provider's policy, as described in the `BDL API Manual <https://api.stat.gov.pl/Home/BdlApi>`_ (see the "Manual" tab).
+pyBDL enforces API rate limits using both synchronous and asynchronous rate limiters. These limits are based on the official BDL API provider's policy, as described in the `BDL API Manual <https://api.stat.gov.pl/Home/BdlApi>`_ (see the "Manual" tab).
 
 **Quick Overview**
 
@@ -248,13 +248,13 @@ To override default rate limits, provide a `custom_quotas` dictionary with integ
 
 .. code-block:: python
 
-    config = LDBConfig(api_key="...", custom_quotas={1: 10, 900: 200, 43200: 2000, 604800: 20000})
+    config = BDLConfig(api_key="...", custom_quotas={1: 10, 900: 200, 43200: 2000, 604800: 20000})
 
 Or via environment variable:
 
 .. code-block:: bash
 
-    export LDB_QUOTAS='{"1": 20, "900": 500}'
+    export BDL_QUOTAS='{"1": 20, "900": 500}'
 
 **Comprehensive Documentation**
 

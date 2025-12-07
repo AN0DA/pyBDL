@@ -2,12 +2,12 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from pyldb.api.attributes import AttributesAPI
-from pyldb.config import LDBConfig
+from pybdl.api.attributes import AttributesAPI
+from pybdl.config import BDLConfig
 
 
 @pytest.fixture
-def attributes_api(dummy_config: LDBConfig) -> AttributesAPI:
+def attributes_api(dummy_config: BDLConfig) -> AttributesAPI:
     return AttributesAPI(dummy_config)
 
 

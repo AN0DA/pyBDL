@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 import pandas as pd
 import pytest
 
-from pyldb.access.base import BaseAccess
+from pybdl.access.base import BaseAccess
 
 
 class ConcreteAccess(BaseAccess):

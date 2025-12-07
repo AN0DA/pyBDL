@@ -3,12 +3,12 @@ from urllib.parse import urlencode
 import pytest
 import responses
 
-from pyldb.api.levels import LevelsAPI
-from pyldb.config import LDBConfig
+from pybdl.api.levels import LevelsAPI
+from pybdl.config import BDLConfig
 
 
 @pytest.fixture
-def levels_api(dummy_config: LDBConfig) -> LevelsAPI:
+def levels_api(dummy_config: BDLConfig) -> LevelsAPI:
     return LevelsAPI(dummy_config)
 
 

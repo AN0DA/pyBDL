@@ -5,13 +5,13 @@ on:
     branches: [main]
     paths:
       - "docs/**"
-      - "pyldb/**"
+      - "pybdl/**"
       - ".github/workflows/docs.yml"
       - "pyproject.toml"
   pull_request:
     paths:
       - "docs/**"
-      - "pyldb/**"
+      - "pybdl/**"
       - ".github/workflows/docs.yml"
       - "pyproject.toml"
 

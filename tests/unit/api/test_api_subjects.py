@@ -3,13 +3,13 @@ from urllib.parse import urlencode
 import pytest
 import responses
 
-from pyldb.api.subjects import SubjectsAPI
-from pyldb.config import LDBConfig
+from pybdl.api.subjects import SubjectsAPI
+from pybdl.config import BDLConfig
 from tests.conftest import paginated_mock
 
 
 @pytest.fixture
-def subjects_api(dummy_config: LDBConfig) -> SubjectsAPI:
+def subjects_api(dummy_config: BDLConfig) -> SubjectsAPI:
     return SubjectsAPI(dummy_config)
 
 

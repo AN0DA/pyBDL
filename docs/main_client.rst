@@ -1,17 +1,17 @@
 Main Client
 ===========
 
-.. automodule:: pyldb.client
+.. automodule:: pybdl.client
     :members:
     :undoc-members:
     :show-inheritance:
     :inherited-members:
     :noindex:
 
-The :class:`pyldb.client.LDB` class is the main entry point for the library. It provides **two interfaces** for accessing LDB data:
+The :class:`pybdl.client.BDL` class is the main entry point for the library. It provides **two interfaces** for accessing BDL data:
 
-1. **Access Layer** (default, recommended): Returns pandas DataFrames - use ``ldb.levels``, ``ldb.data``, etc.
-2. **API Layer**: Returns raw dictionaries - use ``ldb.api.levels``, ``ldb.api.data``, etc.
+1. **Access Layer** (default, recommended): Returns pandas DataFrames - use ``bdl.levels``, ``bdl.data``, etc.
+2. **API Layer**: Returns raw dictionaries - use ``bdl.api.levels``, ``bdl.api.data``, etc.
 
 For most users, the **access layer is recommended** as it provides DataFrames that are immediately ready for data analysis.
 
@@ -22,14 +22,14 @@ The access layer is the primary interface and returns pandas DataFrames:
 
 .. code-block:: python
 
-    from pyldb import LDB, LDBConfig
+    from pybdl import BDL, BDLConfig
     
-    ldb = LDB(LDBConfig(api_key="your-api-key"))
+    bdl = BDL(BDLConfig(api_key="your-api-key"))
     
     # Access layer - returns DataFrames
-    levels_df = ldb.levels.list_levels()
-    variables_df = ldb.variables.list_variables()
-    data_df = ldb.data.get_data_by_variable(variable_id="3643", years=[2021])
+    levels_df = bdl.levels.list_levels()
+    variables_df = bdl.variables.list_variables()
+    data_df = bdl.data.get_data_by_variable(variable_id="3643", years=[2021])
     
     # Data is ready for pandas operations
     print(levels_df.head())
@@ -52,13 +52,13 @@ The API layer provides direct access to raw API responses as dictionaries:
 
 .. code-block:: python
 
-    from pyldb import LDB
+    from pybdl import BDL
     
-    ldb = LDB()
+    bdl = BDL()
     
     # API layer - returns raw dictionaries
-    levels_data = ldb.api.levels.list_levels()
-    data_dict = ldb.api.data.get_data_by_variable(variable_id="3643", years=[2021])
+    levels_data = bdl.api.levels.list_levels()
+    data_dict = bdl.api.data.get_data_by_variable(variable_id="3643", years=[2021])
     
     # Raw API response structure
     print(type(levels_data))  # list
@@ -81,21 +81,21 @@ Basic Usage with Access Layer
 
 .. code-block:: python
 
-    from pyldb import LDB, LDBConfig
+    from pybdl import BDL, BDLConfig
     
     # Initialize client
-    ldb = LDB(LDBConfig(api_key="your-api-key"))
+    bdl = BDL(BDLConfig(api_key="your-api-key"))
     
     # Get administrative levels
-    levels = ldb.levels.list_levels()
+    levels = bdl.levels.list_levels()
     print(f"Found {len(levels)} administrative levels")
     
     # Get variables
-    variables = ldb.variables.search_variables(name="population")
+    variables = bdl.variables.search_variables(name="population")
     print(f"Found {len(variables)} population variables")
     
     # Get data
-    data = ldb.data.get_data_by_variable("3643", years=[2021], unit_level=2)
+    data = bdl.data.get_data_by_variable("3643", years=[2021], unit_level=2)
     print(f"Retrieved {len(data)} data points")
     print(data.head())
 
@@ -104,16 +104,16 @@ Using Both Interfaces
 
 .. code-block:: python
 
-    from pyldb import LDB
+    from pybdl import BDL
     
-    ldb = LDB()
+    bdl = BDL()
     
     # Access layer for DataFrame analysis
-    df = ldb.data.get_data_by_variable("3643", years=[2021])
+    df = bdl.data.get_data_by_variable("3643", years=[2021])
     avg_value = df['val'].mean()
     
     # API layer for raw metadata
-    metadata = ldb.api.data.get_data_by_variable(
+    metadata = bdl.api.data.get_data_by_variable(
         "3643", years=[2021], return_metadata=True
     )
     if isinstance(metadata, tuple):
@@ -128,17 +128,17 @@ Both interfaces support async operations:
 .. code-block:: python
 
     import asyncio
-    from pyldb import LDB
+    from pybdl import BDL
     
     async def main():
-        ldb = LDB()
+        bdl = BDL()
         
         # Async access layer
-        levels_df = await ldb.levels.alist_levels()
-        variables_df = await ldb.variables.alist_variables()
+        levels_df = await bdl.levels.alist_levels()
+        variables_df = await bdl.variables.alist_variables()
         
         # Async API layer
-        levels_data = await ldb.api.levels.alist_levels()
+        levels_data = await bdl.api.levels.alist_levels()
         
         return levels_df, variables_df, levels_data
     

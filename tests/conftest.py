@@ -6,13 +6,13 @@ from urllib.parse import urlencode
 import pytest
 import responses
 
-from pyldb.config import Language, LDBConfig
+from pybdl.config import BDLConfig, Language
 
 
 @pytest.fixture
-def dummy_config() -> LDBConfig:
-    """Provide a dummy LDBConfig for testing."""
-    return LDBConfig(api_key="dummy-api-key", language=Language.EN, use_cache=False, cache_expire_after=100)
+def dummy_config() -> BDLConfig:
+    """Provide a dummy BDLConfig for testing."""
+    return BDLConfig(api_key="dummy-api-key", language=Language.EN, use_cache=False, cache_expire_after=100)
 
 
 @pytest.fixture
@@ -29,7 +29,7 @@ def mock_api_client() -> MagicMock:
 @pytest.fixture
 def api_key() -> str | None:
     """Get API key from environment for e2e tests."""
-    return os.getenv("LDB_API_KEY")
+    return os.getenv("BDL_API_KEY")
 
 
 def paginated_mock(

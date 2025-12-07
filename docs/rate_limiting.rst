@@ -1,7 +1,7 @@
 Rate Limiting
 ==============
 
-pyLDB includes a sophisticated rate limiting system that automatically enforces API quotas to prevent exceeding the BDL API provider's limits. The rate limiter supports both synchronous and asynchronous operations, persistent quota tracking, and flexible wait/raise behaviors.
+pyBDL includes a sophisticated rate limiting system that automatically enforces API quotas to prevent exceeding the BDL API provider's limits. The rate limiter supports both synchronous and asynchronous operations, persistent quota tracking, and flexible wait/raise behaviors.
 
 Overview
 --------
@@ -41,8 +41,8 @@ These limits are automatically applied based on whether you provide an API key (
 
 The library automatically determines your registration status:
 
-- **Anonymous user**: When ``api_key`` is ``None`` or not provided in ``LDBConfig``
-- **Registered user**: When ``api_key`` is provided in ``LDBConfig``
+- **Anonymous user**: When ``api_key`` is ``None`` or not provided in ``BDLConfig``
+- **Registered user**: When ``api_key`` is provided in ``BDLConfig``
 
 The rate limiter uses separate quota tracking for registered and anonymous users, ensuring that each user type gets the correct limits.
 
@@ -56,13 +56,13 @@ Rate limiting is automatically handled by the library. Simply use the API client
 
 .. code-block:: python
 
-    from pyldb import LDB, LDBConfig
+    from pybdl import BDL, BDLConfig
     
-    config = LDBConfig(api_key="your-api-key")
-    ldb = LDB(config)
+    config = BDLConfig(api_key="your-api-key")
+    bdl = BDL(config)
     
     # Rate limiting is automatic - no extra code needed
-    data = ldb.api.data.get_data_by_variable(variable_id="3643", years=[2021])
+    data = bdl.api.data.get_data_by_variable(variable_id="3643", years=[2021])
 
 The rate limiter will automatically:
 - Track your API usage across all calls
@@ -76,10 +76,10 @@ By default, the rate limiter raises a :class:`RateLimitError` when quota is exce
 
 .. code-block:: python
 
-    from pyldb.api.utils.rate_limiter import RateLimitError
+    from pybdl.api.utils.rate_limiter import RateLimitError
     
     try:
-        data = ldb.api.data.get_data_by_variable(variable_id="3643", years=[2021])
+        data = bdl.api.data.get_data_by_variable(variable_id="3643", years=[2021])
     except RateLimitError as e:
         print(f"Rate limit exceeded. Retry after {e.retry_after:.1f} seconds")
         print(f"Limit info: {e.limit_info}")
@@ -95,8 +95,8 @@ You can configure the rate limiter to wait automatically instead of raising exce
 
 .. code-block:: python
 
-    from pyldb.api.utils.rate_limiter import RateLimiter, PersistentQuotaCache
-    from pyldb.config import DEFAULT_QUOTAS
+    from pybdl.api.utils.rate_limiter import RateLimiter, PersistentQuotaCache
+    from pybdl.config import DEFAULT_QUOTAS
     
     # Create a rate limiter that waits up to 30 seconds
     cache = PersistentQuotaCache(enabled=True)
@@ -111,7 +111,7 @@ You can configure the rate limiter to wait automatically instead of raising exce
     
     # Use the limiter before making API calls
     limiter.acquire()
-    data = ldb.api.data.get_data_by_variable(variable_id="3643", years=[2021])
+    data = bdl.api.data.get_data_by_variable(variable_id="3643", years=[2021])
 
 Using Context Managers
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -120,8 +120,8 @@ Rate limiters can be used as context managers for cleaner code:
 
 .. code-block:: python
 
-    from pyldb.api.utils.rate_limiter import RateLimiter, PersistentQuotaCache
-    from pyldb.config import DEFAULT_QUOTAS
+    from pybdl.api.utils.rate_limiter import RateLimiter, PersistentQuotaCache
+    from pybdl.config import DEFAULT_QUOTAS
     
     cache = PersistentQuotaCache(enabled=True)
     quotas = {k: v[1] for k, v in DEFAULT_QUOTAS.items()}
@@ -129,7 +129,7 @@ Rate limiters can be used as context managers for cleaner code:
     
     # Automatically acquires quota when entering context
     with limiter:
-        data = ldb.api.data.get_data_by_variable(variable_id="3643", years=[2021])
+        data = bdl.api.data.get_data_by_variable(variable_id="3643", years=[2021])
 
 Using Decorators
 ~~~~~~~~~~~~~~~~
@@ -138,14 +138,14 @@ You can decorate functions to automatically rate limit them:
 
 .. code-block:: python
 
-    from pyldb.api.utils.rate_limiter import rate_limit
-    from pyldb.config import DEFAULT_QUOTAS
+    from pybdl.api.utils.rate_limiter import rate_limit
+    from pybdl.config import DEFAULT_QUOTAS
     
     quotas = {k: v[1] for k, v in DEFAULT_QUOTAS.items()}
     
     @rate_limit(quotas=quotas, is_registered=True, max_delay=10)
     def fetch_data(variable_id: str, year: int):
-        return ldb.api.data.get_data_by_variable(variable_id=variable_id, years=[year])
+        return bdl.api.data.get_data_by_variable(variable_id=variable_id, years=[year])
     
     # Function is automatically rate limited
     data = fetch_data("3643", 2021)
@@ -154,14 +154,14 @@ For async functions:
 
 .. code-block:: python
 
-    from pyldb.api.utils.rate_limiter import async_rate_limit
-    from pyldb.config import DEFAULT_QUOTAS
+    from pybdl.api.utils.rate_limiter import async_rate_limit
+    from pybdl.config import DEFAULT_QUOTAS
     
     quotas = {k: v[1] for k, v in DEFAULT_QUOTAS.items()}
     
     @async_rate_limit(quotas=quotas, is_registered=True)
     async def async_fetch_data(variable_id: str, year: int):
-        return await ldb.api.data.aget_data_by_variable(variable_id=variable_id, years=[year])
+        return await bdl.api.data.aget_data_by_variable(variable_id=variable_id, years=[year])
 
 Checking Remaining Quota
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -170,12 +170,12 @@ You can check how much quota remains before making API calls:
 
 .. code-block:: python
 
-    from pyldb import LDB, LDBConfig
+    from pybdl import BDL, BDLConfig
     
-    ldb = LDB(LDBConfig(api_key="your-api-key"))
+    bdl = BDL(BDLConfig(api_key="your-api-key"))
     
     # Get remaining quota (requires accessing the internal limiter)
-    remaining = ldb._client._sync_limiter.get_remaining_quota()
+    remaining = bdl._client._sync_limiter.get_remaining_quota()
     print(f"Remaining requests per second: {remaining.get(1, 0)}")
     print(f"Remaining requests per 15 minutes: {remaining.get(900, 0)}")
 
@@ -186,7 +186,7 @@ You can override default quotas for testing or special deployments:
 
 .. code-block:: python
 
-    from pyldb import LDBConfig
+    from pybdl import BDLConfig
     
     # Custom quotas: period in seconds -> limit
     custom_quotas = {
@@ -196,31 +196,31 @@ You can override default quotas for testing or special deployments:
         604800: 20000 # 20000 requests per 7 days
     }
     
-    config = LDBConfig(api_key="your-api-key", custom_quotas=custom_quotas)
-    ldb = LDB(config)
+    config = BDLConfig(api_key="your-api-key", custom_quotas=custom_quotas)
+    bdl = BDL(config)
 
 Or via environment variable:
 
 .. code-block:: bash
 
-    export LDB_QUOTAS='{"1": 20, "900": 500}'
+    export BDL_QUOTAS='{"1": 20, "900": 500}'
 
 Persistent Cache
 ~~~~~~~~~~~~~~~~
 
 The rate limiter uses a persistent cache to track quota usage across process restarts. The cache is stored in:
 
-- **Project-local**: ``.cache/pyldb/quota_cache.json`` (default)
-- **Global**: Platform-specific cache directory (e.g., ``~/.cache/pyldb/quota_cache.json`` on Linux)
+- **Project-local**: ``.cache/pybdl/quota_cache.json`` (default)
+- **Global**: Platform-specific cache directory (e.g., ``~/.cache/pybdl/quota_cache.json`` on Linux)
 
 You can disable persistent caching:
 
 .. code-block:: python
 
-    from pyldb import LDBConfig
+    from pybdl import BDLConfig
     
-    config = LDBConfig(api_key="your-api-key", quota_cache_enabled=False)
-    ldb = LDB(config)
+    config = BDLConfig(api_key="your-api-key", quota_cache_enabled=False)
+    bdl = BDL(config)
 
 Sync and Async Sharing
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -239,7 +239,7 @@ For technical implementation details, including architecture, algorithm, thread 
 API Reference
 -------------
 
-.. automodule:: pyldb.api.utils.rate_limiter
+.. automodule:: pybdl.api.utils.rate_limiter
     :members:
     :undoc-members:
     :show-inheritance:
@@ -252,8 +252,8 @@ Example: Custom Rate Limiter with Wait Behavior
 
 .. code-block:: python
 
-    from pyldb.api.utils.rate_limiter import RateLimiter, PersistentQuotaCache
-    from pyldb.config import DEFAULT_QUOTAS
+    from pybdl.api.utils.rate_limiter import RateLimiter, PersistentQuotaCache
+    from pybdl.config import DEFAULT_QUOTAS
     
     # Create cache
     cache = PersistentQuotaCache(enabled=True)
@@ -279,13 +279,13 @@ Example: Handling Rate Limit Errors
 
 .. code-block:: python
 
-    from pyldb import LDB, LDBConfig
-    from pyldb.api.utils.rate_limiter import RateLimitError, RateLimitDelayExceeded
+    from pybdl import BDL, BDLConfig
+    from pybdl.api.utils.rate_limiter import RateLimitError, RateLimitDelayExceeded
     
-    ldb = LDB(LDBConfig(api_key="your-api-key"))
+    bdl = BDL(BDLConfig(api_key="your-api-key"))
     
     try:
-        data = ldb.api.data.get_data_by_variable(variable_id="3643", years=[2021])
+        data = bdl.api.data.get_data_by_variable(variable_id="3643", years=[2021])
     except RateLimitError as e:
         if isinstance(e, RateLimitDelayExceeded):
             print(f"Would need to wait {e.actual_delay:.1f}s, exceeds max {e.max_delay:.1f}s")
@@ -298,31 +298,31 @@ Example: Checking Quota Before Making Calls
 
 .. code-block:: python
 
-    from pyldb import LDB, LDBConfig
+    from pybdl import BDL, BDLConfig
     
-    ldb = LDB(LDBConfig(api_key="your-api-key"))
+    bdl = BDL(BDLConfig(api_key="your-api-key"))
     
     # Check remaining quota
-    remaining = ldb._client._sync_limiter.get_remaining_quota()
+    remaining = bdl._client._sync_limiter.get_remaining_quota()
     
     if remaining.get(1, 0) < 5:
         print("Warning: Low quota remaining for 1-second period")
         # Consider waiting or reducing request rate
     
     # Make API call
-    data = ldb.api.data.get_data_by_variable(variable_id="3643", years=[2021])
+    data = bdl.api.data.get_data_by_variable(variable_id="3643", years=[2021])
 
 Example: Resetting Quota (for testing)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
-    from pyldb import LDB, LDBConfig
+    from pybdl import BDL, BDLConfig
     
-    ldb = LDB(LDBConfig(api_key="your-api-key"))
+    bdl = BDL(BDLConfig(api_key="your-api-key"))
     
     # Reset quota counters (useful for testing)
-    ldb._client._sync_limiter.reset()
+    bdl._client._sync_limiter.reset()
     
     # Now you can make fresh API calls
 
@@ -345,7 +345,7 @@ A: The persistent cache may contain old quota data. Try resetting the quota or c
 
 **Q: Sync and async calls seem to have separate limits**
 
-A: Ensure both limiters share the same ``PersistentQuotaCache`` instance. This is automatic when using ``LDBConfig``.
+A: Ensure both limiters share the same ``PersistentQuotaCache`` instance. This is automatic when using ``BDLConfig``.
 
 **Q: Rate limiter is too slow**
 

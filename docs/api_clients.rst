@@ -4,18 +4,18 @@ API Clients
 .. note::
    **For most users, the access layer is recommended.** This section documents the low-level API client interface that returns raw dictionaries. The access layer (documented in :doc:`access_layer`) returns pandas DataFrames and is easier to use for data analysis.
 
-   Use the API layer (``ldb.api.*``) when you need:
+   Use the API layer (``bdl.api.*``) when you need:
    - Raw API response structure
    - Custom response processing
    - Direct access to API metadata
    - Integration with non-pandas workflows
 
-   Use the access layer (``ldb.*``) when you need:
+   Use the access layer (``bdl.*``) when you need:
    - Pandas DataFrames for data analysis
    - Automatic column normalization and type inference
    - Nested data flattening
 
-The pyLDB library provides a comprehensive set of API clients for interacting with the Local Data Bank (LDB) API.
+The pyBDL library provides a comprehensive set of API clients for interacting with the Local Data Bank (BDL) API.
 All API endpoints are accessible through the main client's `.api` attribute. See :doc:`Main Client <main_client>` for details about the main client.
 
 .. list-table:: Available API Endpoints
@@ -25,38 +25,38 @@ All API endpoints are accessible through the main client's `.api` attribute. See
      - Class
      - Description
    * - Aggregates
-     - :class:`pyldb.api.aggregates.AggregatesAPI`
+     - :class:`pybdl.api.aggregates.AggregatesAPI`
      - Aggregation level metadata and details
    * - Attributes
-     - :class:`pyldb.api.attributes.AttributesAPI`
+     - :class:`pybdl.api.attributes.AttributesAPI`
      - Attribute metadata and details
    * - Data
-     - :class:`pyldb.api.data.DataAPI`
+     - :class:`pybdl.api.data.DataAPI`
      - Statistical data access (variables, units, localities)
    * - Levels
-     - :class:`pyldb.api.levels.LevelsAPI`
+     - :class:`pybdl.api.levels.LevelsAPI`
      - Administrative unit aggregation levels
    * - Measures
-     - :class:`pyldb.api.measures.MeasuresAPI`
+     - :class:`pybdl.api.measures.MeasuresAPI`
      - Measure unit metadata
    * - Subjects
-     - :class:`pyldb.api.subjects.SubjectsAPI`
+     - :class:`pybdl.api.subjects.SubjectsAPI`
      - Subject hierarchy and metadata
    * - Units
-     - :class:`pyldb.api.units.UnitsAPI`
+     - :class:`pybdl.api.units.UnitsAPI`
      - Administrative unit metadata
    * - Variables
-     - :class:`pyldb.api.variables.VariablesAPI`
+     - :class:`pybdl.api.variables.VariablesAPI`
      - Variable metadata and details
    * - Version
-     - :class:`pyldb.api.version.VersionAPI`
+     - :class:`pybdl.api.version.VersionAPI`
      - API version and build info
    * - Years
-     - :class:`pyldb.api.years.YearsAPI`
+     - :class:`pybdl.api.years.YearsAPI`
      - Available years for data
 
 .. note::
-   All API clients are accessible via ``ldb.api.<endpoint>`` (e.g., ``ldb.api.data.get_data_by_variable(...)``).
+   All API clients are accessible via ``bdl.api.<endpoint>`` (e.g., ``bdl.api.data.get_data_by_variable(...)``).
 
 .. seealso::
    For configuration options, see :doc:`config`.
@@ -70,11 +70,11 @@ All API clients support async methods for high-performance and concurrent applic
 .. code-block:: python
 
     import asyncio
-    from pyldb import LDB
+    from pybdl import BDL
 
     async def main():
-        ldb = LDB()
-        data = await ldb.api.data.aget_data_by_variable(variable_id="3643", years=[2021])
+        bdl = BDL()
+        data = await bdl.api.data.aget_data_by_variable(variable_id="3643", years=[2021])
         print(data)
 
     asyncio.run(main())
@@ -102,19 +102,19 @@ The format and language parameters automatically set the appropriate HTTP header
 
 .. code-block:: python
 
-    from pyldb import LDB
+    from pybdl import BDL
     
-    ldb = LDB()
+    bdl = BDL()
     
     # Request data in XML format
-    data = ldb.api.data.get_data_by_variable(
+    data = bdl.api.data.get_data_by_variable(
         variable_id="3643",
         years=[2021],
         format="xml"
     )
     
     # Request data in Polish
-    data = ldb.api.data.get_data_by_variable(
+    data = bdl.api.data.get_data_by_variable(
         variable_id="3643",
         years=[2021],
         lang="pl"
@@ -123,7 +123,7 @@ The format and language parameters automatically set the appropriate HTTP header
 Aggregates
 ~~~~~~~~~~
 
-.. automodule:: pyldb.api.aggregates
+.. automodule:: pybdl.api.aggregates
     :members:
     :undoc-members:
     :show-inheritance:
@@ -133,7 +133,7 @@ Aggregates
 Attributes
 ~~~~~~~~~~
 
-.. automodule:: pyldb.api.attributes
+.. automodule:: pybdl.api.attributes
     :members:
     :undoc-members:
     :show-inheritance:
@@ -143,7 +143,7 @@ Attributes
 Data
 ~~~~
 
-.. automodule:: pyldb.api.data
+.. automodule:: pybdl.api.data
     :members:
     :undoc-members:
     :show-inheritance:
@@ -153,7 +153,7 @@ Data
 Levels
 ~~~~~~
 
-.. automodule:: pyldb.api.levels
+.. automodule:: pybdl.api.levels
     :members:
     :undoc-members:
     :show-inheritance:
@@ -163,7 +163,7 @@ Levels
 Measures
 ~~~~~~~~
 
-.. automodule:: pyldb.api.measures
+.. automodule:: pybdl.api.measures
     :members:
     :undoc-members:
     :show-inheritance:
@@ -173,7 +173,7 @@ Measures
 Subjects
 ~~~~~~~~
 
-.. automodule:: pyldb.api.subjects
+.. automodule:: pybdl.api.subjects
     :members:
     :undoc-members:
     :show-inheritance:
@@ -183,7 +183,7 @@ Subjects
 Units
 ~~~~~
 
-.. automodule:: pyldb.api.units
+.. automodule:: pybdl.api.units
     :members:
     :undoc-members:
     :show-inheritance:
@@ -193,7 +193,7 @@ Units
 Variables
 ~~~~~~~~~
 
-.. automodule:: pyldb.api.variables
+.. automodule:: pybdl.api.variables
     :members:
     :undoc-members:
     :show-inheritance:
@@ -203,7 +203,7 @@ Variables
 Version
 ~~~~~~~
 
-.. automodule:: pyldb.api.version
+.. automodule:: pybdl.api.version
     :members:
     :undoc-members:
     :show-inheritance:
@@ -213,7 +213,7 @@ Version
 Years
 ~~~~~
 
-.. automodule:: pyldb.api.years
+.. automodule:: pybdl.api.years
     :members:
     :undoc-members:
     :show-inheritance:

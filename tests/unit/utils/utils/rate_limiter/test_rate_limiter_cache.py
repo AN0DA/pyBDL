@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from pyldb.api.utils import rate_limiter
+from pybdl.api.utils import rate_limiter
 
 
 class DummyCache(rate_limiter.PersistentQuotaCache):
@@ -43,7 +43,7 @@ def test_persistent_quota_cache_disabled() -> None:
 @pytest.mark.unit
 def test_rate_limiter_cache(tmp_path: Any) -> None:
     """Test that rate limiter saves to cache."""
-    from pyldb.api.utils.rate_limiter import RateLimitError
+    from pybdl.api.utils.rate_limiter import RateLimitError
 
     quotas: dict[int, int | tuple[Any, ...]] = {1: 2}
     cache = DummyCache()
@@ -60,7 +60,7 @@ def test_async_rate_limiter_cache(tmp_path: Any) -> None:
     """Test that async rate limiter saves to cache."""
     import asyncio
 
-    from pyldb.api.utils.rate_limiter import RateLimitError
+    from pybdl.api.utils.rate_limiter import RateLimitError
 
     quotas: dict[int, int | tuple[Any, ...]] = {1: 2}
     cache = DummyCache()
@@ -96,7 +96,7 @@ def test_cache_persistence_across_instances(tmp_path: Any) -> None:
     # Should only be able to make 2 more calls
     rl2.acquire()
     rl2.acquire()
-    from pyldb.api.utils.rate_limiter import RateLimitError
+    from pybdl.api.utils.rate_limiter import RateLimitError
 
     with pytest.raises(RateLimitError):
         rl2.acquire()
@@ -113,7 +113,7 @@ def test_cache_disabled_behavior() -> None:
     rl.acquire()
     rl.acquire()
     rl.acquire()
-    from pyldb.api.utils.rate_limiter import RateLimitError
+    from pybdl.api.utils.rate_limiter import RateLimitError
 
     with pytest.raises(RateLimitError):
         rl.acquire()

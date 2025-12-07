@@ -4,8 +4,8 @@ import pytest
 import responses
 from requests import HTTPError, PreparedRequest, Response
 
-from pyldb.api.client import BaseAPIClient
-from pyldb.config import DEFAULT_QUOTAS, Language, LDBConfig
+from pybdl.api.client import BaseAPIClient
+from pybdl.config import DEFAULT_QUOTAS, BDLConfig, Language
 
 
 # Type for PreparedRequest with req_kwargs added by responses
@@ -14,7 +14,7 @@ class ResponsesPreparedRequest(PreparedRequest):
 
 
 @pytest.fixture
-def base_client(dummy_config: LDBConfig) -> BaseAPIClient:
+def base_client(dummy_config: BDLConfig) -> BaseAPIClient:
     """Fixture for BaseAPIClient."""
     return BaseAPIClient(dummy_config)
 
@@ -186,7 +186,7 @@ def test_fetch_all_results(base_client: BaseAPIClient, api_url: str) -> None:
 
 @pytest.mark.unit
 def test_client_with_proxy() -> None:
-    config = LDBConfig(api_key="dummy-api-key", proxy_url="http://proxy.example.com:8080")
+    config = BDLConfig(api_key="dummy-api-key", proxy_url="http://proxy.example.com:8080")
     client = BaseAPIClient(config)
     assert client.session.proxies["http"] == "http://proxy.example.com:8080"
     assert client.session.proxies["https"] == "http://proxy.example.com:8080"
@@ -194,7 +194,7 @@ def test_client_with_proxy() -> None:
 
 @pytest.mark.unit
 def test_client_with_authenticated_proxy() -> None:
-    config = LDBConfig(
+    config = BDLConfig(
         api_key="dummy-api-key", proxy_url="http://proxy.example.com:8080", proxy_username="user", proxy_password="pass"
     )
     client = BaseAPIClient(config)
@@ -207,7 +207,7 @@ def test_client_with_authenticated_proxy() -> None:
 @pytest.mark.unit
 def test_make_request_with_proxy(base_client: BaseAPIClient, api_url: str) -> None:
     # Configure client with proxy
-    config = LDBConfig(
+    config = BDLConfig(
         api_key="dummy-api-key",
         proxy_url="http://proxy.example.com:8080",
         language=Language.EN,
@@ -274,7 +274,7 @@ def test_fetch_all_results_missing_results_key_raises(base_client: BaseAPIClient
 @responses.activate
 @pytest.mark.unit
 def test_extra_headers_and_none_values() -> None:
-    config = LDBConfig(api_key="dummy-api-key")
+    config = BDLConfig(api_key="dummy-api-key")
     # All values must be str for headers
     client = BaseAPIClient(config, extra_headers={"X-Int": "123", "X-None": ""})
     endpoint = "data/headers"
@@ -347,7 +347,7 @@ def test_paginated_request_sync_progress_bar(monkeypatch: Any, base_client: Base
         def close(self) -> None:
             self.closed = True
 
-    monkeypatch.setattr("pyldb.api.client.tqdm", DummyBar)
+    monkeypatch.setattr("pybdl.api.client.tqdm", DummyBar)
     endpoint = "data/progress"
     url = "https://bdl.stat.gov.pl/api/v1/data/progress?lang=en&page-size=2"
     responses.add(responses.GET, url, json={"results": [{"id": 1}], "totalCount": 1, "links": {}}, status=200)
@@ -377,7 +377,7 @@ def test_fetch_single_result_metadata_and_error(base_client: BaseAPIClient) -> N
 @pytest.mark.unit
 def test_client_anonymous_user_quotas() -> None:
     """Test that anonymous user (None api_key) uses anonymous quotas."""
-    config = LDBConfig(api_key=None)
+    config = BDLConfig(api_key=None)
     client = BaseAPIClient(config)
 
     # Anonymous user should use anonymous limits from DEFAULT_QUOTAS
@@ -397,7 +397,7 @@ def test_client_anonymous_user_quotas() -> None:
 @pytest.mark.unit
 def test_client_registered_user_quotas() -> None:
     """Test that registered user (with api_key) uses registered quotas."""
-    config = LDBConfig(api_key="test-api-key")
+    config = BDLConfig(api_key="test-api-key")
     client = BaseAPIClient(config)
 
     # Registered user should use registered limits
@@ -422,7 +422,7 @@ def test_client_custom_quotas_override() -> None:
     BaseAPIClient._global_async_limiters.clear()
 
     custom_quotas = {1: 20, 900: 300}
-    config = LDBConfig(api_key="test-api-key", custom_quotas=custom_quotas)
+    config = BDLConfig(api_key="test-api-key", custom_quotas=custom_quotas)
     client = BaseAPIClient(config)
 
     # Custom quotas should be used directly (single int values)
@@ -442,11 +442,11 @@ def test_client_separate_limiters_for_registered_and_anonymous() -> None:
     BaseAPIClient._global_async_limiters.clear()
 
     # Create anonymous client
-    config_anon = LDBConfig(api_key=None)
+    config_anon = BDLConfig(api_key=None)
     client_anon = BaseAPIClient(config_anon)
 
     # Create registered client
-    config_reg = LDBConfig(api_key="test-key")
+    config_reg = BDLConfig(api_key="test-key")
     client_reg = BaseAPIClient(config_reg)
 
     # They should have different limiters
@@ -462,7 +462,7 @@ def test_client_separate_limiters_for_registered_and_anonymous() -> None:
 @pytest.mark.unit
 def test_client_anonymous_no_api_key_header() -> None:
     """Test that anonymous user doesn't send X-ClientId header."""
-    config = LDBConfig(api_key=None)
+    config = BDLConfig(api_key=None)
     client = BaseAPIClient(config)
 
     # X-ClientId header should not be present
@@ -473,7 +473,7 @@ def test_client_anonymous_no_api_key_header() -> None:
 def test_client_registered_has_api_key_header() -> None:
     """Test that registered user sends X-ClientId header."""
     api_key = "test-api-key-123"
-    config = LDBConfig(api_key=api_key)
+    config = BDLConfig(api_key=api_key)
     client = BaseAPIClient(config)
 
     # X-ClientId header should be present with the api_key

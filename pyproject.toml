@@ -1,9 +1,9 @@
 [project]
-name = "pyLDB"
+name = "pyBDL"
 version = "0.0.1"
-description = "A Pythonic interface for LDB (GUS Local Data Bank) datasets."
+description = "A Pythonic interface for Polish GUS Local Data Bank datasets."
 readme = "README.md"
-authors = [{name = "Mikołaj Kaczmarek", email = "12432719+AN0DA@users.noreply.github.com"}]
+authors = [{name = "Mikołaj Kaczmarek", email = "mikolaj.s.kaczmarek@outlook.com"}]
 license = {text = "MIT"}
 
 requires-python = ">=3.11"
@@ -151,10 +151,10 @@ disable_error_code = "abstract"
 exclude_dirs = ['tests/*']
 
 [tool.coverage.paths]
-source = ["pyldb/"]
+source = ["pybdl/"]
 
 [tool.coverage.run]
-source = ["pyldb/"]
+source = ["pybdl/"]
 omit = [
     "**/__init__.py",
 ]
