@@ -3,12 +3,12 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from pyldb.api.data import DataAPI
-from pyldb.config import LDBConfig
+from pybdl.api.data import DataAPI
+from pybdl.config import BDLConfig
 
 
 @pytest.fixture
-def data_api(dummy_config: LDBConfig) -> DataAPI:
+def data_api(dummy_config: BDLConfig) -> DataAPI:
     return DataAPI(dummy_config)
 
 

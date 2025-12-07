@@ -3,13 +3,13 @@ from urllib.parse import urlencode
 import pytest
 import responses
 
-from pyldb.api.attributes import AttributesAPI
-from pyldb.config import LDBConfig
+from pybdl.api.attributes import AttributesAPI
+from pybdl.config import BDLConfig
 from tests.conftest import paginated_mock
 
 
 @pytest.fixture
-def attributes_api(dummy_config: LDBConfig) -> AttributesAPI:
+def attributes_api(dummy_config: BDLConfig) -> AttributesAPI:
     return AttributesAPI(dummy_config)
 
 

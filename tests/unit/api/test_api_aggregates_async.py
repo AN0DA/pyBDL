@@ -2,12 +2,12 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from pyldb.api.aggregates import AggregatesAPI
-from pyldb.config import LDBConfig
+from pybdl.api.aggregates import AggregatesAPI
+from pybdl.config import BDLConfig
 
 
 @pytest.fixture
-def aggregates_api(dummy_config: LDBConfig) -> AggregatesAPI:
+def aggregates_api(dummy_config: BDLConfig) -> AggregatesAPI:
     return AggregatesAPI(dummy_config)
 
 

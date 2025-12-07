@@ -3,12 +3,12 @@ from urllib.parse import urlencode
 import pytest
 import responses
 
-from pyldb.api.measures import MeasuresAPI
-from pyldb.config import LDBConfig
+from pybdl.api.measures import MeasuresAPI
+from pybdl.config import BDLConfig
 
 
 @pytest.fixture
-def measures_api(dummy_config: LDBConfig) -> MeasuresAPI:
+def measures_api(dummy_config: BDLConfig) -> MeasuresAPI:
     return MeasuresAPI(dummy_config)
 
 

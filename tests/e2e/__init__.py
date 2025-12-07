@@ -1,1 +1,1 @@
-"""End-to-end tests for pyldb package."""
+"""End-to-end tests for pybdl package."""

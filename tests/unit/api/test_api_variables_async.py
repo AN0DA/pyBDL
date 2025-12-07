@@ -2,12 +2,12 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from pyldb.api.variables import VariablesAPI
-from pyldb.config import LDBConfig
+from pybdl.api.variables import VariablesAPI
+from pybdl.config import BDLConfig
 
 
 @pytest.fixture
-def variables_api(dummy_config: LDBConfig) -> VariablesAPI:
+def variables_api(dummy_config: BDLConfig) -> VariablesAPI:
     return VariablesAPI(dummy_config)
 
 

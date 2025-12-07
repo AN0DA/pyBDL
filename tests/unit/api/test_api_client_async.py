@@ -1,12 +1,12 @@
 import pytest
 
-from pyldb.api.client import BaseAPIClient
-from pyldb.config import LDBConfig
+from pybdl.api.client import BaseAPIClient
+from pybdl.config import BDLConfig
 
 
 @pytest.fixture
 def async_client() -> BaseAPIClient:
-    config = LDBConfig(api_key="dummy-api-key")
+    config = BDLConfig(api_key="dummy-api-key")
     return BaseAPIClient(config)
 
 
@@ -121,7 +121,7 @@ async def test_afetch_all_results_progress_bar(monkeypatch: pytest.MonkeyPatch, 
         def close(self) -> None:
             self.closed = True
 
-    monkeypatch.setattr("pyldb.api.client.tqdm", DummyBar)
+    monkeypatch.setattr("pybdl.api.client.tqdm", DummyBar)
 
     async def fake_paginated(*args: object, **kwargs: object) -> object:
         yield {"results": [{"id": 1}], "totalCount": 1}

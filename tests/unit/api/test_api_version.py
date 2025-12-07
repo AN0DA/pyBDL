@@ -3,12 +3,12 @@ from typing import Any
 import pytest
 import responses
 
-from pyldb.api.version import VersionAPI
-from pyldb.config import LDBConfig
+from pybdl.api.version import VersionAPI
+from pybdl.config import BDLConfig
 
 
 @pytest.fixture
-def version_api(dummy_config: LDBConfig) -> VersionAPI:
+def version_api(dummy_config: BDLConfig) -> VersionAPI:
     return VersionAPI(dummy_config)
 
 
@@ -25,7 +25,7 @@ def test_get_version(version_api: VersionAPI, api_url: str) -> None:
 
 @pytest.mark.asyncio
 async def test_aget_version(monkeypatch: pytest.MonkeyPatch) -> None:
-    api = VersionAPI(LDBConfig(api_key="dummy"))
+    api = VersionAPI(BDLConfig(api_key="dummy"))
 
     async def fake_afetch_single_result(
         endpoint: str,

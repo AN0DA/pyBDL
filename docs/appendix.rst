@@ -1,7 +1,7 @@
 Appendix: Technical Implementation Details
 ===========================================
 
-This appendix contains technical implementation details for developers and power users who need to understand the internal workings of pyLDB. For user-facing documentation, see the main sections.
+This appendix contains technical implementation details for developers and power users who need to understand the internal workings of pyBDL. For user-facing documentation, see the main sections.
 
 Rate Limiting Implementation
 ----------------------------
@@ -96,11 +96,11 @@ The request cache system stores responses in JSON files:
 
 **Cache Location**
 
-- **Project-local** (default): ``.cache/pyldb/`` directory in the project root
+- **Project-local** (default): ``.cache/pybdl/`` directory in the project root
 - **Global**: Platform-specific cache directory:
-  - Linux: ``~/.cache/pyldb/``
-  - macOS: ``~/Library/Caches/pyldb/``
-  - Windows: ``%LOCALAPPDATA%\\pyldb\\cache\\``
+  - Linux: ``~/.cache/pybdl/``
+  - macOS: ``~/Library/Caches/pybdl/``
+  - Windows: ``%LOCALAPPDATA%\\pybdl\\cache\\``
 
 **Cache File Structure**
 
@@ -132,8 +132,8 @@ The proxy configuration is handled at the HTTP client level:
 
 **Configuration Precedence**
 
-1. Direct parameter in ``LDBConfig``
-2. Environment variables (``LDB_PROXY_URL``, etc.)
+1. Direct parameter in ``BDLConfig``
+2. Environment variables (``BDL_PROXY_URL``, etc.)
 3. Default values (None)
 
 **Proxy URL Format**

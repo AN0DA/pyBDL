@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pandas as pd
 import pytest
 
-from pyldb.access.aggregates import AggregatesAccess
+from pybdl.access.aggregates import AggregatesAccess
 
 
 @pytest.mark.unit

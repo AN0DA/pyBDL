@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pandas as pd
 import pytest
 
-from pyldb.access.measures import MeasuresAccess
+from pybdl.access.measures import MeasuresAccess
 
 
 @pytest.mark.unit

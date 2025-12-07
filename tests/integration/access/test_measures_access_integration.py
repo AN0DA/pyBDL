@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 import pandas as pd
 import pytest
 
-from pyldb.access.measures import MeasuresAccess
+from pybdl.access.measures import MeasuresAccess
 
 
 @pytest.mark.integration

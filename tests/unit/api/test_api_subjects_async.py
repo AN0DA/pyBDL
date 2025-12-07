@@ -2,12 +2,12 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from pyldb.api.subjects import SubjectsAPI
-from pyldb.config import LDBConfig
+from pybdl.api.subjects import SubjectsAPI
+from pybdl.config import BDLConfig
 
 
 @pytest.fixture
-def subjects_api(dummy_config: LDBConfig) -> SubjectsAPI:
+def subjects_api(dummy_config: BDLConfig) -> SubjectsAPI:
     return SubjectsAPI(dummy_config)
 
 

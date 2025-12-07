@@ -1,12 +1,12 @@
 import pytest
 
-from pyldb.api.units import UnitsAPI
-from pyldb.config import LDBConfig
+from pybdl.api.units import UnitsAPI
+from pybdl.config import BDLConfig
 
 
 @pytest.fixture
 def async_units_api() -> UnitsAPI:
-    return UnitsAPI(LDBConfig(api_key="dummy"))
+    return UnitsAPI(BDLConfig(api_key="dummy"))
 
 
 @pytest.mark.asyncio

@@ -1,1 +1,1 @@
-"""Integration tests for pyldb package."""
+"""Integration tests for pybdl package."""

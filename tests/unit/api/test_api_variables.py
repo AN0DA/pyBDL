@@ -3,13 +3,13 @@ from urllib.parse import urlencode
 import pytest
 import responses
 
-from pyldb.api.variables import VariablesAPI
-from pyldb.config import LDBConfig
+from pybdl.api.variables import VariablesAPI
+from pybdl.config import BDLConfig
 from tests.conftest import paginated_mock
 
 
 @pytest.fixture
-def variables_api(dummy_config: LDBConfig) -> VariablesAPI:
+def variables_api(dummy_config: BDLConfig) -> VariablesAPI:
     return VariablesAPI(dummy_config)
 
 

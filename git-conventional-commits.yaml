@@ -30,5 +30,5 @@ changelog:
     breakingChange: BREAKING CHANGES
 
   # GitHub
-  commitUrl: https://github.com/AN0DA/pyldb/commit/%commit%
-  commitRangeUrl: https://github.com/AN0DA/pyldb/compare/%from%...%to%?diff=split
+  commitUrl: https://github.com/AN0DA/pybdl/commit/%commit%
+  commitRangeUrl: https://github.com/AN0DA/pybdl/compare/%from%...%to%?diff=split

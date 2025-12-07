@@ -9,7 +9,7 @@ on:
       - reopened
       - edited
     paths:
-      - "pyldb/**"
+      - "pybdl/**"
       - "tests/**"
       - "pyproject.toml"
       - ".github/workflows/pr-checks.yml"
@@ -56,13 +56,13 @@ jobs:
         run: uv sync --dev
 
       - name: Ruff linter
-        run: uv run ruff check --config pyproject.toml --output-format=github pyldb/ tests/
+        run: uv run ruff check --config pyproject.toml --output-format=github pybdl/ tests/
 
       - name: Ruff formatter (check only)
-        run: uv run ruff format --config pyproject.toml --check pyldb/ tests/
+        run: uv run ruff format --config pyproject.toml --check pybdl/ tests/
 
       - name: Bandit
-        run: uv run bandit -c pyproject.toml -r pyldb/
+        run: uv run bandit -c pyproject.toml -r pybdl/
 
   mypy:
     name: Mypy (Python 3.12)
@@ -83,7 +83,7 @@ jobs:
         run: uv sync --dev
 
       - name: Mypy
-        run: uv run mypy pyldb/ tests/
+        run: uv run mypy pybdl/ tests/
 
   tests:
     name: Tests (Python ${{ matrix.python-version }})

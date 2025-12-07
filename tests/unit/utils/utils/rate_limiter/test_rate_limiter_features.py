@@ -6,8 +6,8 @@ from typing import Any
 
 import pytest
 
-from pyldb.api.utils import rate_limiter
-from pyldb.api.utils.rate_limiter import RateLimitDelayExceeded, RateLimitError
+from pybdl.api.utils import rate_limiter
+from pybdl.api.utils.rate_limiter import RateLimitDelayExceeded, RateLimitError
 
 
 @pytest.mark.unit
@@ -120,7 +120,7 @@ def test_async_rate_limiter_context_manager() -> None:
 @pytest.mark.unit
 def test_rate_limit_decorator() -> None:
     """Test rate_limit decorator."""
-    from pyldb.api.utils.rate_limiter import rate_limit
+    from pybdl.api.utils.rate_limiter import rate_limit
 
     call_count = 0
 
@@ -142,7 +142,7 @@ def test_async_rate_limit_decorator() -> None:
     """Test async_rate_limit decorator."""
 
     async def run() -> None:
-        from pyldb.api.utils.rate_limiter import async_rate_limit
+        from pybdl.api.utils.rate_limiter import async_rate_limit
 
         call_count = 0
 
@@ -164,7 +164,7 @@ def test_async_rate_limit_decorator() -> None:
 @pytest.mark.unit
 def test_decorator_preserves_function_metadata() -> None:
     """Test that decorators preserve function metadata."""
-    from pyldb.api.utils.rate_limiter import rate_limit
+    from pybdl.api.utils.rate_limiter import rate_limit
 
     @rate_limit(quotas={1: 10}, is_registered=False)
     def documented_function() -> int:
