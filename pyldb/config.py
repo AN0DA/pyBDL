@@ -23,6 +23,7 @@ class Format(enum.Enum):
 DEFAULT_LANGUAGE = Language.EN
 DEFAULT_FORMAT = Format.JSON
 DEFAULT_CACHE_EXPIRY = 3600  # 1 hour in seconds
+DEFAULT_PAGE_SIZE = 100
 
 # Define constant quota periods (in seconds)
 QUOTA_PERIODS = {"1s": 1, "15m": 15 * 60, "12h": 12 * 3600, "7d": 7 * 24 * 3600}
@@ -55,6 +56,7 @@ class LDBConfig:
         quota_cache_enabled: Enable persistent quota cache (default: True).
         quota_cache_file: Path to quota cache file (default: project .cache/pyldb).
         use_global_cache: Store quota cache in OS-specific location (default: False).
+        page_size: Default page size for paginated requests (default: 100).
     """
 
     api_key: str | None = field(default=_NOT_PROVIDED)  # type: ignore[assignment]
@@ -69,6 +71,7 @@ class LDBConfig:
     quota_cache_enabled: bool = field(default=True)
     quota_cache_file: str | None = field(default=None)
     use_global_cache: bool = field(default=False)
+    page_size: int = field(default=DEFAULT_PAGE_SIZE)
 
     def __post_init__(self) -> None:
         """
@@ -146,6 +149,15 @@ class LDBConfig:
         env_use_global_cache = os.getenv("LDB_USE_GLOBAL_CACHE")
         if env_use_global_cache is not None:
             self.use_global_cache = env_use_global_cache.lower() in ("true", "1", "yes")
+        
+        # Get page_size from environment if not provided directly
+        env_page_size = os.getenv("LDB_PAGE_SIZE")
+        if env_page_size is not None:
+            try:
+                self.page_size = int(env_page_size)
+            except ValueError as e:
+                raise ValueError("LDB_PAGE_SIZE must be an integer") from e
+        
         # Custom quotas from env (JSON string)
         env_quotas = os.getenv("LDB_QUOTAS")
         if env_quotas:
