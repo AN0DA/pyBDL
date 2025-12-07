@@ -37,7 +37,6 @@ class TestAggregatesAccess:
         assert isinstance(result, pd.DataFrame)
         mock_api_client.get_aggregate.assert_called_once_with("1")
 
-
     def test_list_aggregates_error(self, aggregates_access: AggregatesAccess, mock_api_client: MagicMock) -> None:
         """Test error propagation."""
         mock_api_client.list_aggregates.side_effect = ValueError("API Error")
@@ -57,4 +56,3 @@ class TestAggregatesAccess:
         mock_api_client.aget_aggregate = AsyncMock(return_value={"id": "1", "name": "Aggregate1"})
         result = await aggregates_access.aget_aggregate("1")
         assert isinstance(result, pd.DataFrame)
-

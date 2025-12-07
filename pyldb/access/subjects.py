@@ -87,8 +87,6 @@ class SubjectsAccess(BaseAccess):
         )
         return self._to_dataframe(data)
 
-
-
     async def alist_subjects(
         self,
         parent_id: str | None = None,

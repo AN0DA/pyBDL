@@ -50,7 +50,6 @@ class AttributesAccess(BaseAccess):
         data = self.api_client.get_attribute(attribute_id, **kwargs)
         return self._to_dataframe(data)
 
-
     async def alist_attributes(
         self,
         page_size: int | None = None,
@@ -90,4 +89,3 @@ class AttributesAccess(BaseAccess):
         """
         data = await self.api_client.aget_attribute(attribute_id, **kwargs)
         return self._to_dataframe(data)
-

@@ -58,7 +58,6 @@ class TestSubjectsAccessIntegration:
         assert isinstance(result, pd.DataFrame)
         assert len(result) == 2
 
-
     @pytest.mark.asyncio
     async def test_alist_subjects(
         self,
@@ -99,4 +98,3 @@ class TestSubjectsAccessIntegration:
         access = SubjectsAccess(mock_async_api_client)
         result = await access.asearch_subjects("CENY")
         assert isinstance(result, pd.DataFrame)
-

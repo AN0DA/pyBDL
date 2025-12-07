@@ -37,7 +37,6 @@ class TestAttributesAccess:
         assert isinstance(result, pd.DataFrame)
         mock_api_client.get_attribute.assert_called_once_with("1")
 
-
     def test_list_attributes_error(self, attributes_access: AttributesAccess, mock_api_client: MagicMock) -> None:
         """Test error propagation."""
         mock_api_client.list_attributes.side_effect = ValueError("API Error")
@@ -57,4 +56,3 @@ class TestAttributesAccess:
         mock_api_client.aget_attribute = AsyncMock(return_value={"id": "1", "name": "Attribute1"})
         result = await attributes_access.aget_attribute("1")
         assert isinstance(result, pd.DataFrame)
-

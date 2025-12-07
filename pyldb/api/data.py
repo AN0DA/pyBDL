@@ -1,9 +1,9 @@
 from typing import Any, Literal, overload
 
 from pyldb.api.client import (
+    BaseAPIClient,
     FormatLiteral,
     LanguageLiteral,
-    BaseAPIClient,
 )
 
 

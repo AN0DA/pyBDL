@@ -149,7 +149,7 @@ class LDBConfig:
         env_use_global_cache = os.getenv("LDB_USE_GLOBAL_CACHE")
         if env_use_global_cache is not None:
             self.use_global_cache = env_use_global_cache.lower() in ("true", "1", "yes")
-        
+
         # Get page_size from environment if not provided directly
         env_page_size = os.getenv("LDB_PAGE_SIZE")
         if env_page_size is not None:
@@ -157,7 +157,7 @@ class LDBConfig:
                 self.page_size = int(env_page_size)
             except ValueError as e:
                 raise ValueError("LDB_PAGE_SIZE must be an integer") from e
-        
+
         # Custom quotas from env (JSON string)
         env_quotas = os.getenv("LDB_QUOTAS")
         if env_quotas:

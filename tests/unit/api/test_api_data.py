@@ -147,9 +147,7 @@ def test_get_data_by_variable_locality_all_branches(data_api: DataAPI, api_url: 
         return ([{"id": "A"}], {"meta": 1})
 
     data_api.fetch_all_results = mock_fetch_all_results_with_meta  # type: ignore[assignment]
-    result = data_api.get_data_by_variable_locality(
-        variable_id="v", unit_parent_id="l", return_metadata=True
-    )
+    result = data_api.get_data_by_variable_locality(variable_id="v", unit_parent_id="l", return_metadata=True)
     assert result == ([{"id": "A"}], {"meta": 1})
 
     # all_pages True, return_metadata False
@@ -157,9 +155,7 @@ def test_get_data_by_variable_locality_all_branches(data_api: DataAPI, api_url: 
         return [{"id": "B"}]
 
     data_api.fetch_all_results = mock_fetch_all_results_no_meta  # type: ignore[assignment]
-    result_no_meta = data_api.get_data_by_variable_locality(
-        variable_id="v", unit_parent_id="l", return_metadata=False
-    )
+    result_no_meta = data_api.get_data_by_variable_locality(variable_id="v", unit_parent_id="l", return_metadata=False)
     assert result_no_meta == [{"id": "B"}]
 
     # all_pages False, return_metadata True
@@ -207,7 +203,9 @@ def test_get_data_by_unit_locality_all_branches(data_api: DataAPI, api_url: str)
         return ([{"id": "C"}], {"meta": 2})
 
     data_api.fetch_single_result = mock_fetch_single_result_with_meta  # type: ignore[assignment]
-    result_single_meta = data_api.get_data_by_unit_locality(unit_id="u", variable_id=[1], max_pages=1, return_metadata=True)
+    result_single_meta = data_api.get_data_by_unit_locality(
+        unit_id="u", variable_id=[1], max_pages=1, return_metadata=True
+    )
     assert result_single_meta == ([{"id": "C"}], {"meta": 2})
 
     # max_pages=1 (single page), return_metadata False
@@ -215,7 +213,9 @@ def test_get_data_by_unit_locality_all_branches(data_api: DataAPI, api_url: str)
         return [{"id": "D"}]
 
     data_api.fetch_single_result = mock_fetch_single_result_no_meta  # type: ignore[assignment]
-    result_single_no_meta = data_api.get_data_by_unit_locality(unit_id="u", variable_id=[1], max_pages=1, return_metadata=False)
+    result_single_no_meta = data_api.get_data_by_unit_locality(
+        unit_id="u", variable_id=[1], max_pages=1, return_metadata=False
+    )
     assert result_single_no_meta == [{"id": "D"}]
 
 
@@ -436,9 +436,7 @@ def test_get_data_by_unit_locality_error(data_api: DataAPI) -> None:
 async def test_async_get_data_by_variable_locality_error(afetch_all_results: AsyncMock, data_api: DataAPI) -> None:
     afetch_all_results.side_effect = DummyException("fail")
     with pytest.raises(DummyException):
-        await data_api.aget_data_by_variable_locality(
-            variable_id="v", unit_parent_id="l", return_metadata=True
-        )
+        await data_api.aget_data_by_variable_locality(variable_id="v", unit_parent_id="l", return_metadata=True)
 
 
 @pytest.mark.asyncio

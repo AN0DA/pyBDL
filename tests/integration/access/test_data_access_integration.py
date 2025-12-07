@@ -62,7 +62,7 @@ class TestDataAccessIntegration:
         if "get_data_by_unit" in samples:
             mock_api_client.get_data_by_unit.return_value = samples["get_data_by_unit"]
             access = DataAccess(mock_api_client)
-            result = access.get_data_by_unit("999", variable_id="3643")
+            result = access.get_data_by_unit("999", variable_ids=["3643"])
             assert isinstance(result, pd.DataFrame)
 
     def test_get_data_by_unit_with_metadata(
@@ -78,7 +78,7 @@ class TestDataAccessIntegration:
                 {"total": 1},
             )
             access = DataAccess(mock_api_client)
-            result = access.get_data_by_unit("999", variable_id="3643", return_metadata=True)
+            result = access.get_data_by_unit("999", variable_ids=["3643"], return_metadata=True)
             assert isinstance(result, tuple)
             assert isinstance(result[0], pd.DataFrame)
 
@@ -108,7 +108,6 @@ class TestDataAccessIntegration:
             result = access.get_data_by_unit_locality(unit_id="44", variable_id=[3643])
             assert isinstance(result, pd.DataFrame)
 
-
     @pytest.mark.asyncio
     async def test_aget_data_by_variable(
         self,
@@ -135,7 +134,7 @@ class TestDataAccessIntegration:
         if "get_data_by_unit" in samples:
             mock_async_api_client.aget_data_by_unit.return_value = samples["get_data_by_unit"]
             access = DataAccess(mock_async_api_client)
-            result = await access.aget_data_by_unit(unit_id="999", variable_id="3643")
+            result = await access.aget_data_by_unit(unit_id="999", variable_ids=["3643"])
             assert isinstance(result, pd.DataFrame)
 
     @pytest.mark.asyncio
@@ -165,4 +164,3 @@ class TestDataAccessIntegration:
             access = DataAccess(mock_async_api_client)
             result = await access.aget_data_by_unit_locality(unit_id="44", variable_id=[3643])
             assert isinstance(result, pd.DataFrame)
-

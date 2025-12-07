@@ -46,7 +46,6 @@ class TestMeasuresAccessIntegration:
         assert isinstance(result, pd.DataFrame)
         assert len(result) == 1
 
-
     @pytest.mark.asyncio
     async def test_alist_measures(
         self,
@@ -73,4 +72,3 @@ class TestMeasuresAccessIntegration:
         access = MeasuresAccess(mock_async_api_client)
         result = await access.aget_measure(1)
         assert isinstance(result, pd.DataFrame)
-

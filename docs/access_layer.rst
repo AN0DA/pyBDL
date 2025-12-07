@@ -221,7 +221,7 @@ Statistical data retrieval:
     # Get data by administrative unit
     df = ldb.data.get_data_by_unit(
         unit_id="020000000000",
-        variable_id="3643",
+        variable_ids=["3643"],
         years=[2021]
     )
     

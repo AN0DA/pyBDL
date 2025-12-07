@@ -58,7 +58,6 @@ class TestSubjectsAccess:
         assert isinstance(result, pd.DataFrame)
         mock_api_client.search_subjects.assert_called_once()
 
-
     def test_list_subjects_empty_response(self, subjects_access: SubjectsAccess, mock_api_client: MagicMock) -> None:
         """Test list_subjects with empty response."""
         mock_api_client.list_subjects.return_value = []
@@ -93,4 +92,3 @@ class TestSubjectsAccess:
         mock_api_client.asearch_subjects = AsyncMock(return_value=[{"id": "1", "name": "Subject1"}])
         result = await subjects_access.asearch_subjects("test")
         assert isinstance(result, pd.DataFrame)
-

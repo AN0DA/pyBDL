@@ -43,7 +43,6 @@ class TestYearsAccessIntegration:
         assert len(result) == 1
         assert result["id"].iloc[0] == 2024
 
-
     @pytest.mark.asyncio
     async def test_alist_years(
         self,
@@ -71,4 +70,3 @@ class TestYearsAccessIntegration:
         result = await access.aget_year(2024)
         assert isinstance(result, pd.DataFrame)
         assert len(result) == 1
-

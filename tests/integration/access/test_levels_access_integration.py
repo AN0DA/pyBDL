@@ -46,7 +46,6 @@ class TestLevelsAccessIntegration:
         assert result["id"].iloc[0] == 0
         assert result["name"].iloc[0] == "Poziom Polski"
 
-
     @pytest.mark.asyncio
     async def test_alist_levels(
         self,
@@ -74,4 +73,3 @@ class TestLevelsAccessIntegration:
         result = await access.aget_level(0)
         assert isinstance(result, pd.DataFrame)
         assert len(result) == 1
-

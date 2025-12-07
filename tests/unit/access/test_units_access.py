@@ -65,7 +65,6 @@ class TestUnitsAccess:
         assert isinstance(result, pd.DataFrame)
         mock_api_client.search_localities.assert_called_once()
 
-
     def test_list_units_error(self, units_access: UnitsAccess, mock_api_client: MagicMock) -> None:
         """Test error propagation."""
         mock_api_client.list_units.side_effect = ValueError("API Error")
@@ -113,4 +112,3 @@ class TestUnitsAccess:
         mock_api_client.asearch_localities = AsyncMock(return_value=[{"id": "1", "name": "Locality1"}])
         result = await units_access.asearch_localities("test")
         assert isinstance(result, pd.DataFrame)
-

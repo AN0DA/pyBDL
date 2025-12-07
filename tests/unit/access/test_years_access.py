@@ -37,7 +37,6 @@ class TestYearsAccess:
         assert isinstance(result, pd.DataFrame)
         mock_api_client.get_year.assert_called_once_with(2020)
 
-
     def test_list_years_error(self, years_access: YearsAccess, mock_api_client: MagicMock) -> None:
         """Test error propagation."""
         mock_api_client.list_years.side_effect = ValueError("API Error")
@@ -57,4 +56,3 @@ class TestYearsAccess:
         mock_api_client.aget_year = AsyncMock(return_value={"id": 2020, "name": "2020"})
         result = await years_access.aget_year(2020)
         assert isinstance(result, pd.DataFrame)
-

@@ -27,7 +27,12 @@ def test_get_version(version_api: VersionAPI, api_url: str) -> None:
 async def test_aget_version(monkeypatch: pytest.MonkeyPatch) -> None:
     api = VersionAPI(LDBConfig(api_key="dummy"))
 
-    async def fake_afetch_single_result(endpoint: str, params: dict[str, Any] | None = None, headers: dict[str, str] | None = None, results_key: str | None = None) -> dict[str, str]:
+    async def fake_afetch_single_result(
+        endpoint: str,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+        results_key: str | None = None,
+    ) -> dict[str, str]:
         assert endpoint == "version"
         return {"version": "2.0.0", "build": "future"}
 

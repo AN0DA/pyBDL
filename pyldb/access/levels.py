@@ -50,7 +50,6 @@ class LevelsAccess(BaseAccess):
         data = self.api_client.get_level(level_id, **kwargs)
         return self._to_dataframe(data)
 
-
     async def alist_levels(
         self,
         page_size: int | None = None,
@@ -90,4 +89,3 @@ class LevelsAccess(BaseAccess):
         """
         data = await self.api_client.aget_level(level_id, **kwargs)
         return self._to_dataframe(data)
-

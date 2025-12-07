@@ -46,7 +46,6 @@ class TestAggregatesAccessIntegration:
         assert result["id"].iloc[0] == 1
         assert result["name"].iloc[0] == "ogółem"
 
-
     @pytest.mark.asyncio
     async def test_alist_aggregates(
         self,
@@ -74,4 +73,3 @@ class TestAggregatesAccessIntegration:
         result = await access.aget_aggregate("1")
         assert isinstance(result, pd.DataFrame)
         assert len(result) == 1
-

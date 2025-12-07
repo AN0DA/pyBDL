@@ -360,4 +360,3 @@ class UnitsAccess(BaseAccess):
         resolved_params = self._resolve_api_params(explicit_params, kwargs)
         data = await self.api_client.asearch_localities(**resolved_params, **kwargs)
         return self._to_dataframe(data)
-

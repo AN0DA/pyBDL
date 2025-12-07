@@ -85,7 +85,10 @@ class BaseAPIClient:
         # Determine quotas
         # If custom_quotas is set, use those (single int values)
         # Otherwise, use DEFAULT_QUOTAS (tuple format, rate limiter will select based on is_registered)
-        quotas = config.custom_quotas if config.custom_quotas is not None else DEFAULT_QUOTAS
+        if config.custom_quotas is not None:  # noqa: SIM108
+            quotas = config.custom_quotas
+        else:
+            quotas = DEFAULT_QUOTAS
 
         if BaseAPIClient._quota_cache is None:
             BaseAPIClient._quota_cache = PersistentQuotaCache(config.quota_cache_enabled)
@@ -154,9 +157,11 @@ class BaseAPIClient:
         """
         # Set defaults from config
         if lang is None:
-            lang = self.config.language.value if hasattr(self.config.language, "value") else self.config.language
+            lang_val = self.config.language.value if hasattr(self.config.language, "value") else self.config.language
+            lang = lang_val if isinstance(lang_val, str) else lang_val.value  # type: ignore[assignment]
         if format is None:
-            format = self.config.format.value if hasattr(self.config.format, "value") else self.config.format
+            format_val = self.config.format.value if hasattr(self.config.format, "value") else self.config.format
+            format = format_val if isinstance(format_val, str) else format_val.value  # type: ignore[assignment]
 
         params: dict[str, Any] = {}
         if lang:

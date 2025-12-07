@@ -44,7 +44,6 @@ class TestVariablesAccess:
         assert isinstance(result, pd.DataFrame)
         mock_api_client.search_variables.assert_called_once()
 
-
     def test_list_variables_error(self, variables_access: VariablesAccess, mock_api_client: MagicMock) -> None:
         """Test error propagation."""
         mock_api_client.list_variables.side_effect = ValueError("API Error")
@@ -71,4 +70,3 @@ class TestVariablesAccess:
         mock_api_client.asearch_variables = AsyncMock(return_value=[{"id": "1", "name": "Variable1"}])
         result = await variables_access.asearch_variables("test")
         assert isinstance(result, pd.DataFrame)
-

@@ -60,10 +60,14 @@ async def test_async_get_data_by_variable_locality_all_branches(
     result = await data_api.aget_data_by_variable_locality(variable_id="v", unit_parent_id="l", return_metadata=False)
     assert result == [{"id": 2}]
     afetch_single_result.return_value = ([{"id": 3}], {"meta": 3})
-    result = await data_api.aget_data_by_variable_locality(variable_id="v", unit_parent_id="l", max_pages=1, return_metadata=True)
+    result = await data_api.aget_data_by_variable_locality(
+        variable_id="v", unit_parent_id="l", max_pages=1, return_metadata=True
+    )
     assert result == ([{"id": 3}], {"meta": 3})
     afetch_single_result.return_value = [{"id": 4}]
-    result = await data_api.aget_data_by_variable_locality(variable_id="v", unit_parent_id="l", max_pages=1, return_metadata=False)
+    result = await data_api.aget_data_by_variable_locality(
+        variable_id="v", unit_parent_id="l", max_pages=1, return_metadata=False
+    )
     assert result == [{"id": 4}]
 
 

@@ -42,7 +42,9 @@ def test_list_variables_with_filters(variables_api: VariablesAPI, api_url: str) 
     params["page"] = "1"
     url1 = f"{api_url}/variables?{urlencode(params)}"
     responses.add(responses.GET, url1, json={"results": []}, status=200)
-    variables_api.list_variables(subject_id="cat", sort="name", extra_query={"aggregate-id": "agg", "category-id": "cat", "name": "pop"})
+    variables_api.list_variables(
+        subject_id="cat", sort="name", extra_query={"aggregate-id": "agg", "category-id": "cat", "name": "pop"}
+    )
     called_url = responses.calls[0].request.url
     assert called_url is not None
     assert "subject-id=cat" in called_url
@@ -124,7 +126,10 @@ def test_search_variables_with_filters(variables_api: VariablesAPI, api_url: str
     url = f"{api_url}/variables/search?{urlencode(params)}"
     responses.add(responses.GET, url, json={"results": [{"id": "3"}]}, status=200)
     result = variables_api.search_variables(
-        name="pop", subject_id="cat", sort="name", extra_query={"category-id": "cat", "aggregate-id": "agg", "foo": "bar"}
+        name="pop",
+        subject_id="cat",
+        sort="name",
+        extra_query={"category-id": "cat", "aggregate-id": "agg", "foo": "bar"},
     )
     assert result[0]["id"] == "3"
 

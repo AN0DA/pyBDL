@@ -47,7 +47,6 @@ class TestLevelsAccess:
         assert len(result) == 1
         mock_api_client.get_level.assert_called_once_with(1)
 
-
     def test_list_levels_empty(self, levels_access: LevelsAccess, mock_api_client: MagicMock) -> None:
         """Test list_levels with empty response."""
         mock_api_client.list_levels.return_value = []
@@ -74,4 +73,3 @@ class TestLevelsAccess:
         mock_api_client.aget_level = AsyncMock(return_value={"id": 1, "name": "Level1"})
         result = await levels_access.aget_level(1)
         assert isinstance(result, pd.DataFrame)
-

@@ -1,8 +1,8 @@
 from typing import Any, Literal
 
 from pyldb.api.client import (
-    LanguageLiteral,
     BaseAPIClient,
+    LanguageLiteral,
 )
 
 
@@ -16,7 +16,7 @@ class VersionAPI(BaseAPIClient):
     def get_version(
         self,
         lang: LanguageLiteral | None = None,
-        format: Literal["json", "xml"] | None = None, # /version endpoint doesn't support jsonapi
+        format: Literal["json", "xml"] | None = None,  # /version endpoint doesn't support jsonapi
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -51,7 +51,7 @@ class VersionAPI(BaseAPIClient):
     async def aget_version(
         self,
         lang: LanguageLiteral | None = None,
-        format: Literal["json", "xml"] | None = None, # /version endpoint doesn't support jsonapi
+        format: Literal["json", "xml"] | None = None,  # /version endpoint doesn't support jsonapi
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,

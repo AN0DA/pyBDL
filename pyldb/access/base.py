@@ -9,10 +9,10 @@ import pandas as pd
 class BaseAccess:
     """
     Base class for access layer implementations.
-    
+
     Supports per-function column renaming through the `_column_renames` class attribute.
     Child classes can define column rename mappings that apply to both sync and async methods.
-    
+
     Example:
         class MyAccess(BaseAccess):
             _column_renames = {
@@ -38,15 +38,15 @@ class BaseAccess:
             api_client: API client instance (e.g., LevelsAPI, AttributesAPI).
         """
         self.api_client = api_client
-    
+
     def _get_default_page_size(self) -> int:
         """
         Get default page size from config.
-        
+
         Returns:
             Default page size from config, or 100 if not available.
         """
-        if hasattr(self.api_client, 'config') and hasattr(self.api_client.config, 'page_size'):
+        if hasattr(self.api_client, "config") and hasattr(self.api_client.config, "page_size"):
             return self.api_client.config.page_size
         return 100
 
@@ -57,17 +57,17 @@ class BaseAccess:
     ) -> dict[str, Any]:
         """
         Resolve API parameters, giving precedence to kwargs over explicit parameters.
-        
+
         For any parameter present in both explicit_params and kwargs, kwargs takes precedence.
         This prevents duplicate parameter errors when calling API client methods.
-        
+
         Args:
             explicit_params: Dictionary of explicitly passed parameters.
             kwargs: Keyword arguments dict (will be modified to remove resolved params).
-            
+
         Returns:
             Dictionary of resolved parameters (kwargs values override explicit values).
-            
+
         Example:
             explicit = {"max_pages": None, "page_size": 100}
             kwargs = {"max_pages": 1, "extra": "value"}
@@ -76,15 +76,14 @@ class BaseAccess:
             # kwargs now: {"extra": "value"}  (max_pages removed)
         """
         resolved = explicit_params.copy()
-        
+
         # For each key in kwargs that matches an explicit parameter, use kwargs value
         for key in list(kwargs.keys()):
             if key in resolved:
                 # kwargs takes precedence - use its value and remove from kwargs
                 resolved[key] = kwargs.pop(key)
-        
-        return resolved
 
+        return resolved
 
     def _to_dataframe(
         self,
@@ -129,11 +128,11 @@ class BaseAccess:
     def _get_calling_function_name(self) -> str | None:
         """
         Get the name of the function that called `_to_dataframe`.
-        
+
         Inspects the call stack to find the calling function, skipping internal
         methods like `_to_dataframe` itself. The function name is automatically
         detected from the call stack.
-        
+
         Returns:
             Function name if found, None otherwise.
         """
@@ -155,16 +154,16 @@ class BaseAccess:
     def _normalize_function_name(function_name: str) -> str:
         """
         Normalize function name for column rename lookup.
-        
+
         Removes 'a' prefix from async function names so that sync and async
         methods can share the same column rename configuration.
-        
+
         Args:
             function_name: Function name (e.g., 'list_aggregates' or 'alist_aggregates').
-            
+
         Returns:
             Normalized function name (e.g., 'list_aggregates').
-            
+
         Examples:
             >>> BaseAccess._normalize_function_name('alist_aggregates')
             'list_aggregates'
@@ -184,30 +183,30 @@ class BaseAccess:
     ) -> pd.DataFrame:
         """
         Apply column renames for a specific function.
-        
+
         Looks up column rename mappings in `_column_renames` class attribute.
         Both sync and async methods use the same mapping (async names are normalized).
-        
+
         Args:
             df: DataFrame to rename columns in.
             function_name: Function name (sync or async).
-            
+
         Returns:
             DataFrame with renamed columns (if mappings exist).
         """
         # Normalize function name (remove 'a' prefix for async methods)
         normalized_name = self._normalize_function_name(function_name)
-        
+
         # Get column rename mapping for this function
         rename_map = self._column_renames.get(normalized_name, {})
-        
+
         if not rename_map:
             return df
-        
+
         # Apply renames
         df = df.copy()
         df = df.rename(columns=rename_map)
-        
+
         return df
 
     @staticmethod

@@ -37,7 +37,6 @@ class TestMeasuresAccess:
         assert isinstance(result, pd.DataFrame)
         mock_api_client.get_measure.assert_called_once_with(1)
 
-
     def test_list_measures_error(self, measures_access: MeasuresAccess, mock_api_client: MagicMock) -> None:
         """Test error propagation."""
         mock_api_client.list_measures.side_effect = ValueError("API Error")
@@ -57,4 +56,3 @@ class TestMeasuresAccess:
         mock_api_client.aget_measure = AsyncMock(return_value={"id": 1, "name": "Measure1"})
         result = await measures_access.aget_measure(1)
         assert isinstance(result, pd.DataFrame)
-

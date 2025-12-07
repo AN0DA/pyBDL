@@ -91,7 +91,7 @@ class DataAccess(BaseAccess):
     def get_data_by_unit(
         self,
         unit_id: str,
-        variable_id: list[int] | int,
+        variable_ids: list[str],
         years: list[int] | None = None,
         aggregate_id: int | None = None,
         return_metadata: bool = False,
@@ -102,7 +102,7 @@ class DataAccess(BaseAccess):
 
         Args:
             unit_id: Identifier of the administrative unit.
-            variable_id: Variable ID or list of variable IDs to get results.
+            variable_ids: List of variable IDs (as strings) to get results.
             years: Optional list of years to filter by.
             aggregate_id: Optional aggregate ID.
             return_metadata: If True, return tuple (DataFrame, metadata).
@@ -111,8 +111,8 @@ class DataAccess(BaseAccess):
         Returns:
             DataFrame with data, or tuple (DataFrame, metadata) if return_metadata=True.
         """
-        # Convert single variable_id to list for API compatibility
-        variable_id_list = [variable_id] if isinstance(variable_id, int) else variable_id
+        # Convert variable_ids (list[str]) to list[int] for API compatibility
+        variable_id_list = [int(var_id) for var_id in variable_ids]
         explicit_params = {
             "unit_id": unit_id,
             "variable_id": variable_id_list,
@@ -231,7 +231,6 @@ class DataAccess(BaseAccess):
         df = self._to_dataframe(data)
         return (df, metadata) if return_metadata else df
 
-
     # Async versions
     async def aget_data_by_variable(
         self,
@@ -308,7 +307,7 @@ class DataAccess(BaseAccess):
     async def aget_data_by_unit(
         self,
         unit_id: str,
-        variable_id: list[int] | int,
+        variable_ids: list[str],
         years: list[int] | None = None,
         aggregate_id: int | None = None,
         return_metadata: bool = False,
@@ -319,7 +318,7 @@ class DataAccess(BaseAccess):
 
         Args:
             unit_id: Identifier of the administrative unit.
-            variable_id: Variable ID or list of variable IDs to get results.
+            variable_ids: List of variable IDs (as strings) to get results.
             years: Optional list of years to filter by.
             aggregate_id: Optional aggregate ID.
             return_metadata: If True, return tuple (DataFrame, metadata).
@@ -328,8 +327,8 @@ class DataAccess(BaseAccess):
         Returns:
             DataFrame with data, or tuple (DataFrame, metadata) if return_metadata=True.
         """
-        # Convert single variable_id to list for API compatibility
-        variable_id_list = [variable_id] if isinstance(variable_id, int) else variable_id
+        # Convert variable_ids (list[str]) to list[int] for API compatibility
+        variable_id_list = [int(var_id) for var_id in variable_ids]
         explicit_params = {
             "unit_id": unit_id,
             "variable_id": variable_id_list,

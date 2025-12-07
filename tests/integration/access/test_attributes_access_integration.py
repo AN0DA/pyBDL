@@ -50,7 +50,6 @@ class TestAttributesAccessIntegration:
             result = access.get_attribute("0")
             assert isinstance(result, pd.DataFrame)
 
-
     @pytest.mark.asyncio
     async def test_alist_attributes(
         self,
@@ -77,4 +76,3 @@ class TestAttributesAccessIntegration:
         access = AttributesAccess(mock_async_api_client)
         result = await access.aget_attribute("0")
         assert isinstance(result, pd.DataFrame)
-

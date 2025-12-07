@@ -10,7 +10,7 @@ from pyldb.access.base import BaseAccess
 class AggregatesAccess(BaseAccess):
     """
     Access layer for aggregates API, converting responses to DataFrames.
-    
+
     Example column renaming:
         _column_renames = {
             "list_aggregates": {
@@ -63,7 +63,6 @@ class AggregatesAccess(BaseAccess):
         data = self.api_client.get_aggregate(aggregate_id, **kwargs)
         return self._to_dataframe(data)
 
-
     async def alist_aggregates(
         self,
         page_size: int | None = None,
@@ -103,5 +102,3 @@ class AggregatesAccess(BaseAccess):
         """
         data = await self.api_client.aget_aggregate(aggregate_id, **kwargs)
         return self._to_dataframe(data)
-
-

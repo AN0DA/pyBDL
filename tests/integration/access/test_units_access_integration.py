@@ -107,7 +107,6 @@ class TestUnitsAccessIntegration:
         result = access.search_localities("POLSKA")
         assert isinstance(result, pd.DataFrame)
 
-
     @pytest.mark.asyncio
     async def test_alist_units(
         self,
@@ -186,4 +185,3 @@ class TestUnitsAccessIntegration:
         access = UnitsAccess(mock_async_api_client)
         result = await access.asearch_localities("POLSKA")
         assert isinstance(result, pd.DataFrame)
-

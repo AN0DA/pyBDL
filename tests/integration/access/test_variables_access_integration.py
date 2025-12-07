@@ -58,7 +58,6 @@ class TestVariablesAccessIntegration:
         assert isinstance(result, pd.DataFrame)
         assert len(result) == 2
 
-
     @pytest.mark.asyncio
     async def test_alist_variables(
         self,
@@ -98,4 +97,3 @@ class TestVariablesAccessIntegration:
         access = VariablesAccess(mock_async_api_client)
         result = await access.asearch_variables("ogółem")
         assert isinstance(result, pd.DataFrame)
-

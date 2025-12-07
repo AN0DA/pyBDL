@@ -54,14 +54,14 @@ class TestDataAccess:
     def test_get_data_by_unit(self, data_access: DataAccess, mock_api_client: MagicMock) -> None:
         """Test get_data_by_unit method."""
         mock_api_client.get_data_by_unit.return_value = [{"id": "1", "value": 100}]
-        result = data_access.get_data_by_unit("999", variable_id="3643")
+        result = data_access.get_data_by_unit("999", variable_ids=["3643"])
         assert isinstance(result, pd.DataFrame)
         mock_api_client.get_data_by_unit.assert_called_once()
 
     def test_get_data_by_unit_with_metadata(self, data_access: DataAccess, mock_api_client: MagicMock) -> None:
         """Test get_data_by_unit with return_metadata=True."""
         mock_api_client.get_data_by_unit.return_value = ([{"id": "1", "value": 100}], {"total": 1})
-        result = data_access.get_data_by_unit("999", variable_id="3643", return_metadata=True)
+        result = data_access.get_data_by_unit("999", variable_ids=["3643"], return_metadata=True)
         assert isinstance(result, tuple)
         assert isinstance(result[0], pd.DataFrame)
 
@@ -78,7 +78,6 @@ class TestDataAccess:
         result = data_access.get_data_by_unit_locality("44", variable_id=[3643])
         assert isinstance(result, pd.DataFrame)
         mock_api_client.get_data_by_unit_locality.assert_called_once()
-
 
     def test_get_data_by_variable_year_conversion(self, data_access: DataAccess, mock_api_client: MagicMock) -> None:
         """Test that year is converted to integer."""
@@ -107,6 +106,5 @@ class TestDataAccess:
     async def test_aget_data_by_unit(self, data_access: DataAccess, mock_api_client: MagicMock) -> None:
         """Test async get_data_by_unit method."""
         mock_api_client.aget_data_by_unit = AsyncMock(return_value=[{"id": "1", "value": 100}])
-        result = await data_access.aget_data_by_unit("999", variable_id="3643")
+        result = await data_access.aget_data_by_unit("999", variable_ids=["3643"])
         assert isinstance(result, pd.DataFrame)
-

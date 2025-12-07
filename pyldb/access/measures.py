@@ -50,7 +50,6 @@ class MeasuresAccess(BaseAccess):
         data = self.api_client.get_measure(measure_id, **kwargs)
         return self._to_dataframe(data)
 
-
     async def alist_measures(
         self,
         page_size: int | None = None,

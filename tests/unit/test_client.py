@@ -62,7 +62,7 @@ def test_ldb_config_default(monkeypatch: MonkeyPatch) -> None:
 @pytest.mark.unit
 def test_ldb_accepts_dict_config(monkeypatch: MonkeyPatch) -> None:
     config_dict = {"api_key": "dummy", "language": "en"}
-    ldb = LDB(config=config_dict)  # type: ignore[arg-type]
+    ldb = LDB(config=config_dict)
     assert ldb.config.api_key == "dummy"
     assert ldb.config.language.name == "EN"
 
@@ -104,7 +104,7 @@ def test_ldb_anonymous_access(monkeypatch: MonkeyPatch) -> None:
     assert ldb2.config.api_key is None
 
     # Test with dict config with None api_key
-    ldb3 = LDB(config={"api_key": None})  # type: ignore[arg-type]
+    ldb3 = LDB(config={"api_key": None})
     assert ldb3.config.api_key is None
 
 
@@ -113,6 +113,6 @@ def test_ldb_config_dict_with_none_api_key(monkeypatch: MonkeyPatch) -> None:
     """Test that dict config with None api_key works."""
     monkeypatch.delenv("LDB_API_KEY", raising=False)
     config_dict = {"api_key": None, "language": "en"}
-    ldb = LDB(config=config_dict)  # type: ignore[arg-type]
+    ldb = LDB(config=config_dict)
     assert ldb.config.api_key is None
     assert ldb.config.language.name == "EN"

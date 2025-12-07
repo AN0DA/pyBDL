@@ -1,9 +1,9 @@
 from typing import Any
 
 from pyldb.api.client import (
+    BaseAPIClient,
     FormatLiteral,
     LanguageLiteral,
-    BaseAPIClient,
 )
 
 
@@ -198,7 +198,10 @@ class VariablesAPI(BaseAPIClient):
             params_with_page_size = params.copy() if params else {}
             params_with_page_size["page-size"] = page_size
             return self.fetch_single_result(
-                "variables/search", results_key="results", params=params_with_page_size, headers=headers if headers else None
+                "variables/search",
+                results_key="results",
+                params=params_with_page_size,
+                headers=headers if headers else None,
             )
         else:
             # Fetch all pages (max_pages=None) or up to max_pages
@@ -428,7 +431,10 @@ class VariablesAPI(BaseAPIClient):
             params_with_page_size = params.copy() if params else {}
             params_with_page_size["page-size"] = page_size
             return await self.afetch_single_result(
-                "variables/search", results_key="results", params=params_with_page_size, headers=headers if headers else None
+                "variables/search",
+                results_key="results",
+                params=params_with_page_size,
+                headers=headers if headers else None,
             )
         else:
             # Fetch all pages (max_pages=None) or up to max_pages

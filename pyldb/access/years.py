@@ -50,7 +50,6 @@ class YearsAccess(BaseAccess):
         data = self.api_client.get_year(year_id, **kwargs)
         return self._to_dataframe(data)
 
-
     async def alist_years(
         self,
         page_size: int | None = None,

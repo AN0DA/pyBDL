@@ -1,9 +1,9 @@
 from typing import Any
 
 from pyldb.api.client import (
+    BaseAPIClient,
     FormatLiteral,
     LanguageLiteral,
-    BaseAPIClient,
 )
 
 
@@ -59,7 +59,11 @@ class YearsAPI(BaseAPIClient):
         )
 
         return self.fetch_all_results(
-            "years", params=params if params else None, headers=headers if headers else None, page_size=page_size, max_pages=max_pages
+            "years",
+            params=params if params else None,
+            headers=headers if headers else None,
+            page_size=page_size,
+            max_pages=max_pages,
         )
 
     def get_year(
@@ -178,7 +182,11 @@ class YearsAPI(BaseAPIClient):
         )
 
         return await self.afetch_all_results(
-            "years", params=params if params else None, headers=headers if headers else None, page_size=page_size, max_pages=max_pages
+            "years",
+            params=params if params else None,
+            headers=headers if headers else None,
+            page_size=page_size,
+            max_pages=max_pages,
         )
 
     async def aget_year(
