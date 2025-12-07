@@ -30,7 +30,6 @@ class VariablesAPI(BaseAPIClient):
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
-        all_pages: bool = True,
     ) -> list[dict[str, Any]]:
         """
         List all variables, optionally filtered by subject, level, or year.
@@ -43,14 +42,13 @@ class VariablesAPI(BaseAPIClient):
             years: Optional list of years to filter variables.
             page: Optional page number to fetch.
             page_size: Number of results per page.
-            max_pages: Maximum number of pages to fetch (None for all).
+            max_pages: Maximum number of pages to fetch (None for all pages, 1 for single page).
             sort: Optional sorting order, e.g. 'id', '-id', 'name', '-name'.
             lang: Expected response content language (defaults to config.language).
             format: Expected response content type (defaults to config.format).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
-            all_pages: If True, fetch all pages; otherwise, fetch only the first.
 
         Returns:
             List of variable metadata dictionaries.
@@ -77,7 +75,15 @@ class VariablesAPI(BaseAPIClient):
             extra_params=extra_params,
         )
 
-        if all_pages:
+        if max_pages == 1:
+            # Fetch only the first page
+            params_with_page_size = params.copy() if params else {}
+            params_with_page_size["page-size"] = page_size
+            return self.fetch_single_result(
+                "variables", results_key="results", params=params_with_page_size, headers=headers if headers else None
+            )
+        else:
+            # Fetch all pages (max_pages=None) or up to max_pages
             return self.fetch_all_results(
                 "variables",
                 params=params if params else None,
@@ -85,12 +91,6 @@ class VariablesAPI(BaseAPIClient):
                 page_size=page_size,
                 max_pages=max_pages,
                 results_key="results",
-            )
-        else:
-            params_with_page_size = params.copy() if params else {}
-            params_with_page_size["page-size"] = page_size
-            return self.fetch_single_result(
-                "variables", results_key="results", params=params_with_page_size, headers=headers if headers else None
             )
 
     def get_variable(
@@ -145,7 +145,6 @@ class VariablesAPI(BaseAPIClient):
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
-        all_pages: bool = True,
     ) -> list[dict[str, Any]]:
         """
         Search for variables by name and optional filters.
@@ -159,14 +158,13 @@ class VariablesAPI(BaseAPIClient):
             years: Optional list of years to filter variables.
             page: Optional page number to fetch.
             page_size: Number of results per page.
-            max_pages: Maximum number of pages to fetch (None for all).
+            max_pages: Maximum number of pages to fetch (None for all pages, 1 for single page).
             sort: Optional sorting order.
             lang: Expected response content language (defaults to config.language).
             format: Expected response content type (defaults to config.format).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
-            all_pages: If True, fetch all pages; otherwise, fetch only the first.
 
         Returns:
             List of variable metadata dictionaries.
@@ -195,7 +193,15 @@ class VariablesAPI(BaseAPIClient):
             extra_params=extra_params,
         )
 
-        if all_pages:
+        if max_pages == 1:
+            # Fetch only the first page
+            params_with_page_size = params.copy() if params else {}
+            params_with_page_size["page-size"] = page_size
+            return self.fetch_single_result(
+                "variables/search", results_key="results", params=params_with_page_size, headers=headers if headers else None
+            )
+        else:
+            # Fetch all pages (max_pages=None) or up to max_pages
             return self.fetch_all_results(
                 "variables/search",
                 params=params,
@@ -203,12 +209,6 @@ class VariablesAPI(BaseAPIClient):
                 page_size=page_size,
                 max_pages=max_pages,
                 results_key="results",
-            )
-        else:
-            params_with_page_size = params.copy() if params else {}
-            params_with_page_size["page-size"] = page_size
-            return self.fetch_single_result(
-                "variables/search", results_key="results", params=params_with_page_size, headers=headers if headers else None
             )
 
     def get_variables_metadata(
@@ -260,7 +260,6 @@ class VariablesAPI(BaseAPIClient):
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
-        all_pages: bool = True,
     ) -> list[dict[str, Any]]:
         """
         Asynchronously list all variables, optionally filtered by subject, level, or year.
@@ -273,14 +272,13 @@ class VariablesAPI(BaseAPIClient):
             years: Optional list of years to filter variables.
             page: Optional page number to fetch.
             page_size: Number of results per page.
-            max_pages: Maximum number of pages to fetch (None for all).
+            max_pages: Maximum number of pages to fetch (None for all pages, 1 for single page).
             sort: Optional sorting order, e.g. 'id', '-id', 'name', '-name'.
             lang: Expected response content language (defaults to config.language).
             format: Expected response content type (defaults to config.format).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
-            all_pages: If True, fetch all pages; otherwise, fetch only the first.
 
         Returns:
             List of variable metadata dictionaries.
@@ -307,7 +305,15 @@ class VariablesAPI(BaseAPIClient):
             extra_params=extra_params,
         )
 
-        if all_pages:
+        if max_pages == 1:
+            # Fetch only the first page
+            params_with_page_size = params.copy() if params else {}
+            params_with_page_size["page-size"] = page_size
+            return await self.afetch_single_result(
+                "variables", results_key="results", params=params_with_page_size, headers=headers if headers else None
+            )
+        else:
+            # Fetch all pages (max_pages=None) or up to max_pages
             return await self.afetch_all_results(
                 "variables",
                 params=params if params else None,
@@ -315,12 +321,6 @@ class VariablesAPI(BaseAPIClient):
                 page_size=page_size,
                 max_pages=max_pages,
                 results_key="results",
-            )
-        else:
-            params_with_page_size = params.copy() if params else {}
-            params_with_page_size["page-size"] = page_size
-            return await self.afetch_single_result(
-                "variables", results_key="results", params=params_with_page_size, headers=headers if headers else None
             )
 
     async def aget_variable(
@@ -375,7 +375,6 @@ class VariablesAPI(BaseAPIClient):
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
-        all_pages: bool = True,
     ) -> list[dict[str, Any]]:
         """
         Asynchronously search for variables by name and optional filters.
@@ -389,14 +388,13 @@ class VariablesAPI(BaseAPIClient):
             years: Optional list of years to filter variables.
             page: Optional page number to fetch.
             page_size: Number of results per page.
-            max_pages: Maximum number of pages to fetch (None for all).
+            max_pages: Maximum number of pages to fetch (None for all pages, 1 for single page).
             sort: Optional sorting order.
             lang: Expected response content language (defaults to config.language).
             format: Expected response content type (defaults to config.format).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
-            all_pages: If True, fetch all pages; otherwise, fetch only the first.
 
         Returns:
             List of variable metadata dictionaries.
@@ -425,7 +423,15 @@ class VariablesAPI(BaseAPIClient):
             extra_params=extra_params,
         )
 
-        if all_pages:
+        if max_pages == 1:
+            # Fetch only the first page
+            params_with_page_size = params.copy() if params else {}
+            params_with_page_size["page-size"] = page_size
+            return await self.afetch_single_result(
+                "variables/search", results_key="results", params=params_with_page_size, headers=headers if headers else None
+            )
+        else:
+            # Fetch all pages (max_pages=None) or up to max_pages
             return await self.afetch_all_results(
                 "variables/search",
                 params=params,
@@ -433,12 +439,6 @@ class VariablesAPI(BaseAPIClient):
                 page_size=page_size,
                 max_pages=max_pages,
                 results_key="results",
-            )
-        else:
-            params_with_page_size = params.copy() if params else {}
-            params_with_page_size["page-size"] = page_size
-            return await self.afetch_single_result(
-                "variables/search", results_key="results", params=params_with_page_size, headers=headers if headers else None
             )
 
     async def aget_variables_metadata(

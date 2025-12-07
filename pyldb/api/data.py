@@ -35,7 +35,6 @@ class DataAPI(BaseAPIClient):
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
-        all_pages: bool = True,
         return_metadata: Literal[True] = True,
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]: ...
 
@@ -55,7 +54,6 @@ class DataAPI(BaseAPIClient):
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
-        all_pages: bool = True,
         return_metadata: Literal[False] = False,
     ) -> list[dict[str, Any]]: ...
 
@@ -74,7 +72,6 @@ class DataAPI(BaseAPIClient):
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
-        all_pages: bool = True,
         return_metadata: bool = True,
     ) -> tuple[list[dict[str, Any]], dict[str, Any]] | list[dict[str, Any]]:
         """
@@ -90,13 +87,12 @@ class DataAPI(BaseAPIClient):
             aggregate_id: Optional aggregate ID.
             page: Optional page number to fetch.
             page_size: Number of results per page.
-            max_pages: Maximum number of pages to fetch (None for all).
+            max_pages: Maximum number of pages to fetch (None for all pages, 1 for single page).
             format: Expected response content type (defaults to config.format).
             lang: Expected response content language (defaults to config.language).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
-            all_pages: If True, fetch all pages; otherwise, fetch only the first.
             return_metadata: If True, include metadata in the response.
 
         Returns:
@@ -127,28 +123,8 @@ class DataAPI(BaseAPIClient):
         endpoint = f"data/by-variable/{variable_id}"
 
         result: tuple[list[dict[str, Any]], dict[str, Any]] | list[dict[str, Any]]
-        if all_pages:
-            if return_metadata:
-                result = self.fetch_all_results(
-                    endpoint,
-                    params=params,
-                    headers=headers if headers else None,
-                    page_size=page_size,
-                    max_pages=max_pages,
-                    results_key="results",
-                    return_metadata=True,
-                )
-            else:
-                result = self.fetch_all_results(
-                    endpoint,
-                    params=params,
-                    headers=headers if headers else None,
-                    page_size=page_size,
-                    max_pages=max_pages,
-                    results_key="results",
-                    return_metadata=False,
-                )
-        else:
+        if max_pages == 1:
+            # Fetch only the first page
             params_with_page_size = params.copy()
             params_with_page_size["page-size"] = page_size
             if return_metadata:
@@ -165,6 +141,28 @@ class DataAPI(BaseAPIClient):
                     results_key="results",
                     params=params_with_page_size,
                     headers=headers if headers else None,
+                    return_metadata=False,
+                )
+        else:
+            # Fetch all pages (max_pages=None) or up to max_pages
+            if return_metadata:
+                result = self.fetch_all_results(
+                    endpoint,
+                    params=params,
+                    headers=headers if headers else None,
+                    page_size=page_size,
+                    max_pages=max_pages,
+                    results_key="results",
+                    return_metadata=True,
+                )
+            else:
+                result = self.fetch_all_results(
+                    endpoint,
+                    params=params,
+                    headers=headers if headers else None,
+                    page_size=page_size,
+                    max_pages=max_pages,
+                    results_key="results",
                     return_metadata=False,
                 )
         return result
@@ -296,7 +294,6 @@ class DataAPI(BaseAPIClient):
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
-        all_pages: bool = True,
         return_metadata: Literal[True] = True,
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]: ...
 
@@ -314,7 +311,6 @@ class DataAPI(BaseAPIClient):
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
-        all_pages: bool = True,
         return_metadata: Literal[False] = False,
     ) -> list[dict[str, Any]]: ...
 
@@ -331,7 +327,6 @@ class DataAPI(BaseAPIClient):
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
-        all_pages: bool = True,
         return_metadata: bool = True,
     ) -> tuple[list[dict[str, Any]], dict[str, Any]] | list[dict[str, Any]]:
         """
@@ -345,13 +340,12 @@ class DataAPI(BaseAPIClient):
             years: Optional list of years to filter by.
             page: Optional page number to fetch.
             page_size: Number of results per page.
-            max_pages: Maximum number of pages to fetch (None for all).
+            max_pages: Maximum number of pages to fetch (None for all pages, 1 for single page).
             format: Expected response content type (defaults to config.format).
             lang: Expected response content language (defaults to config.language).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
-            all_pages: If True, fetch all pages; otherwise, fetch only the first.
             return_metadata: If True, include metadata in the response.
 
         Returns:
@@ -376,28 +370,8 @@ class DataAPI(BaseAPIClient):
         endpoint = f"data/localities/by-variable/{variable_id}"
 
         result: tuple[list[dict[str, Any]], dict[str, Any]] | list[dict[str, Any]]
-        if all_pages:
-            if return_metadata:
-                result = self.fetch_all_results(
-                    endpoint,
-                    params=params,
-                    headers=headers if headers else None,
-                    page_size=page_size,
-                    max_pages=max_pages,
-                    results_key="results",
-                    return_metadata=True,
-                )
-            else:
-                result = self.fetch_all_results(
-                    endpoint,
-                    params=params,
-                    headers=headers if headers else None,
-                    page_size=page_size,
-                    max_pages=max_pages,
-                    results_key="results",
-                    return_metadata=False,
-                )
-        else:
+        if max_pages == 1:
+            # Fetch only the first page
             params_with_page_size = params.copy()
             params_with_page_size["page-size"] = page_size
             if return_metadata:
@@ -414,6 +388,28 @@ class DataAPI(BaseAPIClient):
                     results_key="results",
                     params=params_with_page_size,
                     headers=headers if headers else None,
+                    return_metadata=False,
+                )
+        else:
+            # Fetch all pages (max_pages=None) or up to max_pages
+            if return_metadata:
+                result = self.fetch_all_results(
+                    endpoint,
+                    params=params,
+                    headers=headers if headers else None,
+                    page_size=page_size,
+                    max_pages=max_pages,
+                    results_key="results",
+                    return_metadata=True,
+                )
+            else:
+                result = self.fetch_all_results(
+                    endpoint,
+                    params=params,
+                    headers=headers if headers else None,
+                    page_size=page_size,
+                    max_pages=max_pages,
+                    results_key="results",
                     return_metadata=False,
                 )
         return result
@@ -433,7 +429,6 @@ class DataAPI(BaseAPIClient):
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
-        all_pages: bool = True,
         return_metadata: Literal[True] = True,
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]: ...
 
@@ -452,7 +447,6 @@ class DataAPI(BaseAPIClient):
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
-        all_pages: bool = True,
         return_metadata: Literal[False] = False,
     ) -> list[dict[str, Any]]: ...
 
@@ -470,7 +464,6 @@ class DataAPI(BaseAPIClient):
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
-        all_pages: bool = True,
         return_metadata: bool = True,
     ) -> tuple[list[dict[str, Any]], dict[str, Any]] | list[dict[str, Any]]:
         """
@@ -485,13 +478,12 @@ class DataAPI(BaseAPIClient):
             aggregate_id: Optional aggregate ID.
             page: Optional page number to fetch.
             page_size: Number of results per page.
-            max_pages: Maximum number of pages to fetch (None for all).
+            max_pages: Maximum number of pages to fetch (None for all pages, 1 for single page).
             format: Expected response content type (defaults to config.format).
             lang: Expected response content language (defaults to config.language).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
-            all_pages: If True, fetch all pages; otherwise, fetch only the first.
             return_metadata: If True, include metadata in the response.
 
         Returns:
@@ -518,28 +510,8 @@ class DataAPI(BaseAPIClient):
         endpoint = f"data/localities/by-unit/{unit_id}"
 
         result: tuple[list[dict[str, Any]], dict[str, Any]] | list[dict[str, Any]]
-        if all_pages:
-            if return_metadata:
-                result = self.fetch_all_results(
-                    endpoint,
-                    params=params,
-                    headers=headers if headers else None,
-                    page_size=page_size,
-                    max_pages=max_pages,
-                    results_key="results",
-                    return_metadata=True,
-                )
-            else:
-                result = self.fetch_all_results(
-                    endpoint,
-                    params=params,
-                    headers=headers if headers else None,
-                    page_size=page_size,
-                    max_pages=max_pages,
-                    results_key="results",
-                    return_metadata=False,
-                )
-        else:
+        if max_pages == 1:
+            # Fetch only the first page
             params_with_page_size = params.copy()
             params_with_page_size["page-size"] = page_size
             if return_metadata:
@@ -556,6 +528,28 @@ class DataAPI(BaseAPIClient):
                     results_key="results",
                     params=params_with_page_size,
                     headers=headers if headers else None,
+                    return_metadata=False,
+                )
+        else:
+            # Fetch all pages (max_pages=None) or up to max_pages
+            if return_metadata:
+                result = self.fetch_all_results(
+                    endpoint,
+                    params=params,
+                    headers=headers if headers else None,
+                    page_size=page_size,
+                    max_pages=max_pages,
+                    results_key="results",
+                    return_metadata=True,
+                )
+            else:
+                result = self.fetch_all_results(
+                    endpoint,
+                    params=params,
+                    headers=headers if headers else None,
+                    page_size=page_size,
+                    max_pages=max_pages,
+                    results_key="results",
                     return_metadata=False,
                 )
         return result
@@ -612,7 +606,6 @@ class DataAPI(BaseAPIClient):
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
-        all_pages: bool = True,
         return_metadata: Literal[True] = True,
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]: ...
 
@@ -632,7 +625,6 @@ class DataAPI(BaseAPIClient):
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
-        all_pages: bool = True,
         return_metadata: Literal[False] = False,
     ) -> list[dict[str, Any]]: ...
 
@@ -651,7 +643,6 @@ class DataAPI(BaseAPIClient):
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
-        all_pages: bool = True,
         return_metadata: bool = True,
     ) -> tuple[list[dict[str, Any]], dict[str, Any]] | list[dict[str, Any]]:
         """
@@ -667,13 +658,12 @@ class DataAPI(BaseAPIClient):
             aggregate_id: Optional aggregate ID.
             page: Optional page number to fetch.
             page_size: Number of results per page.
-            max_pages: Maximum number of pages to fetch (None for all).
+            max_pages: Maximum number of pages to fetch (None for all pages, 1 for single page).
             format: Expected response content type (defaults to config.format).
             lang: Expected response content language (defaults to config.language).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
-            all_pages: If True, fetch all pages; otherwise, fetch only the first.
             return_metadata: If True, include metadata in the response.
 
         Returns:
@@ -704,28 +694,8 @@ class DataAPI(BaseAPIClient):
         endpoint = f"data/by-variable/{variable_id}"
 
         result: tuple[list[dict[str, Any]], dict[str, Any]] | list[dict[str, Any]]
-        if all_pages:
-            if return_metadata:
-                result = await self.afetch_all_results(
-                    endpoint,
-                    params=params,
-                    headers=headers if headers else None,
-                    page_size=page_size,
-                    max_pages=max_pages,
-                    results_key="results",
-                    return_metadata=True,
-                )
-            else:
-                result = await self.afetch_all_results(
-                    endpoint,
-                    params=params,
-                    headers=headers if headers else None,
-                    page_size=page_size,
-                    max_pages=max_pages,
-                    results_key="results",
-                    return_metadata=False,
-                )
-        else:
+        if max_pages == 1:
+            # Fetch only the first page
             params_with_page_size = params.copy()
             params_with_page_size["page-size"] = page_size
             if return_metadata:
@@ -742,6 +712,28 @@ class DataAPI(BaseAPIClient):
                     results_key="results",
                     params=params_with_page_size,
                     headers=headers if headers else None,
+                    return_metadata=False,
+                )
+        else:
+            # Fetch all pages (max_pages=None) or up to max_pages
+            if return_metadata:
+                result = await self.afetch_all_results(
+                    endpoint,
+                    params=params,
+                    headers=headers if headers else None,
+                    page_size=page_size,
+                    max_pages=max_pages,
+                    results_key="results",
+                    return_metadata=True,
+                )
+            else:
+                result = await self.afetch_all_results(
+                    endpoint,
+                    params=params,
+                    headers=headers if headers else None,
+                    page_size=page_size,
+                    max_pages=max_pages,
+                    results_key="results",
                     return_metadata=False,
                 )
         return result
@@ -873,7 +865,6 @@ class DataAPI(BaseAPIClient):
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
-        all_pages: bool = True,
         return_metadata: Literal[True] = True,
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]: ...
 
@@ -891,7 +882,6 @@ class DataAPI(BaseAPIClient):
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
-        all_pages: bool = True,
         return_metadata: Literal[False] = False,
     ) -> list[dict[str, Any]]: ...
 
@@ -908,7 +898,6 @@ class DataAPI(BaseAPIClient):
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
-        all_pages: bool = True,
         return_metadata: bool = True,
     ) -> tuple[list[dict[str, Any]], dict[str, Any]] | list[dict[str, Any]]:
         """
@@ -922,13 +911,12 @@ class DataAPI(BaseAPIClient):
             years: Optional list of years to filter by.
             page: Optional page number to fetch.
             page_size: Number of results per page.
-            max_pages: Maximum number of pages to fetch (None for all).
+            max_pages: Maximum number of pages to fetch (None for all pages, 1 for single page).
             format: Expected response content type (defaults to config.format).
             lang: Expected response content language (defaults to config.language).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
-            all_pages: If True, fetch all pages; otherwise, fetch only the first.
             return_metadata: If True, include metadata in the response.
 
         Returns:
@@ -953,28 +941,8 @@ class DataAPI(BaseAPIClient):
         endpoint = f"data/localities/by-variable/{variable_id}"
 
         result: tuple[list[dict[str, Any]], dict[str, Any]] | list[dict[str, Any]]
-        if all_pages:
-            if return_metadata:
-                result = await self.afetch_all_results(
-                    endpoint,
-                    params=params,
-                    headers=headers if headers else None,
-                    page_size=page_size,
-                    max_pages=max_pages,
-                    results_key="results",
-                    return_metadata=True,
-                )
-            else:
-                result = await self.afetch_all_results(
-                    endpoint,
-                    params=params,
-                    headers=headers if headers else None,
-                    page_size=page_size,
-                    max_pages=max_pages,
-                    results_key="results",
-                    return_metadata=False,
-                )
-        else:
+        if max_pages == 1:
+            # Fetch only the first page
             params_with_page_size = params.copy()
             params_with_page_size["page-size"] = page_size
             if return_metadata:
@@ -991,6 +959,28 @@ class DataAPI(BaseAPIClient):
                     results_key="results",
                     params=params_with_page_size,
                     headers=headers if headers else None,
+                    return_metadata=False,
+                )
+        else:
+            # Fetch all pages (max_pages=None) or up to max_pages
+            if return_metadata:
+                result = await self.afetch_all_results(
+                    endpoint,
+                    params=params,
+                    headers=headers if headers else None,
+                    page_size=page_size,
+                    max_pages=max_pages,
+                    results_key="results",
+                    return_metadata=True,
+                )
+            else:
+                result = await self.afetch_all_results(
+                    endpoint,
+                    params=params,
+                    headers=headers if headers else None,
+                    page_size=page_size,
+                    max_pages=max_pages,
+                    results_key="results",
                     return_metadata=False,
                 )
         return result
@@ -1010,7 +1000,6 @@ class DataAPI(BaseAPIClient):
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
-        all_pages: bool = True,
         return_metadata: Literal[True] = True,
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]: ...
 
@@ -1029,7 +1018,6 @@ class DataAPI(BaseAPIClient):
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
-        all_pages: bool = True,
         return_metadata: Literal[False] = False,
     ) -> list[dict[str, Any]]: ...
 
@@ -1047,7 +1035,6 @@ class DataAPI(BaseAPIClient):
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
-        all_pages: bool = True,
         return_metadata: bool = True,
     ) -> tuple[list[dict[str, Any]], dict[str, Any]] | list[dict[str, Any]]:
         """
@@ -1062,13 +1049,12 @@ class DataAPI(BaseAPIClient):
             aggregate_id: Optional aggregate ID.
             page: Optional page number to fetch.
             page_size: Number of results per page.
-            max_pages: Maximum number of pages to fetch (None for all).
+            max_pages: Maximum number of pages to fetch (None for all pages, 1 for single page).
             format: Expected response content type (defaults to config.format).
             lang: Expected response content language (defaults to config.language).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
-            all_pages: If True, fetch all pages; otherwise, fetch only the first.
             return_metadata: If True, include metadata in the response.
 
         Returns:
@@ -1095,28 +1081,8 @@ class DataAPI(BaseAPIClient):
         endpoint = f"data/localities/by-unit/{unit_id}"
 
         result: tuple[list[dict[str, Any]], dict[str, Any]] | list[dict[str, Any]]
-        if all_pages:
-            if return_metadata:
-                result = await self.afetch_all_results(
-                    endpoint,
-                    params=params,
-                    headers=headers if headers else None,
-                    page_size=page_size,
-                    max_pages=max_pages,
-                    results_key="results",
-                    return_metadata=True,
-                )
-            else:
-                result = await self.afetch_all_results(
-                    endpoint,
-                    params=params,
-                    headers=headers if headers else None,
-                    page_size=page_size,
-                    max_pages=max_pages,
-                    results_key="results",
-                    return_metadata=False,
-                )
-        else:
+        if max_pages == 1:
+            # Fetch only the first page
             params_with_page_size = params.copy()
             params_with_page_size["page-size"] = page_size
             if return_metadata:
@@ -1133,6 +1099,28 @@ class DataAPI(BaseAPIClient):
                     results_key="results",
                     params=params_with_page_size,
                     headers=headers if headers else None,
+                    return_metadata=False,
+                )
+        else:
+            # Fetch all pages (max_pages=None) or up to max_pages
+            if return_metadata:
+                result = await self.afetch_all_results(
+                    endpoint,
+                    params=params,
+                    headers=headers if headers else None,
+                    page_size=page_size,
+                    max_pages=max_pages,
+                    results_key="results",
+                    return_metadata=True,
+                )
+            else:
+                result = await self.afetch_all_results(
+                    endpoint,
+                    params=params,
+                    headers=headers if headers else None,
+                    page_size=page_size,
+                    max_pages=max_pages,
+                    results_key="results",
                     return_metadata=False,
                 )
 
