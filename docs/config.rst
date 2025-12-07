@@ -10,8 +10,113 @@ Configuration
 
 The :class:`pyldb.config.LDBConfig` class manages all configuration for authentication, language, caching, proxy settings, and quota/rate limiting.
 
+Common Configuration Scenarios
+-------------------------------
+
+Basic Setup
+~~~~~~~~~~~
+
+.. code-block:: python
+
+    from pyldb import LDB, LDBConfig
+    
+    # Minimal configuration (reads API key from environment)
+    ldb = LDB()
+    
+    # Or provide API key directly
+    config = LDBConfig(api_key="your-api-key")
+    ldb = LDB(config)
+
+Anonymous Access
+~~~~~~~~~~~~~~~~
+
+The API supports anonymous access without an API key. When ``api_key`` is explicitly set to ``None``, the client operates in anonymous mode with lower rate limits:
+
+.. code-block:: python
+
+    from pyldb import LDB, LDBConfig
+    
+    # Anonymous access (explicitly None - overrides environment variables)
+    config = LDBConfig(api_key=None)
+    ldb = LDB(config)
+    
+    # Or simply pass None
+    ldb = LDB(config=None)  # Creates default config with api_key=None
+    
+    # Or use dict
+    ldb = LDB(config={"api_key": None})
+
+**Important**: Explicitly passing ``api_key=None`` is stronger than environment variables. If you want to use the environment variable ``LDB_API_KEY``, simply don't provide the ``api_key`` parameter (or use ``LDBConfig()``).
+
+**Note**: Anonymous users have lower rate limits than registered users. See :doc:`rate_limiting` for details on quota differences.
+
+Development Setup
+~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    # Enable caching for faster development
+    config = LDBConfig(
+        api_key="your-api-key",
+        use_cache=True,
+        cache_expire_after=3600  # 1 hour
+    )
+    ldb = LDB(config)
+
+Production Setup
+~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    # Production configuration with rate limiting
+    config = LDBConfig(
+        api_key="your-api-key",
+        use_cache=False,  # Disable cache for real-time data
+        language="en",
+        quota_cache_enabled=True  # Enable quota tracking
+    )
+    ldb = LDB(config)
+
+Corporate Network Setup
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    # Behind corporate proxy
+    config = LDBConfig(
+        api_key="your-api-key",
+        proxy_url="http://proxy.company.com:8080",
+        proxy_username="username",  # Or use environment variables
+        proxy_password="password"
+    )
+    ldb = LDB(config)
+
+Environment Variables
+---------------------
+
+All configuration options can be set via environment variables:
+
+.. code-block:: bash
+
+    export LDB_API_KEY="your-api-key"
+    export LDB_LANGUAGE="en"
+    export LDB_USE_CACHE="true"
+    export LDB_CACHE_EXPIRE_AFTER="3600"
+    export LDB_PROXY_URL="http://proxy.example.com:8080"
+    export LDB_PROXY_USERNAME="user"
+    export LDB_PROXY_PASSWORD="pass"
+    export LDB_QUOTAS='{"1": 20, "900": 500}'
+
+Then use defaults in code:
+
+.. code-block:: python
+
+    # Reads from environment variables
+    ldb = LDB()
+
 .. seealso::
    - :doc:`main_client` for main client usage
+   - :doc:`access_layer` for access layer usage
    - :doc:`api_clients` for API endpoint usage
    - :doc:`rate_limiting` for comprehensive rate limiting documentation
 
@@ -20,34 +125,45 @@ Caching
 
 pyLDB supports transparent request caching to speed up repeated queries and reduce API usage. Caching can be enabled or disabled via the `use_cache` option in `LDBConfig`.
 
-- **Cache location**: By default, cache is stored in a project-local `.cache/pyldb` directory. You can use a global cache or specify a custom path.
-- **Cache expiry**: Set `cache_expire_after` (seconds) to control how long responses are cached.
-- **Cache file management**: See :func:`pyldb.utils.cache.get_default_cache_path` and :func:`pyldb.utils.cache.get_cache_file_path`.
+**Basic Usage**
 
 .. code-block:: python
 
+    # Enable caching with 10-minute expiry
     config = LDBConfig(api_key="...", use_cache=True, cache_expire_after=600)
     ldb = LDB(config)
+    
+    # First call hits the API
+    data1 = ldb.data.get_data_by_variable("3643", years=[2021])
+    
+    # Second call uses cache (if within expiry time)
+    data2 = ldb.data.get_data_by_variable("3643", years=[2021])
+
+**Configuration Options**
+
+- ``use_cache``: Enable/disable caching (default: ``False``)
+- ``cache_expire_after``: Cache expiry time in seconds (default: 3600 = 1 hour)
+
+**When to Use Caching**
+
+- Development and testing: Speed up repeated queries
+- Data exploration: Avoid re-fetching the same data
+- Batch processing: Cache metadata queries
+
+**When Not to Use Caching**
+
+- Real-time data: When you need the latest data
+- One-off scripts: No benefit if queries aren't repeated
+- Memory-constrained environments: Cache uses disk space
+
+For technical details about cache file management and locations, see :doc:`appendix`.
 
 Proxy Configuration
 -------------------
 
-The library supports HTTP/HTTPS proxy configuration through the following settings:
+The library supports HTTP/HTTPS proxy configuration for environments behind corporate firewalls or proxies.
 
-- ``proxy_url``: The URL of the proxy server (e.g., "http://proxy.example.com:8080")
-- ``proxy_username``: Optional username for proxy authentication
-- ``proxy_password``: Optional password for proxy authentication
-
-These settings can be configured in three ways (in order of precedence):
-
-1. Direct parameter passing when creating the config
-2. Environment variables:
-   - ``LDB_PROXY_URL``
-   - ``LDB_PROXY_USERNAME``
-   - ``LDB_PROXY_PASSWORD``
-3. Default values (all None)
-
-Example:
+**Basic Configuration**
 
 .. code-block:: python
 
@@ -55,14 +171,43 @@ Example:
     config = LDBConfig(
         api_key="your-api-key",
         proxy_url="http://proxy.example.com:8080",
-        proxy_username="user",
-        proxy_password="pass"
+        proxy_username="user",  # Optional
+        proxy_password="pass"   # Optional
     )
+    ldb = LDB(config)
 
-    # Or through environment variables
-    # export LDB_PROXY_URL="http://proxy.example.com:8080"
-    # export LDB_PROXY_USERNAME="user"
-    # export LDB_PROXY_PASSWORD="pass"
+**Using Environment Variables**
+
+For security, prefer environment variables over hardcoded credentials:
+
+.. code-block:: bash
+
+    export LDB_PROXY_URL="http://proxy.example.com:8080"
+    export LDB_PROXY_USERNAME="user"
+    export LDB_PROXY_PASSWORD="pass"
+
+Then use in Python:
+
+.. code-block:: python
+
+    # Configuration is read from environment variables
+    config = LDBConfig(api_key="your-api-key")
+    ldb = LDB(config)
+
+**Configuration Precedence**
+
+Settings are applied in this order:
+1. Direct parameter passing (highest priority)
+2. Environment variables
+3. Default values (None)
+
+**Common Use Cases**
+
+- Corporate networks requiring proxy access
+- VPN connections
+- Development environments behind firewalls
+
+For technical details about proxy implementation, see :doc:`appendix`.
 
 Rate Limiting & Quotas
 ----------------------
@@ -78,7 +223,7 @@ pyLDB enforces API rate limits using both synchronous and asynchronous rate limi
 
 **Default Quotas**
 
-The following user limits apply:
+The following user limits apply. Quotas are automatically selected based on whether ``api_key`` is provided:
 
 +---------+------------------+-------------------+
 | Period  | Anonymous user   | Registered user   |
@@ -91,6 +236,11 @@ The following user limits apply:
 +---------+------------------+-------------------+
 | 7d      | 10,000           | 50,000            |
 +---------+------------------+-------------------+
+
+- **Anonymous user**: ``api_key=None`` or not provided (no ``X-ClientId`` header sent)
+- **Registered user**: ``api_key`` is provided (``X-ClientId`` header sent with API key)
+
+The rate limiter automatically selects the appropriate quota limits based on registration status.
 
 **Custom Quotas**
 

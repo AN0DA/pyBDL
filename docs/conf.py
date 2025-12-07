@@ -16,10 +16,17 @@ author = 'Mikołaj Kaczmarek'
 extensions = ['sphinx.ext.duration',
               'sphinx.ext.doctest',
               'sphinx.ext.autodoc',
-              'sphinx.ext.autosummary']
+              'sphinx.ext.autosummary',
+              'sphinx.ext.napoleon',
+              'sphinx.ext.viewcode',
+              'myst_nb']
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+
+# MyST-NB configuration
+nb_execution_mode = 'off'  # Don't execute notebooks during build
+myst_enable_extensions = ['colon_fence']
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
