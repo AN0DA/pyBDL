@@ -14,10 +14,6 @@ LanguageLiteral = Literal["pl", "en"]
 FormatLiteral = Literal["json", "jsonapi", "xml"]
 AcceptHeaderLiteral = Literal["application/json", "application/vnd.api+json", "application/xml"]
 
-# Default values
-DEFAULT_LANG: LanguageLiteral = "en"
-DEFAULT_FORMAT: FormatLiteral = "json"
-
 
 class BaseAPIClient:
     """Base client for LDB API interactions with both sync and async support.
@@ -116,7 +112,7 @@ class BaseAPIClient:
             self._async_limiter = BaseAPIClient._global_async_limiters[is_registered]
 
     @staticmethod
-    def _format_to_accept_header(format: FormatLiteral | FormatLiteralVersion | None) -> str | None:
+    def _format_to_accept_header(format: FormatLiteral | None) -> str | None:
         """
         Convert format parameter to Accept header value.
 
@@ -135,10 +131,10 @@ class BaseAPIClient:
         }
         return format_to_accept.get(format)
 
-    @staticmethod
     def _prepare_api_params_and_headers(
+        self,
         lang: LanguageLiteral | None = None,
-        format: FormatLiteral | FormatLiteralVersion | None = None,
+        format: FormatLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_params: dict[str, Any] | None = None,
@@ -147,8 +143,8 @@ class BaseAPIClient:
         Prepare query parameters and headers for API requests.
 
         Args:
-            lang: Language code (defaults to "en" if not provided).
-            format: Format string (defaults to "json" if not provided).
+            lang: Language code (defaults to config.language if not provided).
+            format: Format string (defaults to config.format if not provided).
             if_none_match: If-None-Match header value.
             if_modified_since: If-Modified-Since header value.
             extra_params: Additional query parameters to merge.
@@ -156,9 +152,11 @@ class BaseAPIClient:
         Returns:
             Tuple of (params dict, headers dict).
         """
-        # Set defaults
-        lang = lang if lang is not None else DEFAULT_LANG
-        format = format if format is not None else DEFAULT_FORMAT
+        # Set defaults from config
+        if lang is None:
+            lang = self.config.language.value if hasattr(self.config.language, "value") else self.config.language
+        if format is None:
+            format = self.config.format.value if hasattr(self.config.format, "value") else self.config.format
 
         params: dict[str, Any] = {}
         if lang:

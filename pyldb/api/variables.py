@@ -1,8 +1,6 @@
 from typing import Any
 
 from pyldb.api.client import (
-    DEFAULT_FORMAT,
-    DEFAULT_LANG,
     FormatLiteral,
     LanguageLiteral,
     BaseAPIClient,
@@ -27,8 +25,8 @@ class VariablesAPI(BaseAPIClient):
         page_size: int = 100,
         max_pages: int | None = None,
         sort: str | None = None,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -47,8 +45,8 @@ class VariablesAPI(BaseAPIClient):
             page_size: Number of results per page.
             max_pages: Maximum number of pages to fetch (None for all).
             sort: Optional sorting order, e.g. 'id', '-id', 'name', '-name'.
-            lang: Expected response content language (default: "en").
-            format: Expected response content type (default: "json").
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
@@ -98,8 +96,8 @@ class VariablesAPI(BaseAPIClient):
     def get_variable(
         self,
         variable_id: str,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -111,8 +109,8 @@ class VariablesAPI(BaseAPIClient):
 
         Args:
             variable_id: Variable identifier.
-            lang: Expected response content language (default: "en").
-            format: Expected response content type (default: "json").
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
@@ -142,8 +140,8 @@ class VariablesAPI(BaseAPIClient):
         page_size: int = 100,
         max_pages: int | None = None,
         sort: str | None = None,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -163,8 +161,8 @@ class VariablesAPI(BaseAPIClient):
             page_size: Number of results per page.
             max_pages: Maximum number of pages to fetch (None for all).
             sort: Optional sorting order.
-            lang: Expected response content language (default: "en").
-            format: Expected response content type (default: "json").
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
@@ -215,8 +213,8 @@ class VariablesAPI(BaseAPIClient):
 
     def get_variables_metadata(
         self,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -227,8 +225,8 @@ class VariablesAPI(BaseAPIClient):
         Maps to: GET /variables/metadata
 
         Args:
-            lang: Expected response content language (default: "en").
-            format: Expected response content type (default: "json").
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
@@ -257,8 +255,8 @@ class VariablesAPI(BaseAPIClient):
         page_size: int = 100,
         max_pages: int | None = None,
         sort: str | None = None,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -277,8 +275,8 @@ class VariablesAPI(BaseAPIClient):
             page_size: Number of results per page.
             max_pages: Maximum number of pages to fetch (None for all).
             sort: Optional sorting order, e.g. 'id', '-id', 'name', '-name'.
-            lang: Expected response content language (default: "en").
-            format: Expected response content type (default: "json").
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
@@ -328,8 +326,8 @@ class VariablesAPI(BaseAPIClient):
     async def aget_variable(
         self,
         variable_id: str,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -341,8 +339,8 @@ class VariablesAPI(BaseAPIClient):
 
         Args:
             variable_id: Variable identifier.
-            lang: Expected response content language (default: "en").
-            format: Expected response content type (default: "json").
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
@@ -372,8 +370,8 @@ class VariablesAPI(BaseAPIClient):
         page_size: int = 100,
         max_pages: int | None = None,
         sort: str | None = None,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -393,8 +391,8 @@ class VariablesAPI(BaseAPIClient):
             page_size: Number of results per page.
             max_pages: Maximum number of pages to fetch (None for all).
             sort: Optional sorting order.
-            lang: Expected response content language (default: "en").
-            format: Expected response content type (default: "json").
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
@@ -445,8 +443,8 @@ class VariablesAPI(BaseAPIClient):
 
     async def aget_variables_metadata(
         self,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -457,8 +455,8 @@ class VariablesAPI(BaseAPIClient):
         Maps to: GET /variables/metadata
 
         Args:
-            lang: Expected response content language (default: "en").
-            format: Expected response content type (default: "json").
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.

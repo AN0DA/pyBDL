@@ -14,12 +14,19 @@ class Language(enum.Enum):
     EN = "en"
 
 
+class Format(enum.Enum):
+    JSON = "json"
+    JSONAPI = "jsonapi"
+    XML = "xml"
+
+
 DEFAULT_LANGUAGE = Language.EN
+DEFAULT_FORMAT = Format.JSON
 DEFAULT_CACHE_EXPIRY = 3600  # 1 hour in seconds
 
 # Define constant quota periods (in seconds)
 QUOTA_PERIODS = {"1s": 1, "15m": 15 * 60, "12h": 12 * 3600, "7d": 7 * 24 * 3600}
-DEFAULT_QUOTAS = { # (anon_limit, reg_limit)
+DEFAULT_QUOTAS = {  # (anon_limit, registered_limit)
     QUOTA_PERIODS["1s"]: (5, 10),
     QUOTA_PERIODS["15m"]: (100, 500),
     QUOTA_PERIODS["12h"]: (1000, 5000),
@@ -38,6 +45,7 @@ class LDBConfig:
     Attributes:
         api_key: API key for authentication (optional, None for anonymous access).
         language: Language code for API responses (default: "en").
+        format: Response format (default: "json").
         use_cache: Whether to use request caching (default: True).
         cache_expire_after: Cache expiration time in seconds (default: 3600).
         proxy_url: Optional URL of the proxy server.
@@ -51,6 +59,7 @@ class LDBConfig:
 
     api_key: str | None = field(default=_NOT_PROVIDED)  # type: ignore[assignment]
     language: Language = field(default=DEFAULT_LANGUAGE)
+    format: Format = field(default=DEFAULT_FORMAT)
     use_cache: bool = field(default=True)
     cache_expire_after: int = field(default=DEFAULT_CACHE_EXPIRY)
     proxy_url: str | None = field(default=None)
@@ -89,6 +98,21 @@ class LDBConfig:
                 self.language = Language(env_language.lower())
             except ValueError as e:
                 raise ValueError(f"LDB_LANGUAGE must be one of: {[lang.value for lang in Language]}") from e
+
+        # Get format from environment if not provided directly
+        # Convert provided format string to Format enum if necessary
+        if isinstance(self.format, str):
+            try:
+                self.format = Format(self.format.lower())
+            except ValueError as e:
+                raise ValueError(f"format must be one of: {[fmt.value for fmt in Format]}") from e
+
+        env_format = os.getenv("LDB_FORMAT")
+        if env_format:
+            try:
+                self.format = Format(env_format.lower())
+            except ValueError as e:
+                raise ValueError(f"LDB_FORMAT must be one of: {[fmt.value for fmt in Format]}") from e
 
         # Get cache settings from environment if not provided directly
         env_use_cache = os.getenv("LDB_USE_CACHE")

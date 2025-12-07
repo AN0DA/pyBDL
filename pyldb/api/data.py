@@ -1,8 +1,6 @@
 from typing import Any, Literal, overload
 
 from pyldb.api.client import (
-    DEFAULT_FORMAT,
-    DEFAULT_LANG,
     FormatLiteral,
     LanguageLiteral,
     BaseAPIClient,
@@ -32,8 +30,8 @@ class DataAPI(BaseAPIClient):
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -52,8 +50,8 @@ class DataAPI(BaseAPIClient):
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -71,8 +69,8 @@ class DataAPI(BaseAPIClient):
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -93,8 +91,8 @@ class DataAPI(BaseAPIClient):
             page: Optional page number to fetch.
             page_size: Number of results per page.
             max_pages: Maximum number of pages to fetch (None for all).
-            format: Expected response content type (default: "json").
-            lang: Expected response content language (default: "en").
+            format: Expected response content type (defaults to config.format).
+            lang: Expected response content language (defaults to config.language).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
@@ -180,8 +178,8 @@ class DataAPI(BaseAPIClient):
         aggregate_id: int | None = None,
         page: int | None = None,
         page_size: int = 100,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -197,8 +195,8 @@ class DataAPI(BaseAPIClient):
         aggregate_id: int | None = None,
         page: int | None = None,
         page_size: int = 100,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -213,8 +211,8 @@ class DataAPI(BaseAPIClient):
         aggregate_id: int | None = None,
         page: int | None = None,
         page_size: int = 100,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -232,8 +230,8 @@ class DataAPI(BaseAPIClient):
             aggregate_id: Optional aggregate ID.
             page: Optional page number to fetch.
             page_size: Number of results per page.
-            format: Expected response content type (default: "json").
-            lang: Expected response content language (default: "en").
+            format: Expected response content type (defaults to config.format).
+            lang: Expected response content language (defaults to config.language).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
@@ -293,8 +291,8 @@ class DataAPI(BaseAPIClient):
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -311,8 +309,8 @@ class DataAPI(BaseAPIClient):
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -328,8 +326,8 @@ class DataAPI(BaseAPIClient):
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -348,8 +346,8 @@ class DataAPI(BaseAPIClient):
             page: Optional page number to fetch.
             page_size: Number of results per page.
             max_pages: Maximum number of pages to fetch (None for all).
-            format: Expected response content type (default: "json").
-            lang: Expected response content language (default: "en").
+            format: Expected response content type (defaults to config.format).
+            lang: Expected response content language (defaults to config.language).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
@@ -430,8 +428,8 @@ class DataAPI(BaseAPIClient):
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -449,8 +447,8 @@ class DataAPI(BaseAPIClient):
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -467,8 +465,8 @@ class DataAPI(BaseAPIClient):
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -488,8 +486,8 @@ class DataAPI(BaseAPIClient):
             page: Optional page number to fetch.
             page_size: Number of results per page.
             max_pages: Maximum number of pages to fetch (None for all).
-            format: Expected response content type (default: "json").
-            lang: Expected response content language (default: "en").
+            format: Expected response content type (defaults to config.format).
+            lang: Expected response content language (defaults to config.language).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
@@ -564,8 +562,8 @@ class DataAPI(BaseAPIClient):
 
     def get_data_metadata(
         self,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -576,8 +574,8 @@ class DataAPI(BaseAPIClient):
         Maps to: GET /data/metadata
 
         Args:
-            lang: Expected response content language (default: "en").
-            format: Expected response content type (default: "json").
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
@@ -609,8 +607,8 @@ class DataAPI(BaseAPIClient):
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -629,8 +627,8 @@ class DataAPI(BaseAPIClient):
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -648,8 +646,8 @@ class DataAPI(BaseAPIClient):
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -670,8 +668,8 @@ class DataAPI(BaseAPIClient):
             page: Optional page number to fetch.
             page_size: Number of results per page.
             max_pages: Maximum number of pages to fetch (None for all).
-            format: Expected response content type (default: "json").
-            lang: Expected response content language (default: "en").
+            format: Expected response content type (defaults to config.format).
+            lang: Expected response content language (defaults to config.language).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
@@ -757,8 +755,8 @@ class DataAPI(BaseAPIClient):
         aggregate_id: int | None = None,
         page: int | None = None,
         page_size: int = 100,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -774,8 +772,8 @@ class DataAPI(BaseAPIClient):
         aggregate_id: int | None = None,
         page: int | None = None,
         page_size: int = 100,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -790,8 +788,8 @@ class DataAPI(BaseAPIClient):
         aggregate_id: int | None = None,
         page: int | None = None,
         page_size: int = 100,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -809,8 +807,8 @@ class DataAPI(BaseAPIClient):
             aggregate_id: Optional aggregate ID.
             page: Optional page number to fetch.
             page_size: Number of results per page.
-            format: Expected response content type (default: "json").
-            lang: Expected response content language (default: "en").
+            format: Expected response content type (defaults to config.format).
+            lang: Expected response content language (defaults to config.language).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
@@ -870,8 +868,8 @@ class DataAPI(BaseAPIClient):
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -888,8 +886,8 @@ class DataAPI(BaseAPIClient):
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -905,8 +903,8 @@ class DataAPI(BaseAPIClient):
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -925,8 +923,8 @@ class DataAPI(BaseAPIClient):
             page: Optional page number to fetch.
             page_size: Number of results per page.
             max_pages: Maximum number of pages to fetch (None for all).
-            format: Expected response content type (default: "json").
-            lang: Expected response content language (default: "en").
+            format: Expected response content type (defaults to config.format).
+            lang: Expected response content language (defaults to config.language).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
@@ -1007,8 +1005,8 @@ class DataAPI(BaseAPIClient):
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -1026,8 +1024,8 @@ class DataAPI(BaseAPIClient):
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -1044,8 +1042,8 @@ class DataAPI(BaseAPIClient):
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
+        format: FormatLiteral | None = None,
+        lang: LanguageLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -1065,8 +1063,8 @@ class DataAPI(BaseAPIClient):
             page: Optional page number to fetch.
             page_size: Number of results per page.
             max_pages: Maximum number of pages to fetch (None for all).
-            format: Expected response content type (default: "json").
-            lang: Expected response content language (default: "en").
+            format: Expected response content type (defaults to config.format).
+            lang: Expected response content language (defaults to config.language).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
@@ -1142,8 +1140,8 @@ class DataAPI(BaseAPIClient):
 
     async def aget_data_metadata(
         self,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -1154,8 +1152,8 @@ class DataAPI(BaseAPIClient):
         Maps to: GET /data/metadata
 
         Args:
-            lang: Expected response content language (default: "en").
-            format: Expected response content type (default: "json").
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.

@@ -1,8 +1,6 @@
 from typing import Any, Literal
 
 from pyldb.api.client import (
-    DEFAULT_FORMAT,
-    DEFAULT_LANG,
     LanguageLiteral,
     BaseAPIClient,
 )
@@ -17,8 +15,8 @@ class VersionAPI(BaseAPIClient):
 
     def get_version(
         self,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
-        format: Literal["json", "xml"] | None = DEFAULT_FORMAT, # /version endpoint doesn't support jsonapi
+        lang: LanguageLiteral | None = None,
+        format: Literal["json", "xml"] | None = None, # /version endpoint doesn't support jsonapi
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -29,8 +27,8 @@ class VersionAPI(BaseAPIClient):
         Maps to: GET /version
 
         Args:
-            lang: Expected response content language (default: "en").
-            format: Expected response content type (default: "json"). Note: only "json" and "xml" are supported for this endpoint.
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format). Note: only "json" and "xml" are supported for this endpoint.
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
@@ -52,8 +50,8 @@ class VersionAPI(BaseAPIClient):
 
     async def aget_version(
         self,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
-        format: Literal["json", "xml"] | None = DEFAULT_FORMAT, # /version endpoint doesn't support jsonapi
+        lang: LanguageLiteral | None = None,
+        format: Literal["json", "xml"] | None = None, # /version endpoint doesn't support jsonapi
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -64,8 +62,8 @@ class VersionAPI(BaseAPIClient):
         Maps to: GET /version
 
         Args:
-            lang: Expected response content language (default: "en").
-            format: Expected response content type (default: "json"). Note: only "json" and "xml" are supported for this endpoint.
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format). Note: only "json" and "xml" are supported for this endpoint.
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.

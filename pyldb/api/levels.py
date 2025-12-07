@@ -1,8 +1,6 @@
 from typing import Any
 
 from pyldb.api.client import (
-    DEFAULT_FORMAT,
-    DEFAULT_LANG,
     FormatLiteral,
     LanguageLiteral,
     BaseAPIClient,
@@ -22,8 +20,8 @@ class LevelsAPI(BaseAPIClient):
         sort: str | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -37,8 +35,8 @@ class LevelsAPI(BaseAPIClient):
             sort: Optional sorting order, e.g., 'Id', '-Id', 'Name', '-Name'.
             page_size: Number of results per page.
             max_pages: Maximum number of pages to fetch (None for all).
-            lang: Expected response content language (default: "en").
-            format: Expected response content type (default: "json").
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
@@ -67,8 +65,8 @@ class LevelsAPI(BaseAPIClient):
     def get_level(
         self,
         level_id: int,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -80,8 +78,8 @@ class LevelsAPI(BaseAPIClient):
 
         Args:
             level_id: Aggregation level identifier (integer).
-            lang: Expected response content language (default: "en").
-            format: Expected response content type (default: "json").
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
@@ -103,8 +101,8 @@ class LevelsAPI(BaseAPIClient):
 
     def get_levels_metadata(
         self,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -115,8 +113,8 @@ class LevelsAPI(BaseAPIClient):
         Maps to: GET /levels/metadata
 
         Args:
-            lang: Expected response content language (default: "en").
-            format: Expected response content type (default: "json").
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
@@ -141,8 +139,8 @@ class LevelsAPI(BaseAPIClient):
         sort: str | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -156,8 +154,8 @@ class LevelsAPI(BaseAPIClient):
             sort: Optional sorting order, e.g., 'Id', '-Id', 'Name', '-Name'.
             page_size: Number of results per page.
             max_pages: Maximum number of pages to fetch (None for all).
-            lang: Expected response content language (default: "en").
-            format: Expected response content type (default: "json").
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
@@ -186,8 +184,8 @@ class LevelsAPI(BaseAPIClient):
     async def aget_level(
         self,
         level_id: int,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -199,8 +197,8 @@ class LevelsAPI(BaseAPIClient):
 
         Args:
             level_id: Aggregation level identifier (integer).
-            lang: Expected response content language (default: "en").
-            format: Expected response content type (default: "json").
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
@@ -222,8 +220,8 @@ class LevelsAPI(BaseAPIClient):
 
     async def aget_levels_metadata(
         self,
-        lang: LanguageLiteral | None = DEFAULT_LANG,
-        format: FormatLiteral | None = DEFAULT_FORMAT,
+        lang: LanguageLiteral | None = None,
+        format: FormatLiteral | None = None,
         if_none_match: str | None = None,
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
@@ -234,8 +232,8 @@ class LevelsAPI(BaseAPIClient):
         Maps to: GET /levels/metadata
 
         Args:
-            lang: Expected response content language (default: "en").
-            format: Expected response content type (default: "json").
+            lang: Expected response content language (defaults to config.language).
+            format: Expected response content type (defaults to config.format).
             if_none_match: Conditional request header If-None-Match (entity tag).
             if_modified_since: Conditional request header If-Modified-Since.
             extra_query: Additional query parameters.
