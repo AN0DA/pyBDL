@@ -23,7 +23,7 @@ class DataAPI(BaseAPIClient):
     def get_data_by_variable(
         self,
         variable_id: str,
-        year: list[int] | None = None,
+        years: list[int] | None = None,
         unit_parent_id: str | None = None,
         unit_level: int | None = None,
         aggregate_id: int | None = None,
@@ -43,7 +43,7 @@ class DataAPI(BaseAPIClient):
     def get_data_by_variable(
         self,
         variable_id: str,
-        year: list[int] | None = None,
+        years: list[int] | None = None,
         unit_parent_id: str | None = None,
         unit_level: int | None = None,
         aggregate_id: int | None = None,
@@ -62,7 +62,7 @@ class DataAPI(BaseAPIClient):
     def get_data_by_variable(
         self,
         variable_id: str,
-        year: list[int] | None = None,
+        years: list[int] | None = None,
         unit_parent_id: str | None = None,
         unit_level: int | None = None,
         aggregate_id: int | None = None,
@@ -84,7 +84,7 @@ class DataAPI(BaseAPIClient):
 
         Args:
             variable_id: Identifier of the variable.
-            year: Optional list of years to filter by.
+            years: Optional list of years to filter by.
             unit_parent_id: Optional parent administrative unit ID.
             unit_level: Optional administrative unit aggregation level.
             aggregate_id: Optional aggregate ID.
@@ -103,8 +103,8 @@ class DataAPI(BaseAPIClient):
             List of results, optionally with metadata dict.
         """
         extra_params: dict[str, Any] = {}
-        if year:
-            extra_params["year"] = year
+        if years:
+            extra_params["year"] = years
         if unit_parent_id:
             extra_params["unit-parent-id"] = unit_parent_id
         if unit_level is not None:
@@ -173,8 +173,8 @@ class DataAPI(BaseAPIClient):
     def get_data_by_unit(
         self,
         unit_id: str,
-        var_id: list[int],
-        year: list[int] | None = None,
+        variable_id: list[int],
+        years: list[int] | None = None,
         aggregate_id: int | None = None,
         page: int | None = None,
         page_size: int = 100,
@@ -190,8 +190,8 @@ class DataAPI(BaseAPIClient):
     def get_data_by_unit(
         self,
         unit_id: str,
-        var_id: list[int],
-        year: list[int] | None = None,
+        variable_id: list[int],
+        years: list[int] | None = None,
         aggregate_id: int | None = None,
         page: int | None = None,
         page_size: int = 100,
@@ -206,8 +206,8 @@ class DataAPI(BaseAPIClient):
     def get_data_by_unit(
         self,
         unit_id: str,
-        var_id: list[int],
-        year: list[int] | None = None,
+        variable_id: list[int],
+        years: list[int] | None = None,
         aggregate_id: int | None = None,
         page: int | None = None,
         page_size: int = 100,
@@ -225,8 +225,8 @@ class DataAPI(BaseAPIClient):
 
         Args:
             unit_id: Identifier of the administrative unit.
-            var_id: List of variable IDs (required).
-            year: Optional list of years to filter by.
+            variable_id: List of variable IDs (required).
+            years: Optional list of years to filter by.
             aggregate_id: Optional aggregate ID.
             page: Optional page number to fetch.
             page_size: Number of results per page.
@@ -240,9 +240,9 @@ class DataAPI(BaseAPIClient):
         Returns:
             List of results, optionally with metadata dict.
         """
-        extra_params: dict[str, Any] = {"var-id": var_id}
-        if year:
-            extra_params["year"] = year
+        extra_params: dict[str, Any] = {"var-id": variable_id}
+        if years:
+            extra_params["year"] = years
         if aggregate_id is not None:
             extra_params["aggregate-id"] = aggregate_id
         if page is not None:
@@ -287,7 +287,7 @@ class DataAPI(BaseAPIClient):
         self,
         variable_id: str,
         unit_parent_id: str,
-        year: list[int] | None = None,
+        years: list[int] | None = None,
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
@@ -305,7 +305,7 @@ class DataAPI(BaseAPIClient):
         self,
         variable_id: str,
         unit_parent_id: str,
-        year: list[int] | None = None,
+        years: list[int] | None = None,
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
@@ -322,7 +322,7 @@ class DataAPI(BaseAPIClient):
         self,
         variable_id: str,
         unit_parent_id: str,
-        year: list[int] | None = None,
+        years: list[int] | None = None,
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
@@ -342,7 +342,7 @@ class DataAPI(BaseAPIClient):
         Args:
             variable_id: Identifier of the variable.
             unit_parent_id: Parent unit ID (required).
-            year: Optional list of years to filter by.
+            years: Optional list of years to filter by.
             page: Optional page number to fetch.
             page_size: Number of results per page.
             max_pages: Maximum number of pages to fetch (None for all).
@@ -358,8 +358,8 @@ class DataAPI(BaseAPIClient):
             List of results, optionally with metadata dict.
         """
         extra_params: dict[str, Any] = {"unit-parent-id": unit_parent_id}
-        if year:
-            extra_params["year"] = year
+        if years:
+            extra_params["year"] = years
         if page is not None:
             extra_params["page"] = page
         if extra_query:
@@ -422,8 +422,8 @@ class DataAPI(BaseAPIClient):
     def get_data_by_unit_locality(
         self,
         unit_id: str,
-        var_id: list[int],
-        year: list[int] | None = None,
+        variable_id: list[int],
+        years: list[int] | None = None,
         aggregate_id: int | None = None,
         page: int | None = None,
         page_size: int = 100,
@@ -441,8 +441,8 @@ class DataAPI(BaseAPIClient):
     def get_data_by_unit_locality(
         self,
         unit_id: str,
-        var_id: list[int],
-        year: list[int] | None = None,
+        variable_id: list[int],
+        years: list[int] | None = None,
         aggregate_id: int | None = None,
         page: int | None = None,
         page_size: int = 100,
@@ -459,8 +459,8 @@ class DataAPI(BaseAPIClient):
     def get_data_by_unit_locality(
         self,
         unit_id: str,
-        var_id: list[int],
-        year: list[int] | None = None,
+        variable_id: list[int],
+        years: list[int] | None = None,
         aggregate_id: int | None = None,
         page: int | None = None,
         page_size: int = 100,
@@ -480,8 +480,8 @@ class DataAPI(BaseAPIClient):
 
         Args:
             unit_id: Identifier of the statistical locality.
-            var_id: List of variable IDs (required).
-            year: Optional list of years to filter by.
+            variable_id: List of variable IDs (required).
+            years: Optional list of years to filter by.
             aggregate_id: Optional aggregate ID.
             page: Optional page number to fetch.
             page_size: Number of results per page.
@@ -497,9 +497,9 @@ class DataAPI(BaseAPIClient):
         Returns:
             List of results, optionally with metadata dict.
         """
-        extra_params: dict[str, Any] = {"var-id": var_id}
-        if year:
-            extra_params["year"] = year
+        extra_params: dict[str, Any] = {"var-id": variable_id}
+        if years:
+            extra_params["year"] = years
         if aggregate_id is not None:
             extra_params["aggregate-id"] = aggregate_id
         if page is not None:
@@ -600,7 +600,7 @@ class DataAPI(BaseAPIClient):
     async def aget_data_by_variable(
         self,
         variable_id: str,
-        year: list[int] | None = None,
+        years: list[int] | None = None,
         unit_parent_id: str | None = None,
         unit_level: int | None = None,
         aggregate_id: int | None = None,
@@ -620,7 +620,7 @@ class DataAPI(BaseAPIClient):
     async def aget_data_by_variable(
         self,
         variable_id: str,
-        year: list[int] | None = None,
+        years: list[int] | None = None,
         unit_parent_id: str | None = None,
         unit_level: int | None = None,
         aggregate_id: int | None = None,
@@ -639,7 +639,7 @@ class DataAPI(BaseAPIClient):
     async def aget_data_by_variable(
         self,
         variable_id: str,
-        year: list[int] | None = None,
+        years: list[int] | None = None,
         unit_parent_id: str | None = None,
         unit_level: int | None = None,
         aggregate_id: int | None = None,
@@ -661,7 +661,7 @@ class DataAPI(BaseAPIClient):
 
         Args:
             variable_id: Identifier of the variable.
-            year: Optional list of years to filter by.
+            years: Optional list of years to filter by.
             unit_parent_id: Optional parent administrative unit ID.
             unit_level: Optional administrative unit aggregation level.
             aggregate_id: Optional aggregate ID.
@@ -680,8 +680,8 @@ class DataAPI(BaseAPIClient):
             List of results, optionally with metadata dict.
         """
         extra_params: dict[str, Any] = {}
-        if year:
-            extra_params["year"] = year
+        if years:
+            extra_params["year"] = years
         if unit_parent_id:
             extra_params["unit-parent-id"] = unit_parent_id
         if unit_level is not None:
@@ -750,8 +750,8 @@ class DataAPI(BaseAPIClient):
     async def aget_data_by_unit(
         self,
         unit_id: str,
-        var_id: list[int],
-        year: list[int] | None = None,
+        variable_id: list[int],
+        years: list[int] | None = None,
         aggregate_id: int | None = None,
         page: int | None = None,
         page_size: int = 100,
@@ -767,8 +767,8 @@ class DataAPI(BaseAPIClient):
     async def aget_data_by_unit(
         self,
         unit_id: str,
-        var_id: list[int],
-        year: list[int] | None = None,
+        variable_id: list[int],
+        years: list[int] | None = None,
         aggregate_id: int | None = None,
         page: int | None = None,
         page_size: int = 100,
@@ -783,8 +783,8 @@ class DataAPI(BaseAPIClient):
     async def aget_data_by_unit(
         self,
         unit_id: str,
-        var_id: list[int],
-        year: list[int] | None = None,
+        variable_id: list[int],
+        years: list[int] | None = None,
         aggregate_id: int | None = None,
         page: int | None = None,
         page_size: int = 100,
@@ -802,8 +802,8 @@ class DataAPI(BaseAPIClient):
 
         Args:
             unit_id: Identifier of the administrative unit.
-            var_id: List of variable IDs (required).
-            year: Optional list of years to filter by.
+            variable_id: List of variable IDs (required).
+            years: Optional list of years to filter by.
             aggregate_id: Optional aggregate ID.
             page: Optional page number to fetch.
             page_size: Number of results per page.
@@ -817,9 +817,9 @@ class DataAPI(BaseAPIClient):
         Returns:
             List of results, optionally with metadata dict.
         """
-        extra_params: dict[str, Any] = {"var-id": var_id}
-        if year:
-            extra_params["year"] = year
+        extra_params: dict[str, Any] = {"var-id": variable_id}
+        if years:
+            extra_params["year"] = years
         if aggregate_id is not None:
             extra_params["aggregate-id"] = aggregate_id
         if page is not None:
@@ -864,7 +864,7 @@ class DataAPI(BaseAPIClient):
         self,
         variable_id: str,
         unit_parent_id: str,
-        year: list[int] | None = None,
+        years: list[int] | None = None,
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
@@ -882,7 +882,7 @@ class DataAPI(BaseAPIClient):
         self,
         variable_id: str,
         unit_parent_id: str,
-        year: list[int] | None = None,
+        years: list[int] | None = None,
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
@@ -899,7 +899,7 @@ class DataAPI(BaseAPIClient):
         self,
         variable_id: str,
         unit_parent_id: str,
-        year: list[int] | None = None,
+        years: list[int] | None = None,
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
@@ -919,7 +919,7 @@ class DataAPI(BaseAPIClient):
         Args:
             variable_id: Identifier of the variable.
             unit_parent_id: Parent unit ID (required).
-            year: Optional list of years to filter by.
+            years: Optional list of years to filter by.
             page: Optional page number to fetch.
             page_size: Number of results per page.
             max_pages: Maximum number of pages to fetch (None for all).
@@ -935,8 +935,8 @@ class DataAPI(BaseAPIClient):
             List of results, optionally with metadata dict.
         """
         extra_params: dict[str, Any] = {"unit-parent-id": unit_parent_id}
-        if year:
-            extra_params["year"] = year
+        if years:
+            extra_params["year"] = years
         if page is not None:
             extra_params["page"] = page
         if extra_query:
@@ -999,8 +999,8 @@ class DataAPI(BaseAPIClient):
     async def aget_data_by_unit_locality(
         self,
         unit_id: str,
-        var_id: list[int],
-        year: list[int] | None = None,
+        variable_id: list[int],
+        years: list[int] | None = None,
         aggregate_id: int | None = None,
         page: int | None = None,
         page_size: int = 100,
@@ -1018,8 +1018,8 @@ class DataAPI(BaseAPIClient):
     async def aget_data_by_unit_locality(
         self,
         unit_id: str,
-        var_id: list[int],
-        year: list[int] | None = None,
+        variable_id: list[int],
+        years: list[int] | None = None,
         aggregate_id: int | None = None,
         page: int | None = None,
         page_size: int = 100,
@@ -1036,8 +1036,8 @@ class DataAPI(BaseAPIClient):
     async def aget_data_by_unit_locality(
         self,
         unit_id: str,
-        var_id: list[int],
-        year: list[int] | None = None,
+        variable_id: list[int],
+        years: list[int] | None = None,
         aggregate_id: int | None = None,
         page: int | None = None,
         page_size: int = 100,
@@ -1057,8 +1057,8 @@ class DataAPI(BaseAPIClient):
 
         Args:
             unit_id: Identifier of the statistical locality.
-            var_id: List of variable IDs (required).
-            year: Optional list of years to filter by.
+            variable_id: List of variable IDs (required).
+            years: Optional list of years to filter by.
             aggregate_id: Optional aggregate ID.
             page: Optional page number to fetch.
             page_size: Number of results per page.
@@ -1074,9 +1074,9 @@ class DataAPI(BaseAPIClient):
         Returns:
             List of results, optionally with metadata dict.
         """
-        extra_params: dict[str, Any] = {"var-id": var_id}
-        if year:
-            extra_params["year"] = year
+        extra_params: dict[str, Any] = {"var-id": variable_id}
+        if years:
+            extra_params["year"] = years
         if aggregate_id is not None:
             extra_params["aggregate-id"] = aggregate_id
         if page is not None:

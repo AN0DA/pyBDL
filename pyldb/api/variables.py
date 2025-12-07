@@ -20,7 +20,7 @@ class VariablesAPI(BaseAPIClient):
         self,
         subject_id: str | None = None,
         level: int | None = None,
-        year: list[int] | None = None,
+        years: list[int] | None = None,
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
@@ -40,7 +40,7 @@ class VariablesAPI(BaseAPIClient):
         Args:
             subject_id: Optional subject ID to filter variables.
             level: Optional level to filter variables.
-            year: Optional list of years to filter variables.
+            years: Optional list of years to filter variables.
             page: Optional page number to fetch.
             page_size: Number of results per page.
             max_pages: Maximum number of pages to fetch (None for all).
@@ -60,8 +60,8 @@ class VariablesAPI(BaseAPIClient):
             extra_params["subject-id"] = subject_id
         if level is not None:
             extra_params["level"] = level
-        if year:
-            extra_params["year"] = year
+        if years:
+            extra_params["year"] = years
         if page is not None:
             extra_params["page"] = page
         if sort:
@@ -135,7 +135,7 @@ class VariablesAPI(BaseAPIClient):
         name: str | None = None,
         subject_id: str | None = None,
         level: int | None = None,
-        year: list[int] | None = None,
+        years: list[int] | None = None,
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
@@ -156,7 +156,7 @@ class VariablesAPI(BaseAPIClient):
             name: Optional substring to search in variable name.
             subject_id: Optional subject ID to filter variables.
             level: Optional level to filter variables.
-            year: Optional list of years to filter variables.
+            years: Optional list of years to filter variables.
             page: Optional page number to fetch.
             page_size: Number of results per page.
             max_pages: Maximum number of pages to fetch (None for all).
@@ -178,8 +178,8 @@ class VariablesAPI(BaseAPIClient):
             extra_params["subject-id"] = subject_id
         if level is not None:
             extra_params["level"] = level
-        if year:
-            extra_params["year"] = year
+        if years:
+            extra_params["year"] = years
         if page is not None:
             extra_params["page"] = page
         if sort:
@@ -250,7 +250,7 @@ class VariablesAPI(BaseAPIClient):
         self,
         subject_id: str | None = None,
         level: int | None = None,
-        year: list[int] | None = None,
+        years: list[int] | None = None,
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
@@ -270,7 +270,7 @@ class VariablesAPI(BaseAPIClient):
         Args:
             subject_id: Optional subject ID to filter variables.
             level: Optional level to filter variables.
-            year: Optional list of years to filter variables.
+            years: Optional list of years to filter variables.
             page: Optional page number to fetch.
             page_size: Number of results per page.
             max_pages: Maximum number of pages to fetch (None for all).
@@ -290,8 +290,8 @@ class VariablesAPI(BaseAPIClient):
             extra_params["subject-id"] = subject_id
         if level is not None:
             extra_params["level"] = level
-        if year:
-            extra_params["year"] = year
+        if years:
+            extra_params["year"] = years
         if page is not None:
             extra_params["page"] = page
         if sort:
@@ -365,7 +365,7 @@ class VariablesAPI(BaseAPIClient):
         name: str | None = None,
         subject_id: str | None = None,
         level: int | None = None,
-        year: list[int] | None = None,
+        years: list[int] | None = None,
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
@@ -386,7 +386,7 @@ class VariablesAPI(BaseAPIClient):
             name: Optional substring to search in variable name.
             subject_id: Optional subject ID to filter variables.
             level: Optional level to filter variables.
-            year: Optional list of years to filter variables.
+            years: Optional list of years to filter variables.
             page: Optional page number to fetch.
             page_size: Number of results per page.
             max_pages: Maximum number of pages to fetch (None for all).
@@ -408,8 +408,8 @@ class VariablesAPI(BaseAPIClient):
             extra_params["subject-id"] = subject_id
         if level is not None:
             extra_params["level"] = level
-        if year:
-            extra_params["year"] = year
+        if years:
+            extra_params["year"] = years
         if page is not None:
             extra_params["page"] = page
         if sort:

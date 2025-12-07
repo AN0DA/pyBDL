@@ -129,7 +129,7 @@ class UnitsAPI(BaseAPIClient):
         self,
         name: str | None = None,
         level: list[int] | None = None,
-        year: list[int] | None = None,
+        years: list[int] | None = None,
         kind: str | None = None,
         page: int | None = None,
         page_size: int = 100,
@@ -150,7 +150,7 @@ class UnitsAPI(BaseAPIClient):
         Args:
             name: Optional substring to search in unit name.
             level: Optional list of administrative levels to filter by.
-            year: Optional list of years to filter by.
+            years: Optional list of years to filter by.
             kind: Optional kind filter.
             page: Optional page number to fetch.
             page_size: Number of results per page.
@@ -171,8 +171,8 @@ class UnitsAPI(BaseAPIClient):
             extra_params["name"] = name
         if level:
             extra_params["level"] = level
-        if year:
-            extra_params["year"] = year
+        if years:
+            extra_params["year"] = years
         if kind:
             extra_params["kind"] = kind
         if page is not None:
@@ -313,7 +313,7 @@ class UnitsAPI(BaseAPIClient):
     def search_localities(
         self,
         name: str | None = None,
-        year: list[int] | None = None,
+        years: list[int] | None = None,
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
@@ -332,7 +332,7 @@ class UnitsAPI(BaseAPIClient):
 
         Args:
             name: Optional substring to search in locality name.
-            year: Optional list of years to filter by.
+            years: Optional list of years to filter by.
             page: Optional page number to fetch.
             page_size: Number of results per page.
             max_pages: Maximum number of pages to fetch (None for all).
@@ -350,8 +350,8 @@ class UnitsAPI(BaseAPIClient):
         extra_params: dict[str, Any] = {}
         if name:
             extra_params["name"] = name
-        if year:
-            extra_params["year"] = year
+        if years:
+            extra_params["year"] = years
         if page is not None:
             extra_params["page"] = page
         if sort:
@@ -530,7 +530,7 @@ class UnitsAPI(BaseAPIClient):
         self,
         name: str | None = None,
         level: list[int] | None = None,
-        year: list[int] | None = None,
+        years: list[int] | None = None,
         kind: str | None = None,
         page: int | None = None,
         page_size: int = 100,
@@ -551,7 +551,7 @@ class UnitsAPI(BaseAPIClient):
         Args:
             name: Optional substring to search in unit name.
             level: Optional list of administrative levels to filter by.
-            year: Optional list of years to filter by.
+            years: Optional list of years to filter by.
             kind: Optional kind filter.
             page: Optional page number to fetch.
             page_size: Number of results per page.
@@ -572,8 +572,8 @@ class UnitsAPI(BaseAPIClient):
             extra_params["name"] = name
         if level:
             extra_params["level"] = level
-        if year:
-            extra_params["year"] = year
+        if years:
+            extra_params["year"] = years
         if kind:
             extra_params["kind"] = kind
         if page is not None:
@@ -714,7 +714,7 @@ class UnitsAPI(BaseAPIClient):
     async def asearch_localities(
         self,
         name: str | None = None,
-        year: list[int] | None = None,
+        years: list[int] | None = None,
         page: int | None = None,
         page_size: int = 100,
         max_pages: int | None = None,
@@ -733,7 +733,7 @@ class UnitsAPI(BaseAPIClient):
 
         Args:
             name: Optional substring to search in locality name.
-            year: Optional list of years to filter by.
+            years: Optional list of years to filter by.
             page: Optional page number to fetch.
             page_size: Number of results per page.
             max_pages: Maximum number of pages to fetch (None for all).
@@ -751,8 +751,8 @@ class UnitsAPI(BaseAPIClient):
         extra_params: dict[str, Any] = {}
         if name:
             extra_params["name"] = name
-        if year:
-            extra_params["year"] = year
+        if years:
+            extra_params["year"] = years
         if page is not None:
             extra_params["page"] = page
         if sort:
