@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 import pybdl.access as access
 import pybdl.api as api
@@ -105,13 +105,13 @@ class BDL:
     def __enter__(self) -> "BDL":
         return self
 
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> Literal[False]:
         self.close()
         return False
 
     async def __aenter__(self) -> "BDL":
         return self
 
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> Literal[False]:
         await self.aclose()
         return False
