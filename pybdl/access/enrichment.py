@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import inspect
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from functools import wraps
-import inspect
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 import pandas as pd
 
@@ -102,9 +103,7 @@ def _fetch_attributes_sync(access: BaseAccess) -> pd.DataFrame:
 
 async def _fetch_attributes_async(access: BaseAccess) -> pd.DataFrame:
     if hasattr(access.api_client, "alist_attributes"):
-        data = await access.api_client.alist_attributes(
-            page_size=access._get_default_page_size(), max_pages=None
-        )
+        data = await access.api_client.alist_attributes(page_size=access._get_default_page_size(), max_pages=None)
     else:
         from pybdl.api.attributes import AttributesAPI
 
@@ -120,9 +119,7 @@ def _fetch_units_sync(access: BaseAccess) -> pd.DataFrame:
     else:
         from pybdl.api.units import UnitsAPI
 
-        data = UnitsAPI(access.api_client.config).list_units(
-            page_size=access._get_default_page_size(), max_pages=None
-        )
+        data = UnitsAPI(access.api_client.config).list_units(page_size=access._get_default_page_size(), max_pages=None)
     return _normalize_lookup_dataframe(access, data)
 
 
@@ -152,9 +149,7 @@ def _fetch_aggregates_sync(access: BaseAccess) -> pd.DataFrame:
 
 async def _fetch_aggregates_async(access: BaseAccess) -> pd.DataFrame:
     if hasattr(access.api_client, "alist_aggregates"):
-        data = await access.api_client.alist_aggregates(
-            page_size=access._get_default_page_size(), max_pages=None
-        )
+        data = await access.api_client.alist_aggregates(page_size=access._get_default_page_size(), max_pages=None)
     else:
         from pybdl.api.aggregates import AggregatesAPI
 
@@ -333,7 +328,7 @@ def _resolve_enrichment_flags(specs: tuple[EnrichmentSpec, ...], kwargs: dict[st
     return flags
 
 
-def with_enrichment(*specs: EnrichmentSpec):
+def with_enrichment(*specs: EnrichmentSpec) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """
     Decorator to enrich DataFrame results with reference metadata.
 
@@ -370,15 +365,16 @@ def with_enrichment(*specs: EnrichmentSpec):
                     kind=inspect.Parameter.KEYWORD_ONLY,
                     default=False,
                     annotation=bool,
-                )
+                ),
             )
             insert_at += 1
         return inspect.Signature(parameters=params, return_annotation=sig.return_annotation)
 
-    def decorator(func: Callable[..., Any]):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         if inspect.iscoroutinefunction(func):
+
             @wraps(func)
-            async def async_wrapper(self: BaseAccess, *args: Any, **kwargs: Any):
+            async def async_wrapper(self: BaseAccess, *args: Any, **kwargs: Any) -> Any:
                 flags = _resolve_enrichment_flags(specs, kwargs)
                 result = await func(self, *args, **kwargs)
                 df, metadata = _split_result(result)
@@ -392,7 +388,7 @@ def with_enrichment(*specs: EnrichmentSpec):
             return async_wrapper
 
         @wraps(func)
-        def wrapper(self: BaseAccess, *args: Any, **kwargs: Any):
+        def wrapper(self: BaseAccess, *args: Any, **kwargs: Any) -> Any:
             flags = _resolve_enrichment_flags(specs, kwargs)
             result = func(self, *args, **kwargs)
             df, metadata = _split_result(result)

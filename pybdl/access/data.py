@@ -46,10 +46,7 @@ class DataAccess(BaseAccess):
         resolved = variable_ids if variable_ids is not None else legacy_value
         if resolved is None:
             raise TypeError("'variable_ids' is required.")
-        if isinstance(resolved, (str, int)):
-            items = [resolved]
-        else:
-            items = list(resolved)
+        items = [resolved] if isinstance(resolved, (str, int)) else list(resolved)
         return [int(item) for item in items]
 
     def _normalize_variable_dataframe(self, data: list[dict[str, Any]]) -> pd.DataFrame:
