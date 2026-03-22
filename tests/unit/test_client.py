@@ -1,9 +1,7 @@
-from types import SimpleNamespace
-
 import pytest
 from pytest import MonkeyPatch, raises
 
-from pybdl.client import BDL
+from pybdl.client import APINamespace, BDL
 from pybdl.config import BDLConfig, Language
 
 
@@ -29,7 +27,7 @@ def test_bdl_initializes_all_apis(monkeypatch: MonkeyPatch) -> None:
     bdl = BDL(config=config)
 
     api = bdl.api
-    assert isinstance(api, SimpleNamespace)
+    assert isinstance(api, APINamespace)
     # Check all endpoints exist and are DummyAPI instances
     assert isinstance(api.aggregates, DummyAPI)
     assert isinstance(api.attributes, DummyAPI)
@@ -44,6 +42,33 @@ def test_bdl_initializes_all_apis(monkeypatch: MonkeyPatch) -> None:
     # All configs passed through
     for attr in vars(api):
         assert getattr(api, attr).config is config
+
+
+@pytest.mark.unit
+def test_bdl_context_manager_closes_api_clients(monkeypatch: MonkeyPatch) -> None:
+    class DummyAPI:
+        def __init__(self, config: BDLConfig) -> None:
+            self.config = config
+            self.closed = False
+
+        def close(self) -> None:
+            self.closed = True
+
+    monkeypatch.setattr("pybdl.api.AggregatesAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.AttributesAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.DataAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.LevelsAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.MeasuresAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.SubjectsAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.UnitsAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.VariablesAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.VersionAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.YearsAPI", DummyAPI)
+
+    with BDL(config=BDLConfig(api_key="dummy")) as bdl:
+        api = bdl.api
+
+    assert all(getattr(client, "closed", False) for client in vars(api).values())
 
 
 @pytest.mark.unit

@@ -5,6 +5,7 @@ import responses
 from requests import HTTPError, PreparedRequest, Response
 
 from pybdl.api.client import BaseAPIClient
+from pybdl.api.exceptions import BDLHTTPError, BDLResponseError
 from pybdl.config import DEFAULT_QUOTAS, BDLConfig, Language
 
 
@@ -70,9 +71,9 @@ def test_make_request_http_error(base_client: BaseAPIClient, api_url: str) -> No
     endpoint = "data/fail"
     url = f"{api_url}/data/fail?lang=en"
     responses.add(responses.GET, url, json={"detail": "Not found"}, status=404)
-    with pytest.raises(RuntimeError) as excinfo:
+    with pytest.raises(BDLHTTPError) as excinfo:
         base_client._request_sync(endpoint)
-    assert "HTTP error" in str(excinfo.value)
+    assert excinfo.value.status_code == 404
 
 
 @responses.activate
@@ -81,9 +82,9 @@ def test_make_request_api_error_field(base_client: BaseAPIClient, api_url: str) 
     endpoint = "data/api_error"
     url = f"{api_url}/data/api_error?lang=en"
     responses.add(responses.GET, url, json={"error": "Oops"}, status=200)
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(BDLResponseError) as excinfo:
         base_client._request_sync(endpoint)
-    assert "API Error" in str(excinfo.value)
+    assert excinfo.value.payload == {"error": "Oops"}
 
 
 @responses.activate
@@ -267,7 +268,7 @@ def test_fetch_all_results_missing_results_key_raises(base_client: BaseAPIClient
     endpoint = "data/bad"
     url = "https://bdl.stat.gov.pl/api/v1/data/bad?lang=en&page-size=2"
     responses.add(responses.GET, url, json={"notresults": []}, status=200)
-    with pytest.raises(ValueError):
+    with pytest.raises(BDLResponseError):
         base_client.fetch_all_results(endpoint, results_key="results", page_size=2)
 
 
@@ -314,7 +315,7 @@ def test_process_response_text_fallback(monkeypatch: Any, base_client: BaseAPICl
         def text(self) -> str:
             return "plain text error"
 
-    with pytest.raises(RuntimeError) as e:
+    with pytest.raises(BDLHTTPError) as e:
         base_client._process_response(DummyResponse())
     assert "plain text error" in str(e.value)
 
@@ -326,7 +327,7 @@ def test_paginated_request_sync_missing_results_key(base_client: BaseAPIClient) 
     url = "https://bdl.stat.gov.pl/api/v1/data/badpage?lang=en&page-size=2"
     responses.add(responses.GET, url, json={"notresults": []}, status=200)
     it = base_client._paginated_request_sync(endpoint, results_key="results", page_size=2)
-    with pytest.raises(ValueError):
+    with pytest.raises(BDLResponseError):
         next(it)
 
 
@@ -370,7 +371,7 @@ def test_fetch_single_result_metadata_and_error(base_client: BaseAPIClient) -> N
     assert results2 == [{"id": 1}]
     # Missing results_key
     responses.replace(responses.GET, url, json={"notresults": []}, status=200)
-    with pytest.raises(ValueError):
+    with pytest.raises(BDLResponseError):
         base_client.fetch_single_result(endpoint, results_key="results")
 
 
@@ -417,10 +418,6 @@ def test_client_registered_user_quotas() -> None:
 @pytest.mark.unit
 def test_client_custom_quotas_override() -> None:
     """Test that custom_quotas override DEFAULT_QUOTAS."""
-    # Clear any existing limiters to ensure fresh limiter creation
-    BaseAPIClient._global_sync_limiters.clear()
-    BaseAPIClient._global_async_limiters.clear()
-
     custom_quotas = {1: 20, 900: 300}
     config = BDLConfig(api_key="test-api-key", custom_quotas=custom_quotas)
     client = BaseAPIClient(config)
@@ -436,10 +433,7 @@ def test_client_custom_quotas_override() -> None:
 
 @pytest.mark.unit
 def test_client_separate_limiters_for_registered_and_anonymous() -> None:
-    """Test that registered and anonymous users get separate limiters."""
-    # Clear any existing limiters
-    BaseAPIClient._global_sync_limiters.clear()
-    BaseAPIClient._global_async_limiters.clear()
+    """Test that registered and anonymous users get separate limiter instances."""
 
     # Create anonymous client
     config_anon = BDLConfig(api_key=None)
@@ -453,10 +447,24 @@ def test_client_separate_limiters_for_registered_and_anonymous() -> None:
     assert client_anon._sync_limiter is not client_reg._sync_limiter
     assert client_anon._async_limiter is not client_reg._async_limiter
 
-    # But same limiters should be reused for same registration status
+    # New clients also get isolated limiter instances.
     client_anon2 = BaseAPIClient(config_anon)
-    assert client_anon._sync_limiter is client_anon2._sync_limiter
-    assert client_anon._async_limiter is client_anon2._async_limiter
+    assert client_anon._sync_limiter is not client_anon2._sync_limiter
+    assert client_anon._async_limiter is not client_anon2._async_limiter
+
+
+@responses.activate
+@pytest.mark.unit
+def test_make_request_retries_transient_http_errors(base_client: BaseAPIClient, api_url: str) -> None:
+    endpoint = "data/retry"
+    url = f"{api_url}/data/retry?lang=en"
+    responses.add(responses.GET, url, json={"detail": "temporary"}, status=503)
+    responses.add(responses.GET, url, json={"results": [{"id": 1}]}, status=200)
+
+    result = base_client._request_sync(endpoint)
+
+    assert result == {"results": [{"id": 1}]}
+    assert len(responses.calls) == 2
 
 
 @pytest.mark.unit

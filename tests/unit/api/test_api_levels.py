@@ -3,6 +3,7 @@ from urllib.parse import urlencode
 import pytest
 import responses
 
+from pybdl.api.exceptions import BDLHTTPError, BDLResponseError
 from pybdl.api.levels import LevelsAPI
 from pybdl.config import BDLConfig
 
@@ -129,7 +130,7 @@ def test_list_levels_http_error(levels_api: LevelsAPI, api_url: str) -> None:
     """Test handling of HTTP errors."""
     url = f"{api_url}/levels?lang=en&format=json&page-size=100"
     responses.add(responses.GET, url, json={"error": "Not Found"}, status=404)
-    with pytest.raises(RuntimeError):  # Should raise RuntimeError for HTTP error
+    with pytest.raises(BDLHTTPError):
         levels_api.list_levels()
 
 
@@ -139,7 +140,7 @@ def test_get_level_invalid_id(levels_api: LevelsAPI, api_url: str) -> None:
     """Test handling of invalid level ID."""
     url = f"{api_url}/levels/99999?lang=en&format=json"
     responses.add(responses.GET, url, json={"error": "Not Found"}, status=404)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(BDLHTTPError):
         levels_api.get_level(99999)
 
 
@@ -159,5 +160,5 @@ def test_get_level_malformed_response(levels_api: LevelsAPI, api_url: str) -> No
     """Test handling of malformed JSON response."""
     url = f"{api_url}/levels/3?lang=en&format=json"
     responses.add(responses.GET, url, body="not json", status=200, content_type="text/plain")
-    with pytest.raises(ValueError):  # Should raise ValueError for malformed JSON
+    with pytest.raises(BDLResponseError):
         levels_api.get_level(3)
