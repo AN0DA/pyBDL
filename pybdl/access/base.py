@@ -1,6 +1,7 @@
 """Base access class for converting API responses to DataFrames."""
 
-import inspect
+import re
+import sys
 from typing import Any
 
 import pandas as pd
@@ -38,6 +39,8 @@ class BaseAccess:
             api_client: API client instance (e.g., LevelsAPI, AttributesAPI).
         """
         self.api_client = api_client
+        # Cache for enrichment lookups (e.g., levels, measures) to avoid refetching
+        self._enrichment_cache: dict[str, Any] = {}
 
     def _get_default_page_size(self) -> int:
         """
@@ -88,16 +91,18 @@ class BaseAccess:
     def _to_dataframe(
         self,
         data: list[dict[str, Any]] | dict[str, Any],
+        *,
+        function_name: str | None = None,
     ) -> pd.DataFrame:
         """
         Convert API response to DataFrame with proper column names and data types.
 
-        Automatically detects the calling function name to apply column renames defined
-        in `_column_renames`. Both sync and async methods are supported (async names are
-        normalized by removing 'a' prefix).
+        Applies per-method column renames defined in `_column_renames`. Both sync and
+        async methods are supported (async names are normalized by removing 'a' prefix).
 
         Args:
             data: List of dictionaries or single dictionary from API response.
+            function_name: Optional explicit function name for column rename lookup.
 
         Returns:
             DataFrame with normalized column names and proper data types.
@@ -118,8 +123,8 @@ class BaseAccess:
         # Infer and convert data types
         df = self._infer_dtypes(df)
 
-        # Automatically detect calling function name for column renames
-        function_name = self._get_calling_function_name()
+        if function_name is None:
+            function_name = self._get_calling_function_name()
         if function_name:
             df = self._apply_column_renames(df, function_name)
 
@@ -136,18 +141,12 @@ class BaseAccess:
         Returns:
             Function name if found, None otherwise.
         """
-        stack = inspect.stack()
-        # Skip frames:
-        # 0: _get_calling_function_name (this method)
-        # 1: _to_dataframe (the method that called this)
-        # 2: The actual calling method (what we want)
-        if len(stack) > 2:
-            frame_info = stack[2]
-            func_name = frame_info.function
-            # Return the function name (could be sync like 'list_aggregates' or async like 'alist_aggregates')
-            # Skip only if it's a module-level call or internal method
-            if func_name != "<module>" and not func_name.startswith("__"):
-                return func_name
+        try:
+            func_name = sys._getframe(2).f_code.co_name
+        except ValueError:
+            return None
+        if func_name != "<module>" and not func_name.startswith("__"):
+            return func_name
         return None
 
     @staticmethod
@@ -220,8 +219,6 @@ class BaseAccess:
         Returns:
             Column name in snake_case.
         """
-        import re
-
         # Insert underscore before uppercase letters (except at the start)
         s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
         # Insert underscore before uppercase letters that follow lowercase

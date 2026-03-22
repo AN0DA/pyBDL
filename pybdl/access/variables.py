@@ -5,11 +5,13 @@ from typing import Any
 import pandas as pd
 
 from pybdl.access.base import BaseAccess
+from pybdl.access.enrichment import LEVELS_SPEC, MEASURES_SPEC, SUBJECTS_SPEC, with_enrichment
 
 
 class VariablesAccess(BaseAccess):
     """Access layer for variables API, converting responses to DataFrames."""
 
+    @with_enrichment(LEVELS_SPEC, MEASURES_SPEC, SUBJECTS_SPEC)
     def list_variables(
         self,
         subject_id: str | None = None,
@@ -28,7 +30,8 @@ class VariablesAccess(BaseAccess):
             years: Optional list of years to filter variables.
             page_size: Number of results per page (defaults to config.page_size or 100).
             max_pages: Maximum number of pages to fetch (None for all pages).
-            **kwargs: Additional parameters passed to API layer (e.g., sort, lang, format, extra_query).
+            **kwargs: Additional parameters passed to API layer, including `enrich=["levels", ...]`
+                or legacy `enrich_levels=True`-style flags.
 
         Returns:
             DataFrame with variables data.
@@ -46,6 +49,7 @@ class VariablesAccess(BaseAccess):
         data = self.api_client.list_variables(**resolved_params, **kwargs)
         return self._to_dataframe(data)
 
+    @with_enrichment(LEVELS_SPEC, MEASURES_SPEC, SUBJECTS_SPEC)
     def get_variable(
         self,
         variable_id: str,
@@ -56,7 +60,8 @@ class VariablesAccess(BaseAccess):
 
         Args:
             variable_id: Variable identifier.
-            **kwargs: Additional parameters passed to API layer (e.g., lang, format, extra_query).
+            **kwargs: Additional parameters passed to API layer, including `enrich=["levels", ...]`
+                or legacy `enrich_levels=True`-style flags.
 
         Returns:
             DataFrame with variable metadata.
@@ -64,6 +69,7 @@ class VariablesAccess(BaseAccess):
         data = self.api_client.get_variable(variable_id, **kwargs)
         return self._to_dataframe(data)
 
+    @with_enrichment(LEVELS_SPEC, MEASURES_SPEC, SUBJECTS_SPEC)
     def search_variables(
         self,
         name: str | None = None,
@@ -84,7 +90,8 @@ class VariablesAccess(BaseAccess):
             years: Optional list of years to filter variables.
             page_size: Number of results per page (defaults to config.page_size or 100).
             max_pages: Maximum number of pages to fetch (None for all pages).
-            **kwargs: Additional parameters passed to API layer (e.g., sort, lang, format, extra_query).
+            **kwargs: Additional parameters passed to API layer, including `enrich=["levels", ...]`
+                or legacy `enrich_levels=True`-style flags.
 
         Returns:
             DataFrame with matching variables.
@@ -103,6 +110,7 @@ class VariablesAccess(BaseAccess):
         data = self.api_client.search_variables(**resolved_params, **kwargs)
         return self._to_dataframe(data)
 
+    @with_enrichment(LEVELS_SPEC, MEASURES_SPEC, SUBJECTS_SPEC)
     async def alist_variables(
         self,
         subject_id: str | None = None,
@@ -121,7 +129,8 @@ class VariablesAccess(BaseAccess):
             years: Optional list of years to filter variables.
             page_size: Number of results per page (defaults to config.page_size or 100).
             max_pages: Maximum number of pages to fetch (None for all pages).
-            **kwargs: Additional parameters passed to API layer (e.g., sort, lang, format, extra_query).
+            **kwargs: Additional parameters passed to API layer, including `enrich=["levels", ...]`
+                or legacy `enrich_levels=True`-style flags.
 
         Returns:
             DataFrame with variables data.
@@ -139,6 +148,7 @@ class VariablesAccess(BaseAccess):
         data = await self.api_client.alist_variables(**resolved_params, **kwargs)
         return self._to_dataframe(data)
 
+    @with_enrichment(LEVELS_SPEC, MEASURES_SPEC, SUBJECTS_SPEC)
     async def aget_variable(
         self,
         variable_id: str,
@@ -149,7 +159,8 @@ class VariablesAccess(BaseAccess):
 
         Args:
             variable_id: Variable identifier.
-            **kwargs: Additional parameters passed to API layer (e.g., lang, format, extra_query).
+            **kwargs: Additional parameters passed to API layer, including `enrich=["levels", ...]`
+                or legacy `enrich_levels=True`-style flags.
 
         Returns:
             DataFrame with variable metadata.
@@ -157,6 +168,7 @@ class VariablesAccess(BaseAccess):
         data = await self.api_client.aget_variable(variable_id, **kwargs)
         return self._to_dataframe(data)
 
+    @with_enrichment(LEVELS_SPEC, MEASURES_SPEC, SUBJECTS_SPEC)
     async def asearch_variables(
         self,
         name: str | None = None,
@@ -177,7 +189,8 @@ class VariablesAccess(BaseAccess):
             years: Optional list of years to filter variables.
             page_size: Number of results per page (defaults to config.page_size or 100).
             max_pages: Maximum number of pages to fetch (None for all pages).
-            **kwargs: Additional parameters passed to API layer (e.g., sort, lang, format, extra_query).
+            **kwargs: Additional parameters passed to API layer, including `enrich=["levels", ...]`
+                or legacy `enrich_levels=True`-style flags.
 
         Returns:
             DataFrame with matching variables.

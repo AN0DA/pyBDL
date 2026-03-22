@@ -5,6 +5,7 @@ from typing import Any
 import pandas as pd
 
 from pybdl.access.base import BaseAccess
+from pybdl.access.enrichment import LEVELS_SPEC, with_enrichment
 
 
 class AggregatesAccess(BaseAccess):
@@ -24,6 +25,7 @@ class AggregatesAccess(BaseAccess):
         }
     """
 
+    @with_enrichment(LEVELS_SPEC)
     def list_aggregates(
         self,
         page_size: int | None = None,
@@ -46,6 +48,7 @@ class AggregatesAccess(BaseAccess):
         data = self.api_client.list_aggregates(page_size=page_size, max_pages=max_pages, **kwargs)
         return self._to_dataframe(data)
 
+    @with_enrichment(LEVELS_SPEC)
     def get_aggregate(
         self,
         aggregate_id: str,
@@ -64,6 +67,7 @@ class AggregatesAccess(BaseAccess):
         data = self.api_client.get_aggregate(aggregate_id, **kwargs)
         return self._to_dataframe(data)
 
+    @with_enrichment(LEVELS_SPEC)
     async def alist_aggregates(
         self,
         page_size: int | None = None,
@@ -86,6 +90,7 @@ class AggregatesAccess(BaseAccess):
         data = await self.api_client.alist_aggregates(page_size=page_size, max_pages=max_pages, **kwargs)
         return self._to_dataframe(data)
 
+    @with_enrichment(LEVELS_SPEC)
     async def aget_aggregate(
         self,
         aggregate_id: str,
