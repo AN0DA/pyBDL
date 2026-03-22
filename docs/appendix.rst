@@ -117,7 +117,67 @@ Cache files are named based on request parameters:
 **Internal Functions**
 
 - ``get_default_cache_path()``: Returns platform-appropriate cache directory
-- ``get_cache_file_path(url, method, params, headers)``: Generates cache file path for a request
+- ``get_cache_file_path(filename, use_global_cache=False, custom_path=None)``: Returns a file path inside the resolved cache directory
+- ``resolve_cache_file_path(filename, use_global_cache=False, custom_file=None)``: Resolves an explicit file path or falls back to the default cache directory
+
+Caching Internals
+~~~~~~~~~~~~~~~~~
+
+pyBDL uses ``hishel`` on top of ``httpx`` for both synchronous and asynchronous HTTP caching.
+
+**Client selection**
+
+- Sync without cache: ``httpx.Client``
+- Sync with cache: ``hishel.SyncCacheClient``
+- Async without cache: ``httpx.AsyncClient``
+- Async with cache: ``hishel.AsyncCacheClient``
+
+**Cache backends**
+
+- ``cache_backend="file"``:
+  - Stores cached responses in ``http_cache.db``
+  - The file lives in the same directory as the quota cache file
+  - Sync and async clients point to the same cache database
+- ``cache_backend="memory"``:
+  - Uses SQLite ``:memory:``
+  - Cache is process-local and not persisted
+  - Sync and async clients each get their own in-memory cache
+- ``cache_backend=None``:
+  - Bypasses Hishel entirely and uses plain ``httpx`` clients
+
+**Cache file location**
+
+When the file backend is enabled, pyBDL resolves the quota cache path first and then places the HTTP cache beside it:
+
+.. code-block:: text
+
+    <cache_dir>/quota_cache.json
+    <cache_dir>/http_cache.db
+
+If ``quota_cache_file`` is explicitly set, that file's parent directory is reused. Otherwise pyBDL uses the default project-local or global cache directory, depending on configuration.
+
+**Expiration model**
+
+- ``cache_expire_after`` is applied as the default TTL for stored responses
+- Expired entries are treated as stale and will not be reused as fresh cache hits
+- A later request for the same URL may refresh the stored entry
+
+**Quota interaction**
+
+Rate limiting and caching are intentionally coordinated:
+
+1. pyBDL reserves a quota slot before making a request
+2. the HTTP client returns either a network response or a cached response
+3. if the response was served from cache, the reservation is released
+
+This design keeps quota accounting safe in mixed sync/async scenarios while ensuring cached responses do not consume quota in normal use.
+
+**What this means in practice**
+
+- A cache miss counts against quota
+- A cache hit does not count against quota after refund
+- File-backed cache can reduce repeated quota usage across separate runs
+- Memory-backed cache only helps within the current process lifetime
 
 Proxy Configuration Internals
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -126,8 +186,8 @@ The proxy configuration is handled at the HTTP client level:
 
 **Implementation**
 
-- Uses ``requests`` library's proxy support for synchronous requests
-- Uses ``aiohttp`` library's proxy support for asynchronous requests
+- Uses ``httpx.Client`` / ``hishel.SyncCacheClient`` for synchronous requests
+- Uses ``httpx.AsyncClient`` / ``hishel.AsyncCacheClient`` for asynchronous requests
 - Proxy authentication uses HTTP Basic Auth
 
 **Configuration Precedence**
@@ -200,8 +260,8 @@ All API clients inherit from a base client class that handles:
 HTTP Client Selection
 ~~~~~~~~~~~~~~~~~~~~~
 
-- **Synchronous**: Uses ``requests`` library
-- **Asynchronous**: Uses ``aiohttp`` library
+- **Synchronous**: Uses ``httpx.Client`` (or ``hishel.SyncCacheClient`` when caching is enabled)
+- **Asynchronous**: Uses ``httpx.AsyncClient`` (or ``hishel.AsyncCacheClient`` when caching is enabled)
 - Both clients share the same configuration and rate limiting state
 
 Response Processing

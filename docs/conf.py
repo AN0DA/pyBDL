@@ -19,7 +19,13 @@ extensions = ['sphinx.ext.duration',
               'sphinx.ext.autosummary',
               'sphinx.ext.napoleon',
               'sphinx.ext.viewcode',
+              'sphinx_autodoc_typehints',
               'myst_nb']
+
+# sphinx-autodoc-typehints: show types from annotations, not in docstrings
+always_document_param_types = False
+typehints_fully_qualified = False
+simplify_optional_unions = True
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']

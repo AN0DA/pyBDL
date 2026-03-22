@@ -86,6 +86,7 @@ Documentation
    :caption: Reference
 
    appendix
+   changelog.md
 
 Contributing & License
 ----------------------

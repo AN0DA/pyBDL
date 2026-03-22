@@ -103,10 +103,21 @@ payload_with_meta = bdl.api.data.get_data_by_variable_with_metadata(
 
 ## Documentation
 
-Full documentation and examples live in `docs/`, including:
+Full documentation is built with Sphinx. To build locally:
 
-- `docs/index.rst`
-- `docs/main_client.rst`
-- `docs/access_layer.rst`
-- `docs/api_clients.rst`
-- `docs/examples.ipynb`
+```bash
+make docs
+# or: cd docs && make html
+```
+
+The built HTML is written to `docs/_build/html/`.
+
+Key documentation pages:
+
+- [Main Client](docs/main_client.rst) — BDL client, access vs API layer, context manager, async
+- [Access Layer](docs/access_layer.rst) — DataFrame interface, enrichment, pagination, metadata
+- [API Clients](docs/api_clients.rst) — Low-level raw-JSON clients
+- [Configuration](docs/config.rst) — All options and environment variables
+- [Rate Limiting](docs/rate_limiting.rst) — Quotas, retry, custom limits
+- [Examples](docs/examples.ipynb) — Jupyter notebook with real-world examples
+- [Changelog](CHANGELOG.md) — Release history

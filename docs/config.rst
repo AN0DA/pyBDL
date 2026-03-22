@@ -94,24 +94,93 @@ Corporate Network Setup
 Environment Variables
 ---------------------
 
-All configuration options can be set via environment variables:
+All configuration options can be set via environment variables. Explicit constructor arguments
+always take precedence over environment variables.
+
+.. list-table:: Complete Environment Variable Reference
+   :header-rows: 1
+   :widths: 30 20 50
+
+   * - Variable
+     - Default
+     - Description
+   * - ``BDL_API_KEY``
+     - *(none)*
+     - API key for authenticated access. Omit for anonymous access.
+   * - ``BDL_LANGUAGE``
+     - ``en``
+     - Response language: ``en`` or ``pl``.
+   * - ``BDL_FORMAT``
+     - ``json``
+     - Response format: ``json``, ``jsonapi``, or ``xml``.
+   * - ``BDL_USE_CACHE``
+     - ``true``
+     - Enable HTTP response caching: ``true`` or ``false``.
+   * - ``BDL_CACHE_EXPIRY``
+     - ``3600``
+     - Cache expiry time in seconds.
+   * - ``BDL_PAGE_SIZE``
+     - ``100``
+     - Default page size for paginated requests.
+   * - ``BDL_PROXY_URL``
+     - *(none)*
+     - Proxy server URL, e.g. ``http://proxy.example.com:8080``.
+   * - ``BDL_PROXY_USERNAME``
+     - *(none)*
+     - Username for proxy authentication.
+   * - ``BDL_PROXY_PASSWORD``
+     - *(none)*
+     - Password for proxy authentication.
+   * - ``BDL_REQUEST_RETRIES``
+     - ``3``
+     - Number of retry attempts for transient HTTP errors.
+   * - ``BDL_RETRY_BACKOFF_FACTOR``
+     - ``0.5``
+     - Base backoff multiplier (seconds) between retries.
+   * - ``BDL_MAX_RETRY_DELAY``
+     - ``30.0``
+     - Maximum time in seconds to wait between retries.
+   * - ``BDL_RETRY_STATUS_CODES``
+     - ``429,500,502,503,504``
+     - Comma-separated HTTP status codes that trigger a retry.
+   * - ``BDL_RATE_LIMIT_RAISE``
+     - ``false``
+     - If ``true``, raise ``RateLimitError`` when client-side quota is exhausted; if ``false`` (default), wait until a slot is available.
+   * - ``BDL_HTTP_429_MAX_RETRIES``
+     - ``12``
+     - Max retries when the **server** returns HTTP 429 (separate from ``BDL_REQUEST_RETRIES`` for 5xx). Honors ``Retry-After`` up to ``BDL_HTTP_429_MAX_DELAY``; otherwise uses exponential backoff from ``BDL_RETRY_BACKOFF_FACTOR``.
+   * - ``BDL_HTTP_429_MAX_DELAY``
+     - ``900``
+     - Max seconds to wait between HTTP 429 retries (15 minutes; aligns with common BDL quota windows).
+   * - ``BDL_QUOTAS``
+     - *(BDL defaults)*
+     - JSON object overriding rate-limit quotas, e.g. ``'{"1": 20, "900": 500}'``.
+   * - ``BDL_QUOTA_CACHE_ENABLED``
+     - ``true``
+     - Persist quota usage across process restarts.
+   * - ``BDL_QUOTA_CACHE``
+     - *(auto)*
+     - Path to the quota cache file.
+   * - ``BDL_USE_GLOBAL_CACHE``
+     - ``false``
+     - Store quota cache in the OS-level cache directory instead of the project ``.cache/``.
+
+Example — set environment variables and use defaults in code:
 
 .. code-block:: bash
 
     export BDL_API_KEY="your-api-key"
     export BDL_LANGUAGE="en"
     export BDL_USE_CACHE="true"
-    export BDL_CACHE_EXPIRE_AFTER="3600"
+    export BDL_CACHE_EXPIRY="3600"
     export BDL_PROXY_URL="http://proxy.example.com:8080"
     export BDL_PROXY_USERNAME="user"
     export BDL_PROXY_PASSWORD="pass"
     export BDL_QUOTAS='{"1": 20, "900": 500}'
 
-Then use defaults in code:
-
 .. code-block:: python
 
-    # Reads from environment variables
+    # All settings are read from environment variables
     bdl = BDL()
 
 .. seealso::
@@ -123,14 +192,21 @@ Then use defaults in code:
 Caching
 -------
 
-pyBDL supports transparent request caching to speed up repeated queries and reduce API usage. Caching can be enabled or disabled via the `use_cache` option in `BDLConfig`.
+pyBDL supports transparent HTTP response caching to speed up repeated queries and reduce unnecessary API traffic. The same caching model is available for both synchronous and asynchronous clients, so repeated calls made through either interface can reuse previously stored responses.
+
+At a high level, caching works like this:
+
+1. The first request for a given URL is sent to the BDL API and the response is stored.
+2. A later request for the same URL can be served from cache instead of making another network call.
+3. Cached responses expire after ``cache_expire_after`` seconds.
+4. When the response comes from cache, pyBDL refunds the temporary quota reservation, so cached reads do not consume rate limit quota.
 
 **Basic Usage**
 
 .. code-block:: python
 
-    # Enable caching with 10-minute expiry
-    config = BDLConfig(api_key="...", use_cache=True, cache_expire_after=600)
+    # Enable file-backed caching with 10-minute expiry
+    config = BDLConfig(api_key="...", cache_backend="file", cache_expire_after=600)
     bdl = BDL(config)
     
     # First call hits the API
@@ -139,10 +215,83 @@ pyBDL supports transparent request caching to speed up repeated queries and redu
     # Second call uses cache (if within expiry time)
     data2 = bdl.data.get_data_by_variable("3643", years=[2021])
 
+**Backend Options**
+
+pyBDL supports two cache backends plus a disabled mode:
+
+- ``cache_backend="file"``: Stores cache data on disk and is the recommended default for most users.
+- ``cache_backend="memory"``: Uses an in-memory SQLite database that exists only for the lifetime of the current process.
+- ``cache_backend=None``: Disables caching completely.
+
+.. code-block:: python
+
+    from pybdl import BDL, BDLConfig
+
+    # File-backed cache shared across sync/async clients
+    file_config = BDLConfig(
+        api_key="...",
+        cache_backend="file",
+        cache_expire_after=3600,
+    )
+
+    # In-memory cache for short-lived scripts or tests
+    memory_config = BDLConfig(
+        api_key="...",
+        cache_backend="memory",
+        cache_expire_after=300,
+    )
+
+    # Disable cache entirely
+    no_cache_config = BDLConfig(
+        api_key="...",
+        cache_backend=None,
+    )
+
 **Configuration Options**
 
-- ``use_cache``: Enable/disable caching (default: ``False``)
+- ``use_cache``: Backward-compatible boolean toggle for caching
+- ``cache_backend``: ``"file"``, ``"memory"``, or ``None`` to disable caching
 - ``cache_expire_after``: Cache expiry time in seconds (default: 3600 = 1 hour)
+
+**What to Expect**
+
+- The first request for a resource is usually slower because it goes to the network.
+- Repeated requests for the same URL are usually faster because the cached response can be reused.
+- File-backed cache persists across process restarts.
+- Memory-backed cache is cleared when the Python process exits.
+- With ``cache_backend="file"``, sync and async clients use the same cache file and can reuse each other's cached responses.
+- With ``cache_backend="memory"``, sync and async clients each keep their own in-memory cache and do not share entries.
+- Cache keys are based on the actual HTTP request, so changing endpoint parameters, language, format, or headers that affect representation may produce a different cache entry.
+
+**Rate Limiting Interaction**
+
+pyBDL still reserves a quota slot before issuing the request, because at that moment it does not yet know whether the response will come from cache. If the response is later identified as a cache hit, that reservation is released immediately.
+
+In practice this means:
+
+- Real network requests count against quota.
+- Cache hits do not reduce available quota.
+- You can safely enable caching to reduce rate-limit pressure during repeated exploration or batch workflows.
+
+**Choosing a Backend**
+
+Use ``"file"`` when:
+
+- You want cache reuse between script runs
+- You mix sync and async usage and want both to share cache entries
+- You do longer exploratory or ETL-style workflows
+
+Use ``"memory"`` when:
+
+- You want temporary caching only inside one process
+- You do not want cache files on disk
+- You are running isolated tests or short-lived scripts
+
+Use ``None`` when:
+
+- You always want fresh data from the API
+- You are debugging live responses
+- You want the simplest possible request behavior
 
 **When to Use Caching**
 
@@ -156,7 +305,21 @@ pyBDL supports transparent request caching to speed up repeated queries and redu
 - One-off scripts: No benefit if queries aren't repeated
 - Memory-constrained environments: Cache uses disk space
 
-For technical details about cache file management and locations, see :doc:`appendix`.
+**Environment Variables**
+
+Caching can also be configured through environment variables:
+
+.. code-block:: bash
+
+    export BDL_CACHE_BACKEND="file"
+    export BDL_CACHE_EXPIRY="1800"
+
+.. code-block:: python
+
+    # Reads cache settings from the environment
+    bdl = BDL(BDLConfig(api_key="..."))
+
+For technical details about cache file management, cache locations, and implementation details, see :doc:`appendix`.
 
 Proxy Configuration
 -------------------
@@ -220,6 +383,7 @@ pyBDL enforces API rate limits using both synchronous and asynchronous rate limi
 - **Multiple quota periods**: Enforces limits across different time windows simultaneously
 - **Persistent cache**: Quota usage survives process restarts
 - **Sync & async support**: Works seamlessly with both synchronous and asynchronous code
+- **Wait by default**: ``raise_on_rate_limit`` defaults to ``False`` so the client waits for quota; set ``True`` or ``BDL_RATE_LIMIT_RAISE`` to raise immediately (see :doc:`rate_limiting`)
 
 **Default Quotas**
 
@@ -266,3 +430,48 @@ For detailed information on rate limiting, including:
 - Technical implementation details
 
 See :doc:`rate_limiting` for the complete guide.
+
+Retry Configuration
+-------------------
+
+pyBDL automatically retries requests that fail with transient HTTP errors. Retries use
+exponential back-off up to a configurable ceiling.
+
+**Configuration Options**
+
+- ``request_retries``: Total retry attempts before raising (default: ``3``).
+- ``retry_backoff_factor``: Back-off multiplier in seconds (default: ``0.5``).
+  Delay before attempt *n* = ``retry_backoff_factor × 2^(n-1)`` seconds.
+- ``max_retry_delay``: Upper bound on any individual retry delay in seconds (default: ``30.0``).
+- ``retry_status_codes``: HTTP status codes that should trigger a retry
+  (default: ``429, 500, 502, 503, 504``).
+
+**Examples**
+
+.. code-block:: python
+
+    from pybdl import BDL, BDLConfig
+
+    # Aggressive retry for unreliable networks
+    config = BDLConfig(
+        api_key="your-api-key",
+        request_retries=5,
+        retry_backoff_factor=1.0,
+        max_retry_delay=60.0,
+    )
+    bdl = BDL(config)
+
+.. code-block:: python
+
+    # Disable retries entirely
+    config = BDLConfig(api_key="your-api-key", request_retries=0)
+    bdl = BDL(config)
+
+Or via environment variables:
+
+.. code-block:: bash
+
+    export BDL_REQUEST_RETRIES=5
+    export BDL_RETRY_BACKOFF_FACTOR=1.0
+    export BDL_MAX_RETRY_DELAY=60.0
+    export BDL_RETRY_STATUS_CODES="429,500,502,503,504"

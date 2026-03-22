@@ -18,6 +18,10 @@ Key Features
 - **Configurable behavior**: Choose to wait or raise exceptions when limits are exceeded
 - **Shared state**: Sync and async limiters share quota state via persistent cache
 
+The :class:`pybdl.config.BDLConfig` used by the API client defaults to **waiting** when a local quota slot is not yet available (``raise_on_rate_limit=False``). Set ``raise_on_rate_limit=True`` (or environment variable ``BDL_RATE_LIMIT_RAISE=true``) to raise :class:`pybdl.api.exceptions.RateLimitError` immediately instead, for example in tests that must fail fast.
+
+When the **server** responds with HTTP **429** (Too Many Requests), the client retries with a separate budget (``http_429_max_retries`` / ``BDL_HTTP_429_MAX_RETRIES``), honoring ``Retry-After`` when present (seconds or HTTP-date) up to ``http_429_max_delay`` (default 900 seconds). If ``Retry-After`` is omitted, waits use **exponential backoff** ``retry_backoff_factor × 2^attempt`` (capped by ``http_429_max_delay``). This is independent of ``request_retries``, which applies to other retryable status codes.
+
 Default Quotas
 --------------
 
