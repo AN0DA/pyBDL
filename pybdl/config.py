@@ -2,7 +2,7 @@ import enum
 import json
 import os
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Literal, cast
 
 # API Constants
 BDL_API_BASE_URL = "https://bdl.stat.gov.pl/api/v1"
@@ -22,6 +22,9 @@ class Format(enum.Enum):
     XML = "xml"
 
 
+CacheBackend = Literal["memory", "file"]
+
+
 DEFAULT_LANGUAGE = Language.EN
 DEFAULT_FORMAT = Format.JSON
 DEFAULT_CACHE_EXPIRY = 3600  # 1 hour in seconds
@@ -30,10 +33,16 @@ DEFAULT_REQUEST_RETRIES = 3
 DEFAULT_RETRY_BACKOFF_FACTOR = 0.5
 DEFAULT_MAX_RETRY_DELAY = 30.0
 DEFAULT_RETRY_STATUS_CODES = (429, 500, 502, 503, 504)
+DEFAULT_HTTP_429_MAX_RETRIES = 12
+DEFAULT_HTTP_429_MAX_DELAY = 900.0  # align with common 15-minute API quota windows
 
 # Define constant quota periods (in seconds)
 QUOTA_PERIODS = {"1s": 1, "15m": 15 * 60, "12h": 12 * 3600, "7d": 7 * 24 * 3600}
-DEFAULT_QUOTAS = {  # (anon_limit, registered_limit)
+
+# Period -> per-period limit (int) or (anonymous_limit, registered_limit) tuple
+QuotaMap = dict[int, int | tuple[int, int]]
+
+DEFAULT_QUOTAS: QuotaMap = {  # (anon_limit, registered_limit)
     QUOTA_PERIODS["1s"]: (5, 10),
     QUOTA_PERIODS["15m"]: (100, 500),
     QUOTA_PERIODS["12h"]: (1000, 5000),
@@ -54,6 +63,7 @@ class BDLConfig:
         language: Language code for API responses (default: "en").
         format: Response format (default: "json").
         use_cache: Whether to use request caching (default: True).
+        cache_backend: Cache backend to use: "memory", "file", or None to disable cache.
         cache_expire_after: Cache expiration time in seconds (default: 3600).
         proxy_url: Optional URL of the proxy server.
         proxy_username: Optional username for proxy authentication.
@@ -67,12 +77,18 @@ class BDLConfig:
         retry_backoff_factor: Base backoff factor in seconds for retries (default: 0.5).
         max_retry_delay: Maximum time to wait between retries in seconds (default: 30).
         retry_status_codes: HTTP status codes that should be retried.
+        raise_on_rate_limit: If True, raise RateLimitError when client-side quota is exhausted;
+            if False (default), wait until a slot is available.
+        http_429_max_retries: Max retry attempts when the server returns HTTP 429 (separate from
+            request_retries for 5xx). Uses Retry-After or backoff up to http_429_max_delay seconds.
+        http_429_max_delay: Upper bound in seconds for wait between 429 retries (default 900).
     """
 
     api_key: str | None
     language: Language
     format: Format
     use_cache: bool
+    cache_backend: CacheBackend | None
     cache_expire_after: int
     proxy_url: str | None
     proxy_username: str | None
@@ -86,6 +102,9 @@ class BDLConfig:
     retry_backoff_factor: float
     max_retry_delay: float
     retry_status_codes: tuple[int, ...]
+    raise_on_rate_limit: bool
+    http_429_max_retries: int
+    http_429_max_delay: float
     _provided_fields: set[str] = field(default_factory=set, init=False, repr=False)
 
     def __init__(
@@ -94,6 +113,7 @@ class BDLConfig:
         language: Language | str | object = _NOT_PROVIDED,
         format: Format | str | object = _NOT_PROVIDED,
         use_cache: bool | object = _NOT_PROVIDED,
+        cache_backend: CacheBackend | str | None | object = _NOT_PROVIDED,
         cache_expire_after: int | object = _NOT_PROVIDED,
         proxy_url: str | None | object = _NOT_PROVIDED,
         proxy_username: str | None | object = _NOT_PROVIDED,
@@ -107,6 +127,9 @@ class BDLConfig:
         retry_backoff_factor: float | object = _NOT_PROVIDED,
         max_retry_delay: float | object = _NOT_PROVIDED,
         retry_status_codes: tuple[int, ...] | list[int] | object = _NOT_PROVIDED,
+        raise_on_rate_limit: bool | object = _NOT_PROVIDED,
+        http_429_max_retries: int | object = _NOT_PROVIDED,
+        http_429_max_delay: float | object = _NOT_PROVIDED,
     ) -> None:
         self._provided_fields = {
             field_name
@@ -115,6 +138,7 @@ class BDLConfig:
                 "language": language,
                 "format": format,
                 "use_cache": use_cache,
+                "cache_backend": cache_backend,
                 "cache_expire_after": cache_expire_after,
                 "proxy_url": proxy_url,
                 "proxy_username": proxy_username,
@@ -128,6 +152,9 @@ class BDLConfig:
                 "retry_backoff_factor": retry_backoff_factor,
                 "max_retry_delay": max_retry_delay,
                 "retry_status_codes": retry_status_codes,
+                "raise_on_rate_limit": raise_on_rate_limit,
+                "http_429_max_retries": http_429_max_retries,
+                "http_429_max_delay": http_429_max_delay,
             }.items()
             if value is not _NOT_PROVIDED
         }
@@ -135,13 +162,17 @@ class BDLConfig:
         self.api_key = self._resolve_optional_str("api_key", api_key, "BDL_API_KEY")
         self.language = self._parse_language(
             self._resolve_value("language", language, "BDL_LANGUAGE", DEFAULT_LANGUAGE.value),
-            source="BDL_LANGUAGE" if "language" not in self._provided_fields and os.getenv("BDL_LANGUAGE") else "language",
+            source="BDL_LANGUAGE"
+            if "language" not in self._provided_fields and os.getenv("BDL_LANGUAGE")
+            else "language",
         )
         self.format = self._parse_format(
             self._resolve_value("format", format, "BDL_FORMAT", DEFAULT_FORMAT.value),
             source="BDL_FORMAT" if "format" not in self._provided_fields and os.getenv("BDL_FORMAT") else "format",
         )
-        self.use_cache = self._resolve_bool("use_cache", use_cache, "BDL_USE_CACHE", True)
+        use_cache_value = self._resolve_bool("use_cache", use_cache, "BDL_USE_CACHE", True)
+        self.cache_backend = self._resolve_cache_backend(cache_backend, use_cache_value)
+        self.use_cache = self.cache_backend is not None
         self.cache_expire_after = self._resolve_int(
             "cache_expire_after",
             cache_expire_after,
@@ -184,6 +215,24 @@ class BDLConfig:
             DEFAULT_MAX_RETRY_DELAY,
         )
         self.retry_status_codes = self._resolve_retry_status_codes(retry_status_codes)
+        self.raise_on_rate_limit = self._resolve_bool(
+            "raise_on_rate_limit",
+            raise_on_rate_limit,
+            "BDL_RATE_LIMIT_RAISE",
+            False,
+        )
+        self.http_429_max_retries = self._resolve_int(
+            "http_429_max_retries",
+            http_429_max_retries,
+            "BDL_HTTP_429_MAX_RETRIES",
+            DEFAULT_HTTP_429_MAX_RETRIES,
+        )
+        self.http_429_max_delay = self._resolve_float(
+            "http_429_max_delay",
+            http_429_max_delay,
+            "BDL_HTTP_429_MAX_DELAY",
+            DEFAULT_HTTP_429_MAX_DELAY,
+        )
         self.custom_quotas = self._resolve_custom_quotas(custom_quotas)
 
         if self.page_size <= 0:
@@ -196,6 +245,10 @@ class BDLConfig:
             raise ValueError("retry_backoff_factor must be greater than or equal to 0")
         if self.max_retry_delay <= 0:
             raise ValueError("max_retry_delay must be a positive number")
+        if self.http_429_max_retries < 0:
+            raise ValueError("http_429_max_retries must be greater than or equal to 0")
+        if self.http_429_max_delay <= 0:
+            raise ValueError("http_429_max_delay must be a positive number")
 
     def _resolve_value(self, field_name: str, value: object, env_name: str, default: Any) -> Any:
         if field_name in self._provided_fields:
@@ -220,6 +273,32 @@ class BDLConfig:
             return resolved.lower() in ("true", "1", "yes")
         raise ValueError(f"{field_name} must be a boolean")
 
+    def _resolve_cache_backend(self, value: object, use_cache_value: bool) -> CacheBackend | None:
+        if "cache_backend" in self._provided_fields:
+            source = "cache_backend"
+            resolved = value
+        else:
+            env_value = os.getenv("BDL_CACHE_BACKEND")
+            if env_value is not None:
+                source = "BDL_CACHE_BACKEND"
+                resolved = env_value
+            elif "use_cache" in self._provided_fields or os.getenv("BDL_USE_CACHE") is not None:
+                return "file" if use_cache_value else None
+            else:
+                return "file"
+
+        if resolved is None:
+            return None
+        if not isinstance(resolved, str):
+            raise ValueError("cache_backend must be one of: ['memory', 'file'] or None")
+
+        normalized = resolved.lower()
+        if normalized == "none":
+            return None
+        if normalized in {"memory", "file"}:
+            return cast(CacheBackend, normalized)
+        raise ValueError(f"{source} must be one of: ['memory', 'file']")
+
     def _resolve_int(self, field_name: str, value: object, env_name: str, default: int) -> int:
         resolved = self._resolve_value(field_name, value, env_name, default)
         if isinstance(resolved, bool):
@@ -227,7 +306,9 @@ class BDLConfig:
         try:
             return int(resolved)
         except (TypeError, ValueError) as e:
-            env_label = env_name if field_name not in self._provided_fields and os.getenv(env_name) is not None else field_name
+            env_label = (
+                env_name if field_name not in self._provided_fields and os.getenv(env_name) is not None else field_name
+            )
             raise ValueError(f"{env_label} must be an integer") from e
 
     def _resolve_float(self, field_name: str, value: object, env_name: str, default: float) -> float:
@@ -237,7 +318,9 @@ class BDLConfig:
         try:
             return float(resolved)
         except (TypeError, ValueError) as e:
-            env_label = env_name if field_name not in self._provided_fields and os.getenv(env_name) is not None else field_name
+            env_label = (
+                env_name if field_name not in self._provided_fields and os.getenv(env_name) is not None else field_name
+            )
             raise ValueError(f"{env_label} must be a number") from e
 
     def _parse_language(self, value: object, *, source: str) -> Language:
