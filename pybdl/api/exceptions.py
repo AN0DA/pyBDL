@@ -6,7 +6,40 @@ from typing import Any
 class GUSBDLError(Exception):
     """Base exception for all GUS BDL API errors."""
 
-    pass
+
+class BDLHTTPError(GUSBDLError):
+    """Raised when the BDL API responds with an HTTP error or the request fails."""
+
+    def __init__(
+        self,
+        *,
+        status_code: int | None,
+        response_body: Any = None,
+        url: str | None = None,
+        message: str | None = None,
+    ) -> None:
+        self.status_code = status_code
+        self.response_body = response_body
+        self.url = url
+
+        if message is None:
+            parts = ["BDL request failed"]
+            if status_code is not None:
+                parts.append(f"with HTTP {status_code}")
+            if url:
+                parts.append(f"for {url}")
+            if response_body not in (None, ""):
+                parts.append(f": {response_body}")
+            message = " ".join(parts)
+        super().__init__(message)
+
+
+class BDLResponseError(GUSBDLError):
+    """Raised when the BDL API returns an unexpected or invalid payload."""
+
+    def __init__(self, message: str, *, payload: Any = None) -> None:
+        self.payload = payload
+        super().__init__(message)
 
 
 class RateLimitError(GUSBDLError):
