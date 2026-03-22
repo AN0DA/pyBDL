@@ -29,6 +29,42 @@ def test_config_env(monkeypatch: MonkeyPatch) -> None:
 
 
 @pytest.mark.unit
+def test_explicit_values_override_environment(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setenv("BDL_LANGUAGE", "pl")
+    monkeypatch.setenv("BDL_USE_CACHE", "false")
+    monkeypatch.setenv("BDL_CACHE_EXPIRY", "999")
+    monkeypatch.setenv("BDL_PAGE_SIZE", "333")
+
+    config = BDLConfig(
+        api_key="abc123",
+        language=Language.EN,
+        use_cache=True,
+        cache_expire_after=123,
+        page_size=25,
+    )
+
+    assert config.language == Language.EN
+    assert config.use_cache is True
+    assert config.cache_expire_after == 123
+    assert config.page_size == 25
+
+
+@pytest.mark.unit
+def test_retry_config_from_environment(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setenv("BDL_REQUEST_RETRIES", "5")
+    monkeypatch.setenv("BDL_RETRY_BACKOFF_FACTOR", "0.25")
+    monkeypatch.setenv("BDL_MAX_RETRY_DELAY", "12")
+    monkeypatch.setenv("BDL_RETRY_STATUS_CODES", "429,500,503")
+
+    config = BDLConfig(api_key="abc123")
+
+    assert config.request_retries == 5
+    assert config.retry_backoff_factor == 0.25
+    assert config.max_retry_delay == 12.0
+    assert config.retry_status_codes == (429, 500, 503)
+
+
+@pytest.mark.unit
 def test_config_env_false_cache(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("BDL_API_KEY", "key2")
     monkeypatch.setenv("BDL_USE_CACHE", "false")
