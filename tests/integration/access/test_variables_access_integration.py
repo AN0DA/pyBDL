@@ -58,6 +58,28 @@ class TestVariablesAccessIntegration:
         assert isinstance(result, pd.DataFrame)
         assert len(result) == 2
 
+    def test_list_variables_with_enrichment(
+        self,
+        mock_api_client: MagicMock,
+        load_sample_data: Callable[[str], dict[str, Any]],
+    ) -> None:
+        """Test list_variables enrichment merges level and measure details."""
+        variables_sample = load_sample_data("samples_raw_variables.json")
+        levels_sample = load_sample_data("samples_raw_levels.json")
+        measures_sample = load_sample_data("samples_raw_measures.json")
+
+        mock_api_client.list_variables.return_value = variables_sample["list_variables"]
+        mock_api_client.list_levels.return_value = levels_sample["list_levels"]
+        mock_api_client.list_measures.return_value = measures_sample["list_measures"]
+
+        access = VariablesAccess(mock_api_client)
+        result = access.list_variables(enrich_levels=True, enrich_measures=True)
+
+        assert "level_name" in result.columns
+        assert result["level_name"].notna().any()
+        assert "measure_unit_description" in result.columns
+        assert result["measure_unit_description"].notna().any()
+
     @pytest.mark.asyncio
     async def test_alist_variables(
         self,
