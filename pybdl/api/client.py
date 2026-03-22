@@ -1,16 +1,19 @@
 import asyncio
-from collections.abc import AsyncIterator, Iterator, Mapping
 import time
+from collections.abc import AsyncIterator, Iterator, Mapping
+from datetime import UTC, datetime
+from email.utils import parsedate_to_datetime
+from pathlib import Path
 from typing import Any, Literal, cast, overload
 
 import httpx
-from requests import HTTPError, RequestException, Response, Session
-from requests_cache import CachedSession
+from hishel import AsyncSqliteStorage, FilterPolicy, SyncSqliteStorage
+from hishel.httpx import AsyncCacheClient, SyncCacheClient
 from tqdm import tqdm
 
 from pybdl.api.exceptions import BDLHTTPError, BDLResponseError
 from pybdl.api.utils.rate_limiter import AsyncRateLimiter, PersistentQuotaCache, RateLimiter
-from pybdl.config import BDL_API_BASE_URL, DEFAULT_QUOTAS, BDLConfig
+from pybdl.config import BDL_API_BASE_URL, DEFAULT_QUOTAS, BDLConfig, QuotaMap
 
 # Centralized type literals for API parameters
 LanguageLiteral = Literal["pl", "en"]
@@ -37,33 +40,33 @@ class BaseAPIClient:
             extra_headers: Optional extra headers (e.g., Accept-Language) to include in requests.
         """
         self.config = config
-        self.session: CachedSession | Session
-
-        if config.use_cache:
-            self.session = CachedSession(
-                expire_after=config.cache_expire_after,
-                backend="memory",
-            )
-        else:
-            self.session = Session()
-
-        self._proxy_url = self._build_proxy_url()
-        if self._proxy_url:
-            self.session.proxies.update({"http": self._proxy_url, "https": self._proxy_url})
-
-        default_headers = self._build_default_headers(extra_headers)
-        self.session.headers.update(default_headers)
-        self._async_client = httpx.AsyncClient(headers=default_headers, proxy=self._proxy_url)
-
         is_registered = bool(config.api_key)
-        quotas = config.custom_quotas if config.custom_quotas is not None else DEFAULT_QUOTAS
+        quotas: QuotaMap = cast(
+            QuotaMap,
+            config.custom_quotas if config.custom_quotas is not None else DEFAULT_QUOTAS,
+        )
         self._quota_cache = PersistentQuotaCache(
             config.quota_cache_enabled,
             cache_file=config.quota_cache_file,
             use_global_cache=config.use_global_cache,
         )
-        self._sync_limiter = RateLimiter(quotas, is_registered, self._quota_cache)
-        self._async_limiter = AsyncRateLimiter(quotas, is_registered, self._quota_cache)
+        self._sync_limiter = RateLimiter(
+            quotas,
+            is_registered,
+            self._quota_cache,
+            raise_on_limit=config.raise_on_rate_limit,
+        )
+        self._async_limiter = AsyncRateLimiter(
+            quotas,
+            is_registered,
+            self._quota_cache,
+            raise_on_limit=config.raise_on_rate_limit,
+        )
+        self._proxy_url = self._build_proxy_url()
+        self._http_cache_path = self._build_http_cache_path()
+        default_headers = self._build_default_headers(extra_headers)
+        self.session = self._build_sync_client(default_headers)
+        self._async_client = self._build_async_client(default_headers)
 
     def _build_proxy_url(self) -> str | None:
         if not self.config.proxy_url:
@@ -84,6 +87,48 @@ class BaseAPIClient:
         if extra_headers:
             headers.update({key: str(value) for key, value in extra_headers.items() if value is not None})
         return headers
+
+    def _build_http_cache_path(self) -> Path | None:
+        if self.config.cache_backend != "file":
+            return None
+        return self._quota_cache.cache_file.with_name("http_cache.db")
+
+    def _build_cache_policy(self) -> FilterPolicy:
+        return FilterPolicy()
+
+    def _build_sync_client(self, default_headers: Mapping[str, str]) -> httpx.Client:
+        if self.config.cache_backend == "memory":
+            return SyncCacheClient(
+                headers=default_headers,
+                proxy=self._proxy_url,
+                storage=SyncSqliteStorage(database_path=":memory:"),
+                policy=self._build_cache_policy(),
+            )
+        if self.config.cache_backend == "file" and self._http_cache_path is not None:
+            return SyncCacheClient(
+                headers=default_headers,
+                proxy=self._proxy_url,
+                storage=SyncSqliteStorage(database_path=str(self._http_cache_path)),
+                policy=self._build_cache_policy(),
+            )
+        return httpx.Client(headers=default_headers, proxy=self._proxy_url)
+
+    def _build_async_client(self, default_headers: Mapping[str, str]) -> httpx.AsyncClient:
+        if self.config.cache_backend == "memory":
+            return AsyncCacheClient(
+                headers=default_headers,
+                proxy=self._proxy_url,
+                storage=AsyncSqliteStorage(database_path=":memory:"),
+                policy=self._build_cache_policy(),
+            )
+        if self.config.cache_backend == "file" and self._http_cache_path is not None:
+            return AsyncCacheClient(
+                headers=default_headers,
+                proxy=self._proxy_url,
+                storage=AsyncSqliteStorage(database_path=str(self._http_cache_path)),
+                policy=self._build_cache_policy(),
+            )
+        return httpx.AsyncClient(headers=default_headers, proxy=self._proxy_url)
 
     def close(self) -> None:
         """Close synchronous HTTP resources."""
@@ -203,13 +248,13 @@ class BaseAPIClient:
             request_headers.update({key: str(value) for key, value in headers.items()})
         return request_headers
 
-    def _extract_error_detail(self, response: Response | httpx.Response) -> Any:
+    def _extract_error_detail(self, response: httpx.Response) -> Any:
         try:
             return response.json()
         except Exception:
             return response.text
 
-    def _parse_response_json(self, response: Response | httpx.Response) -> dict[str, Any]:
+    def _parse_response_json(self, response: httpx.Response) -> dict[str, Any]:
         try:
             data = response.json()
         except Exception as exc:
@@ -220,10 +265,10 @@ class BaseAPIClient:
             raise BDLResponseError("BDL API returned an error payload.", payload=data)
         return data
 
-    def _process_response(self, response: Response | httpx.Response) -> dict[str, Any]:
+    def _process_response(self, response: httpx.Response) -> dict[str, Any]:
         try:
             response.raise_for_status()
-        except (HTTPError, httpx.HTTPStatusError) as exc:
+        except httpx.HTTPStatusError as exc:
             raise BDLHTTPError(
                 status_code=response.status_code,
                 response_body=self._extract_error_detail(response),
@@ -234,16 +279,44 @@ class BaseAPIClient:
     def _should_retry_status(self, status_code: int) -> bool:
         return status_code in self.config.retry_status_codes
 
-    def _retry_delay(self, attempt: int, response: Response | httpx.Response | None = None) -> float:
+    @staticmethod
+    def _parse_retry_after_seconds(response: httpx.Response) -> float | None:
+        raw = response.headers.get("Retry-After")
+        if raw is None:
+            return None
+        text = str(raw).strip()
+        if not text:
+            return None
+        try:
+            return max(0.0, float(text))
+        except ValueError:
+            pass
+        try:
+            dt = parsedate_to_datetime(text)
+        except (TypeError, ValueError):
+            return None
+        if dt is None:
+            return None
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=UTC)
+        now = datetime.now(dt.tzinfo)
+        return max(0.0, (dt - now).total_seconds())
+
+    def _retry_delay(self, attempt: int, response: httpx.Response | None = None) -> float:
         if response is not None:
-            retry_after = response.headers.get("Retry-After")
-            if retry_after:
-                try:
-                    return min(float(retry_after), self.config.max_retry_delay)
-                except ValueError:
-                    pass
+            parsed = BaseAPIClient._parse_retry_after_seconds(response)
+            if parsed is not None:
+                return min(parsed, self.config.max_retry_delay)
         delay = self.config.retry_backoff_factor * (2**attempt)
         return min(delay, self.config.max_retry_delay)
+
+    def _retry_delay_after_429(self, attempt: int, response: httpx.Response) -> float:
+        """Wait after HTTP 429: honor ``Retry-After`` when set, else exponential backoff."""
+        parsed = self._parse_retry_after_seconds(response)
+        if parsed is not None:
+            return min(parsed, self.config.http_429_max_delay)
+        delay = self.config.retry_backoff_factor * (2**attempt)
+        return min(self.config.http_429_max_delay, delay)
 
     def _request_sync_url(
         self,
@@ -253,21 +326,27 @@ class BaseAPIClient:
         params: dict[str, Any] | None = None,
         headers: dict[str, str] | None = None,
     ) -> dict[str, Any]:
-        query = params.copy() if params else {}
+        query = params.copy() if params else None
         lang = self.config.language.value if hasattr(self.config.language, "value") else self.config.language
         if params is not None or "?" not in url:
+            query = query or {}
             query.setdefault("lang", lang)
         request_headers = self._merge_headers(headers)
 
         last_error: Exception | None = None
-        for attempt in range(self.config.request_retries + 1):
-            self._sync_limiter.acquire()
+        retries_other = 0
+        retries_429 = 0
+        max_iterations = self.config.request_retries + self.config.http_429_max_retries + 500
+
+        for _ in range(max_iterations):
+            reservation = self._sync_limiter.acquire()
             try:
                 response = self.session.request(method, url, params=query, headers=request_headers)
-            except RequestException as exc:
+            except httpx.HTTPError as exc:
                 last_error = exc
-                if attempt < self.config.request_retries:
-                    time.sleep(self._retry_delay(attempt))
+                if retries_other < self.config.request_retries:
+                    retries_other += 1
+                    time.sleep(self._retry_delay(retries_other - 1))
                     continue
                 raise BDLHTTPError(
                     status_code=None,
@@ -275,9 +354,25 @@ class BaseAPIClient:
                     url=url,
                 ) from exc
 
-            if self._should_retry_status(response.status_code) and attempt < self.config.request_retries:
-                time.sleep(self._retry_delay(attempt, response))
+            if response.extensions.get("hishel_from_cache", False):
+                self._sync_limiter.release(reservation)
+
+            if response.status_code == 429 and 429 in self.config.retry_status_codes:
+                if retries_429 < self.config.http_429_max_retries:
+                    retries_429 += 1
+                    time.sleep(self._retry_delay_after_429(retries_429 - 1, response))
+                    continue
+                return self._process_response(response)
+
+            if (
+                self._should_retry_status(response.status_code)
+                and response.status_code != 429
+                and retries_other < self.config.request_retries
+            ):
+                retries_other += 1
+                time.sleep(self._retry_delay(retries_other - 1, response))
                 continue
+
             return self._process_response(response)
 
         raise BDLHTTPError(status_code=None, response_body=str(last_error), url=url)
@@ -480,19 +575,16 @@ class BaseAPIClient:
         max_pages: int | None = None,
         show_progress: bool = True,
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-        return cast(
-            tuple[list[dict[str, Any]], dict[str, Any]],
-            self.fetch_all_results(
-                endpoint,
-                method=method,
-                params=params,
-                headers=headers,
-                results_key=results_key,
-                page_size=page_size,
-                max_pages=max_pages,
-                return_metadata=True,
-                show_progress=show_progress,
-            ),
+        return self.fetch_all_results(
+            endpoint,
+            method=method,
+            params=params,
+            headers=headers,
+            results_key=results_key,
+            page_size=page_size,
+            max_pages=max_pages,
+            return_metadata=True,
+            show_progress=show_progress,
         )
 
     @overload
@@ -603,16 +695,13 @@ class BaseAPIClient:
         params: dict[str, Any] | None = None,
         headers: dict[str, str] | None = None,
     ) -> tuple[dict[str, Any], dict[str, Any]] | tuple[list[dict[str, Any]], dict[str, Any]]:
-        return cast(
-            tuple[dict[str, Any], dict[str, Any]] | tuple[list[dict[str, Any]], dict[str, Any]],
-            self.fetch_single_result(
-                endpoint,
-                results_key=results_key,
-                method=method,
-                params=params,
-                headers=headers,
-                return_metadata=True,
-            ),
+        return self.fetch_single_result(
+            endpoint,
+            results_key=results_key,
+            method=method,
+            params=params,
+            headers=headers,
+            return_metadata=True,
         )
 
     def _fetch_collection_endpoint(
@@ -639,26 +728,20 @@ class BaseAPIClient:
         if max_pages == 1:
             params_with_page_size = params.copy()
             params_with_page_size["page-size"] = page_size
-            return cast(
-                list[dict[str, Any]],
-                self.fetch_single_result(
-                    endpoint,
-                    results_key=results_key,
-                    params=params_with_page_size,
-                    headers=headers,
-                ),
+            return self.fetch_single_result(
+                endpoint,
+                results_key=results_key,
+                params=params_with_page_size,
+                headers=headers,
             )
 
-        return cast(
-            list[dict[str, Any]],
-            self.fetch_all_results(
-                endpoint,
-                params=params,
-                headers=headers,
-                page_size=page_size,
-                max_pages=max_pages,
-                results_key=results_key,
-            ),
+        return self.fetch_all_results(
+            endpoint,
+            params=params,
+            headers=headers,
+            page_size=page_size,
+            max_pages=max_pages,
+            results_key=results_key,
         )
 
     def _fetch_detail_endpoint(
@@ -678,10 +761,7 @@ class BaseAPIClient:
             if_modified_since=if_modified_since,
             extra_params=extra_params,
         )
-        return cast(
-            dict[str, Any],
-            self.fetch_single_result(endpoint, params=params or None, headers=headers or None),
-        )
+        return self.fetch_single_result(endpoint, params=params or None, headers=headers or None)
 
     async def _request_async_url(
         self,
@@ -691,21 +771,27 @@ class BaseAPIClient:
         params: dict[str, Any] | None = None,
         headers: dict[str, str] | None = None,
     ) -> dict[str, Any]:
-        query = params.copy() if params else {}
+        query = params.copy() if params else None
         lang = self.config.language.value if hasattr(self.config.language, "value") else self.config.language
         if params is not None or "?" not in url:
+            query = query or {}
             query.setdefault("lang", lang)
         request_headers = self._merge_headers(headers)
 
         last_error: Exception | None = None
-        for attempt in range(self.config.request_retries + 1):
-            await self._async_limiter.acquire()
+        retries_other = 0
+        retries_429 = 0
+        max_iterations = self.config.request_retries + self.config.http_429_max_retries + 500
+
+        for _ in range(max_iterations):
+            reservation = await self._async_limiter.acquire()
             try:
                 response = await self._async_client.request(method, url, params=query, headers=request_headers)
             except httpx.HTTPError as exc:
                 last_error = exc
-                if attempt < self.config.request_retries:
-                    await asyncio.sleep(self._retry_delay(attempt))
+                if retries_other < self.config.request_retries:
+                    retries_other += 1
+                    await asyncio.sleep(self._retry_delay(retries_other - 1))
                     continue
                 raise BDLHTTPError(
                     status_code=getattr(getattr(exc, "response", None), "status_code", None),
@@ -713,9 +799,25 @@ class BaseAPIClient:
                     url=url,
                 ) from exc
 
-            if self._should_retry_status(response.status_code) and attempt < self.config.request_retries:
-                await asyncio.sleep(self._retry_delay(attempt, response))
+            if response.extensions.get("hishel_from_cache", False):
+                await self._async_limiter.release(reservation)
+
+            if response.status_code == 429 and 429 in self.config.retry_status_codes:
+                if retries_429 < self.config.http_429_max_retries:
+                    retries_429 += 1
+                    await asyncio.sleep(self._retry_delay_after_429(retries_429 - 1, response))
+                    continue
+                return self._process_response(response)
+
+            if (
+                self._should_retry_status(response.status_code)
+                and response.status_code != 429
+                and retries_other < self.config.request_retries
+            ):
+                retries_other += 1
+                await asyncio.sleep(self._retry_delay(retries_other - 1, response))
                 continue
+
             return self._process_response(response)
 
         raise BDLHTTPError(status_code=None, response_body=str(last_error), url=url)
@@ -897,19 +999,16 @@ class BaseAPIClient:
         max_pages: int | None = None,
         show_progress: bool = True,
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-        return cast(
-            tuple[list[dict[str, Any]], dict[str, Any]],
-            await self.afetch_all_results(
-                endpoint,
-                method=method,
-                params=params,
-                headers=headers,
-                results_key=results_key,
-                page_size=page_size,
-                max_pages=max_pages,
-                return_metadata=True,
-                show_progress=show_progress,
-            ),
+        return await self.afetch_all_results(
+            endpoint,
+            method=method,
+            params=params,
+            headers=headers,
+            results_key=results_key,
+            page_size=page_size,
+            max_pages=max_pages,
+            return_metadata=True,
+            show_progress=show_progress,
         )
 
     @overload
@@ -1018,16 +1117,13 @@ class BaseAPIClient:
         params: dict[str, Any] | None = None,
         headers: dict[str, str] | None = None,
     ) -> tuple[dict[str, Any], dict[str, Any]] | tuple[list[dict[str, Any]], dict[str, Any]]:
-        return cast(
-            tuple[dict[str, Any], dict[str, Any]] | tuple[list[dict[str, Any]], dict[str, Any]],
-            await self.afetch_single_result(
-                endpoint,
-                results_key=results_key,
-                method=method,
-                params=params,
-                headers=headers,
-                return_metadata=True,
-            ),
+        return await self.afetch_single_result(
+            endpoint,
+            results_key=results_key,
+            method=method,
+            params=params,
+            headers=headers,
+            return_metadata=True,
         )
 
     async def _afetch_collection_endpoint(
@@ -1054,26 +1150,20 @@ class BaseAPIClient:
         if max_pages == 1:
             params_with_page_size = params.copy()
             params_with_page_size["page-size"] = page_size
-            return cast(
-                list[dict[str, Any]],
-                await self.afetch_single_result(
-                    endpoint,
-                    results_key=results_key,
-                    params=params_with_page_size,
-                    headers=headers,
-                ),
+            return await self.afetch_single_result(
+                endpoint,
+                results_key=results_key,
+                params=params_with_page_size,
+                headers=headers,
             )
 
-        return cast(
-            list[dict[str, Any]],
-            await self.afetch_all_results(
-                endpoint,
-                params=params,
-                headers=headers,
-                page_size=page_size,
-                max_pages=max_pages,
-                results_key=results_key,
-            ),
+        return await self.afetch_all_results(
+            endpoint,
+            params=params,
+            headers=headers,
+            page_size=page_size,
+            max_pages=max_pages,
+            results_key=results_key,
         )
 
     async def _afetch_detail_endpoint(
@@ -1093,7 +1183,4 @@ class BaseAPIClient:
             if_modified_since=if_modified_since,
             extra_params=extra_params,
         )
-        return cast(
-            dict[str, Any],
-            await self.afetch_single_result(endpoint, params=params or None, headers=headers or None),
-        )
+        return await self.afetch_single_result(endpoint, params=params or None, headers=headers or None)
