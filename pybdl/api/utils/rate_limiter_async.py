@@ -82,6 +82,14 @@ class AsyncRateLimiter:
         for period in self.quotas:
             self.cache.set(f"{self.cache_key}_{period}", list(self.calls[period]))
 
+    def _remove_local_timestamp(self, period: int, recorded_at: float) -> None:
+        calls = list(self.calls[period])
+        for index in range(len(calls) - 1, -1, -1):
+            if calls[index] == recorded_at:
+                del calls[index]
+                self.calls[period] = deque(calls)
+                break
+
     def _get_limit_info(self) -> dict[str, Any]:
         """Get current rate limit information."""
         return {
@@ -146,7 +154,7 @@ class AsyncRateLimiter:
                 self.calls[period].clear()
             self._save_to_cache()
 
-    async def acquire(self) -> None:
+    async def acquire(self) -> float | None:
         """
         Acquire a slot for an API request asynchronously.
 
@@ -159,6 +167,9 @@ class AsyncRateLimiter:
             RateLimitError: If the rate limit is exceeded and raise_on_limit=True.
             RateLimitDelayExceeded: If required delay exceeds max_delay.
         """
+        if not self.quotas:
+            return None
+
         now = time.monotonic()
 
         # Check if we need to wait
@@ -263,6 +274,18 @@ class AsyncRateLimiter:
                 # No cache - just record locally
                 for period in self.quotas:
                     self.calls[period].append(now)
+            return now
+
+    async def release(self, recorded_at: float | None) -> None:
+        """Refund a previously acquired quota slot."""
+        if recorded_at is None:
+            return
+
+        async with self.lock:
+            for period in self.quotas:
+                self._remove_local_timestamp(period, recorded_at)
+                if self.cache and self.cache.enabled:
+                    self.cache.remove_last_if_matches(f"{self.cache_key}_{period}", recorded_at)
 
     async def __aenter__(self) -> "AsyncRateLimiter":
         """Async context manager entry."""
