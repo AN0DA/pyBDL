@@ -1,8 +1,25 @@
-from types import SimpleNamespace
+from dataclasses import dataclass
+from typing import Any
 
 import pybdl.access as access
 import pybdl.api as api
 from pybdl.config import BDLConfig
+
+
+@dataclass
+class APINamespace:
+    """Typed namespace for low-level API clients."""
+
+    aggregates: Any
+    attributes: Any
+    data: Any
+    levels: Any
+    measures: Any
+    subjects: Any
+    units: Any
+    variables: Any
+    version: Any
+    years: Any
 
 
 class BDL:
@@ -43,18 +60,18 @@ class BDL:
             raise TypeError(f"config must be a dict, BDLConfig, or None, got {type(config)}")
         self.config = config_obj
 
-        # Initialize API namespace (for raw API access)
-        self.api = SimpleNamespace()
-        self.api.aggregates = api.AggregatesAPI(self.config)
-        self.api.attributes = api.AttributesAPI(self.config)
-        self.api.data = api.DataAPI(self.config)
-        self.api.levels = api.LevelsAPI(self.config)
-        self.api.measures = api.MeasuresAPI(self.config)
-        self.api.subjects = api.SubjectsAPI(self.config)
-        self.api.units = api.UnitsAPI(self.config)
-        self.api.variables = api.VariablesAPI(self.config)
-        self.api.version = api.VersionAPI(self.config)
-        self.api.years = api.YearsAPI(self.config)
+        self.api = APINamespace(
+            aggregates=api.AggregatesAPI(self.config),
+            attributes=api.AttributesAPI(self.config),
+            data=api.DataAPI(self.config),
+            levels=api.LevelsAPI(self.config),
+            measures=api.MeasuresAPI(self.config),
+            subjects=api.SubjectsAPI(self.config),
+            units=api.UnitsAPI(self.config),
+            variables=api.VariablesAPI(self.config),
+            version=api.VersionAPI(self.config),
+            years=api.YearsAPI(self.config),
+        )
 
         # Initialize access layer (default interface, returns DataFrames)
         self.aggregates = access.AggregatesAccess(self.api.aggregates)
@@ -66,3 +83,35 @@ class BDL:
         self.units = access.UnitsAccess(self.api.units)
         self.variables = access.VariablesAccess(self.api.variables)
         self.years = access.YearsAccess(self.api.years)
+
+    def close(self) -> None:
+        """Close all synchronous HTTP resources owned by the client."""
+        for client in vars(self.api).values():
+            close = getattr(client, "close", None)
+            if callable(close):
+                close()
+
+    async def aclose(self) -> None:
+        """Close all synchronous and asynchronous HTTP resources owned by the client."""
+        for client in vars(self.api).values():
+            aclose = getattr(client, "aclose", None)
+            if callable(aclose):
+                await aclose()
+            else:
+                close = getattr(client, "close", None)
+                if callable(close):
+                    close()
+
+    def __enter__(self) -> "BDL":
+        return self
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+        self.close()
+        return False
+
+    async def __aenter__(self) -> "BDL":
+        return self
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+        await self.aclose()
+        return False
