@@ -56,3 +56,22 @@ def get_cache_file_path(filename: str, use_global_cache: bool = False, custom_pa
     """
     cache_dir = get_default_cache_path(use_global_cache, custom_path)
     return os.path.join(cache_dir, filename)
+
+
+def resolve_cache_file_path(filename: str, use_global_cache: bool = False, custom_file: str | None = None) -> str:
+    """
+    Resolve a cache file path from either an explicit file or the default cache directory.
+
+    Args:
+        filename: Default file name when no explicit path is provided.
+        use_global_cache: If True, use the global cache directory.
+        custom_file: Explicit file path to use instead of the default cache directory.
+
+    Returns:
+        str: Full path to the cache file.
+    """
+    if custom_file:
+        explicit_path = Path(custom_file)
+        explicit_path.parent.mkdir(parents=True, exist_ok=True)
+        return str(explicit_path)
+    return get_cache_file_path(filename, use_global_cache=use_global_cache)
