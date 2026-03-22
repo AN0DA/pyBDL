@@ -3,8 +3,9 @@ from typing import Any
 from unittest.mock import AsyncMock, patch
 from urllib.parse import urlencode
 
+import httpx
 import pytest
-import responses
+import respx
 
 from pybdl.api.data import DataAPI
 from pybdl.config import BDLConfig
@@ -15,64 +16,58 @@ def data_api(dummy_config: BDLConfig) -> DataAPI:
     return DataAPI(dummy_config)
 
 
-@responses.activate
 @pytest.mark.unit
-def test_get_data_by_variable(data_api: DataAPI, api_url: str) -> None:
+def test_get_data_by_variable(respx_mock: respx.MockRouter, data_api: DataAPI, api_url: str) -> None:
     url = f"{api_url}/data/by-variable/3643?lang=en&format=json&page-size=100"
     payload = {"results": [{"id": "A", "value": 123}]}
-    responses.add(responses.GET, url, json=payload, status=200)
+    respx_mock.get(url).mock(return_value=httpx.Response(200, json=payload))
     response = data_api.get_data_by_variable(variable_id="3643", max_pages=1)
     assert isinstance(response, list)
     assert response[0]["id"] == "A"
 
 
-@responses.activate
 @pytest.mark.unit
-def test_get_data_by_unit(data_api: DataAPI, api_url: str) -> None:
+def test_get_data_by_unit(respx_mock: respx.MockRouter, data_api: DataAPI, api_url: str) -> None:
     params = {"var-id": "3643", "lang": "en", "format": "json", "page-size": "100"}
     url = f"{api_url}/data/by-unit/999?{urlencode(params)}"
     payload = {"results": [{"id": "B", "value": 555}]}
-    responses.add(responses.GET, url, json=payload, status=200)
+    respx_mock.get(url).mock(return_value=httpx.Response(200, json=payload))
     response = data_api.get_data_by_unit(unit_id="999", variable_ids=[3643])
     assert isinstance(response, list)
     assert response[0]["id"] == "B"
-    request_url = responses.calls[0].request.url
-    assert request_url is not None and "var-id=3643" in request_url
+    request_url = respx_mock.calls[0].request.url
+    assert request_url is not None and "var-id=3643" in str(request_url)
 
 
-@responses.activate
 @pytest.mark.unit
-def test_get_data_by_variable_locality(data_api: DataAPI, api_url: str) -> None:
+def test_get_data_by_variable_locality(respx_mock: respx.MockRouter, data_api: DataAPI, api_url: str) -> None:
     url = f"{api_url}/data/localities/by-variable/7?lang=en&format=json&unit-parent-id=2&page-size=100"
     payload = {"results": [{"id": "C", "value": 42}]}
-    responses.add(responses.GET, url, json=payload, status=200)
+    respx_mock.get(url).mock(return_value=httpx.Response(200, json=payload))
     response = data_api.get_data_by_variable_locality(variable_id="7", unit_parent_id="2", max_pages=1)
     assert isinstance(response, list)
     assert response[0]["id"] == "C"
 
 
-@responses.activate
 @pytest.mark.unit
-def test_get_data_locality_by_unit(data_api: DataAPI, api_url: str) -> None:
+def test_get_data_locality_by_unit(respx_mock: respx.MockRouter, data_api: DataAPI, api_url: str) -> None:
     url = f"{api_url}/data/localities/by-unit/44?lang=en&format=json&var-id=3643&page-size=100"
     payload = {"results": [{"id": "D", "value": 10}]}
-    responses.add(responses.GET, url, json=payload, status=200)
+    respx_mock.get(url).mock(return_value=httpx.Response(200, json=payload))
     response = data_api.get_data_by_unit_locality(unit_id="44", variable_ids=[3643], max_pages=1)
     assert isinstance(response, list)
     assert response[0]["id"] == "D"
 
 
-@responses.activate
 @pytest.mark.unit
-def test_get_data_metadata(data_api: DataAPI, api_url: str) -> None:
+def test_get_data_metadata(respx_mock: respx.MockRouter, data_api: DataAPI, api_url: str) -> None:
     url = f"{api_url}/data/metadata?lang=en&format=json"
     payload = {"info": "data metadata"}
-    responses.add(responses.GET, url, json=payload, status=200)
+    respx_mock.get(url).mock(return_value=httpx.Response(200, json=payload))
     result = data_api.get_data_metadata()
     assert result["info"] == "data metadata"
 
 
-@responses.activate
 @pytest.mark.unit
 def test_get_data_metadata_error(data_api: DataAPI) -> None:
     # Simulate error in fetch_single_result
@@ -87,14 +82,9 @@ def test_get_data_metadata_error(data_api: DataAPI) -> None:
         data_api.get_data_metadata()
 
 
-@responses.activate
 @pytest.mark.unit
-def test_get_data_by_variable_all_branches(data_api: DataAPI, api_url: str) -> None:
+def test_get_data_by_variable_all_branches(data_api: DataAPI) -> None:
     # max_pages=None (default, all pages), return_metadata True
-    url = f"{api_url}/data/by-variable/3643?lang=en&format=json"
-    payload = {"results": [{"id": "A", "value": 123}]}
-    responses.add(responses.GET, url, json=payload, status=200)
-
     def mock_fetch_all_results(*a: Any, **k: Any) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         return ([{"id": "A", "value": 123}], {"meta": 1})
 
@@ -119,7 +109,6 @@ def test_get_data_by_variable_all_branches(data_api: DataAPI, api_url: str) -> N
     assert result_single == [{"id": "C"}]
 
 
-@responses.activate
 @pytest.mark.unit
 def test_get_data_by_unit_all_branches(data_api: DataAPI, api_url: str) -> None:
     # return_metadata True
@@ -139,7 +128,6 @@ def test_get_data_by_unit_all_branches(data_api: DataAPI, api_url: str) -> None:
     assert result_no_meta == [{"id": "B"}]
 
 
-@responses.activate
 @pytest.mark.unit
 def test_get_data_by_variable_locality_all_branches(data_api: DataAPI, api_url: str) -> None:
     # max_pages=None (default, all pages), return_metadata True
@@ -179,7 +167,6 @@ def test_get_data_by_variable_locality_all_branches(data_api: DataAPI, api_url: 
     assert result_single_no_meta == [{"id": "D"}]
 
 
-@responses.activate
 @pytest.mark.unit
 def test_get_data_by_unit_locality_all_branches(data_api: DataAPI, api_url: str) -> None:
     # max_pages=None (default, all pages), return_metadata True
@@ -219,7 +206,6 @@ def test_get_data_by_unit_locality_all_branches(data_api: DataAPI, api_url: str)
     assert result_single_no_meta == [{"id": "D"}]
 
 
-@responses.activate
 @pytest.mark.unit
 def test_get_data_by_variable_params(data_api: DataAPI, api_url: str) -> None:
     # Test all optional params: year, unit_level, parent_id, format, extra_query
@@ -246,7 +232,6 @@ def test_get_data_by_variable_params(data_api: DataAPI, api_url: str) -> None:
     assert result["foo"] == "bar"
 
 
-@responses.activate
 @pytest.mark.unit
 def test_get_data_by_unit_params(data_api: DataAPI, api_url: str) -> None:
     def mock_fetch_single_result(
@@ -269,7 +254,6 @@ def test_get_data_by_unit_params(data_api: DataAPI, api_url: str) -> None:
     assert result["bar"] == "baz"
 
 
-@responses.activate
 @pytest.mark.unit
 def test_get_data_by_variable_locality_params(data_api: DataAPI, api_url: str) -> None:
     def mock_fetch_all_results(
@@ -292,7 +276,6 @@ def test_get_data_by_variable_locality_params(data_api: DataAPI, api_url: str) -
     assert result["baz"] == "qux"
 
 
-@responses.activate
 @pytest.mark.unit
 def test_get_data_by_unit_locality_params(data_api: DataAPI, api_url: str) -> None:
     def mock_fetch_all_results(
@@ -315,7 +298,6 @@ def test_get_data_by_unit_locality_params(data_api: DataAPI, api_url: str) -> No
     assert result["qux"] == "quux"
 
 
-@responses.activate
 @pytest.mark.unit
 def test_get_data_by_variable_edge_cases(data_api: DataAPI, api_url: str) -> None:
     # Empty results
@@ -337,7 +319,6 @@ def test_get_data_by_variable_edge_cases(data_api: DataAPI, api_url: str) -> Non
     assert result_no_meta[1] is None
 
 
-@responses.activate
 @pytest.mark.unit
 def test_get_data_by_unit_locality_edge_cases(data_api: DataAPI, api_url: str) -> None:
     # Empty results
@@ -387,7 +368,6 @@ async def test_async_get_data_by_unit_error(afetch_single_result: AsyncMock, dat
         await data_api.aget_data_by_unit(unit_id="u", variable_id=[1], return_metadata=True)
 
 
-@responses.activate
 @pytest.mark.unit
 def test_get_data_by_variable_error(data_api: DataAPI) -> None:
     def raise_exc(*a: Any, **k: Any) -> None:
@@ -398,7 +378,6 @@ def test_get_data_by_variable_error(data_api: DataAPI) -> None:
         data_api.get_data_by_variable(variable_id="v", return_metadata=True)
 
 
-@responses.activate
 @pytest.mark.unit
 def test_get_data_by_unit_error(data_api: DataAPI) -> None:
     def raise_exc(*a: Any, **k: Any) -> None:
@@ -409,7 +388,6 @@ def test_get_data_by_unit_error(data_api: DataAPI) -> None:
         data_api.get_data_by_unit(unit_id="u", variable_id=[1], return_metadata=True)
 
 
-@responses.activate
 @pytest.mark.unit
 def test_get_data_by_variable_locality_error(data_api: DataAPI) -> None:
     def raise_exc(*a: Any, **k: Any) -> None:
@@ -420,7 +398,6 @@ def test_get_data_by_variable_locality_error(data_api: DataAPI) -> None:
         data_api.get_data_by_variable_locality(variable_id="v", unit_parent_id="l", return_metadata=True)
 
 
-@responses.activate
 @pytest.mark.unit
 def test_get_data_by_unit_locality_error(data_api: DataAPI) -> None:
     def raise_exc(*a: Any, **k: Any) -> None:
@@ -447,7 +424,6 @@ async def test_async_get_data_by_unit_locality_error(afetch_all_results: AsyncMo
         await data_api.aget_data_by_unit_locality(unit_id="u", variable_id=[1], return_metadata=True)
 
 
-@responses.activate
 @pytest.mark.unit
 def test_get_data_by_variable_pagination(data_api: DataAPI) -> None:
     # Test max_pages and page_size are passed through
@@ -475,3 +451,138 @@ async def test_async_get_data_by_variable_pagination(afetch_all_results: AsyncMo
     assert len(result) == 2
     assert result[0] == 55  # page_size
     assert result[1] == 3  # max_pages
+
+
+@pytest.mark.unit
+def test_normalize_variable_ids_both_parameters_rejected() -> None:
+    with pytest.raises(TypeError, match="not both"):
+        DataAPI._normalize_variable_ids([1], [2])  # type: ignore[arg-type]
+
+
+@pytest.mark.unit
+def test_normalize_variable_ids_neither_parameter_rejected() -> None:
+    with pytest.raises(TypeError, match="required"):
+        DataAPI._normalize_variable_ids(None, None)
+
+
+@pytest.mark.unit
+def test_normalize_variable_ids_single_int_and_string() -> None:
+    assert DataAPI._normalize_variable_ids(42, None) == [42]
+    assert DataAPI._normalize_variable_ids("99", None) == [99]
+
+
+@pytest.mark.unit
+def test_normalize_variable_ids_sequence() -> None:
+    assert DataAPI._normalize_variable_ids([1, "2"], None) == [1, 2]
+
+
+@pytest.mark.unit
+def test_get_data_by_variable_with_metadata_sets_flag(data_api: DataAPI) -> None:
+    captured: dict[str, Any] = {}
+
+    def capture(*a: Any, **k: Any) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        captured.update(k)
+        return ([{"x": 1}], {"m": 2})
+
+    data_api.get_data_by_variable = capture  # type: ignore[assignment]
+    rows, meta = data_api.get_data_by_variable_with_metadata(variable_id="3643")
+    assert rows == [{"x": 1}]
+    assert meta == {"m": 2}
+    assert captured.get("return_metadata") is True
+
+
+@pytest.mark.unit
+def test_get_data_by_unit_with_metadata_sets_flag(data_api: DataAPI) -> None:
+    captured: dict[str, Any] = {}
+
+    def capture(*a: Any, **k: Any) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        captured.update(k)
+        return ([{"x": 1}], {"m": 2})
+
+    data_api.get_data_by_unit = capture  # type: ignore[assignment]
+    rows, meta = data_api.get_data_by_unit_with_metadata(unit_id="1", variable_ids=[1])
+    assert captured.get("return_metadata") is True
+    assert rows == [{"x": 1}]
+
+
+@pytest.mark.unit
+def test_get_data_by_variable_locality_with_metadata_sets_flag(data_api: DataAPI) -> None:
+    captured: dict[str, Any] = {}
+
+    def capture(*a: Any, **k: Any) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        captured.update(k)
+        return ([], {})
+
+    data_api.get_data_by_variable_locality = capture  # type: ignore[assignment]
+    data_api.get_data_by_variable_locality_with_metadata(variable_id="v", unit_parent_id="l")
+    assert captured.get("return_metadata") is True
+
+
+@pytest.mark.unit
+def test_get_data_by_unit_locality_with_metadata_sets_flag(data_api: DataAPI) -> None:
+    captured: dict[str, Any] = {}
+
+    def capture(*a: Any, **k: Any) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        captured.update(k)
+        return ([], {})
+
+    data_api.get_data_by_unit_locality = capture  # type: ignore[assignment]
+    data_api.get_data_by_unit_locality_with_metadata(unit_id="u", variable_ids=[1])
+    assert captured.get("return_metadata") is True
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_aget_data_by_variable_with_metadata_sets_flag(data_api: DataAPI) -> None:
+    captured: dict[str, Any] = {}
+
+    async def capture(*a: Any, **k: Any) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        captured.update(k)
+        return ([{"a": 1}], {"b": 2})
+
+    data_api.aget_data_by_variable = capture  # type: ignore[assignment]
+    rows, meta = await data_api.aget_data_by_variable_with_metadata(variable_id="v")
+    assert captured.get("return_metadata") is True
+    assert rows == [{"a": 1}]
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_aget_data_by_unit_with_metadata_sets_flag(data_api: DataAPI) -> None:
+    captured: dict[str, Any] = {}
+
+    async def capture(*a: Any, **k: Any) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        captured.update(k)
+        return ([], {})
+
+    data_api.aget_data_by_unit = capture  # type: ignore[assignment]
+    await data_api.aget_data_by_unit_with_metadata(unit_id="u", variable_ids=[1])
+    assert captured.get("return_metadata") is True
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_aget_data_by_variable_locality_with_metadata_sets_flag(data_api: DataAPI) -> None:
+    captured: dict[str, Any] = {}
+
+    async def capture(*a: Any, **k: Any) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        captured.update(k)
+        return ([], {})
+
+    data_api.aget_data_by_variable_locality = capture  # type: ignore[assignment]
+    await data_api.aget_data_by_variable_locality_with_metadata(variable_id="v", unit_parent_id="l")
+    assert captured.get("return_metadata") is True
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_aget_data_by_unit_locality_with_metadata_sets_flag(data_api: DataAPI) -> None:
+    captured: dict[str, Any] = {}
+
+    async def capture(*a: Any, **k: Any) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        captured.update(k)
+        return ([], {})
+
+    data_api.aget_data_by_unit_locality = capture  # type: ignore[assignment]
+    await data_api.aget_data_by_unit_locality_with_metadata(unit_id="u", variable_ids=[1])
+    assert captured.get("return_metadata") is True

@@ -10,7 +10,13 @@ import pandas as pd
 import pytest
 
 from pybdl.access.base import BaseAccess
-from pybdl.access.enrichment import EnrichmentSpec, with_enrichment
+from pybdl.access.enrichment import (
+    EnrichmentSpec,
+    _merge_enrichment,
+    _normalize_lookup_dataframe,
+    _normalize_requested_enrichments,
+    with_enrichment,
+)
 
 
 class DummyAccess(BaseAccess):
@@ -139,3 +145,118 @@ async def test_async_enrichment_path() -> None:
     async_loader.assert_awaited_once()
     assert "dummy_name" in df.columns
     assert df.loc[0, "dummy_name"] == "async"
+
+
+@pytest.mark.unit
+def test_merge_enrichment_skips_when_main_empty() -> None:
+    spec = EnrichmentSpec(
+        flag="enrich_dummy",
+        id_column="id",
+        cache_key="dummy",
+        sync_loader=lambda self: pd.DataFrame(),
+        async_loader=AsyncMock(return_value=pd.DataFrame()),
+        rename_map={"name": "dummy_name"},
+    )
+    empty = pd.DataFrame(columns=["id"])
+    lookup = pd.DataFrame([{"id": 1, "name": "x"}])
+    out = _merge_enrichment(empty, lookup, spec)
+    assert out.empty
+
+
+@pytest.mark.unit
+def test_merge_enrichment_skips_when_lookup_empty() -> None:
+    spec = EnrichmentSpec(
+        flag="enrich_dummy",
+        id_column="id",
+        cache_key="dummy",
+        sync_loader=lambda self: pd.DataFrame(),
+        async_loader=AsyncMock(return_value=pd.DataFrame()),
+        rename_map={"name": "dummy_name"},
+    )
+    df = pd.DataFrame([{"id": 1}])
+    out = _merge_enrichment(df, pd.DataFrame(), spec)
+    pd.testing.assert_frame_equal(out, df)
+
+
+@pytest.mark.unit
+def test_merge_enrichment_skips_when_id_column_missing() -> None:
+    spec = EnrichmentSpec(
+        flag="enrich_dummy",
+        id_column="id",
+        cache_key="dummy",
+        sync_loader=lambda self: pd.DataFrame(),
+        async_loader=AsyncMock(return_value=pd.DataFrame()),
+        rename_map={"name": "dummy_name"},
+    )
+    df = pd.DataFrame([{"other": 1}])
+    lookup = pd.DataFrame([{"id": 1, "name": "x"}])
+    out = _merge_enrichment(df, lookup, spec)
+    pd.testing.assert_frame_equal(out, df)
+
+
+@pytest.mark.unit
+def test_normalize_lookup_dataframe_from_dict() -> None:
+    access = DummyAccess(MagicMock())
+    df = _normalize_lookup_dataframe(access, {"someId": 1, "displayName": "A"})
+    assert list(df.columns) == ["some_id", "display_name"]
+    assert df.loc[0, "some_id"] == 1
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "enrich_arg",
+    [
+        ["dummy"],
+        ("dummy",),
+        {"dummy"},
+        frozenset({"dummy"}),
+    ],
+)
+def test_enrich_collection_enables_flag(enrich_arg: Any) -> None:
+    """Using enrich= with list/tuple/set/frozenset enables the matching spec."""
+    spec = EnrichmentSpec(
+        flag="enrich_dummy",
+        id_column="id",
+        cache_key="dummy",
+        sync_loader=lambda self: pd.DataFrame([{"id": 1, "name": "one"}]),
+        async_loader=AsyncMock(return_value=pd.DataFrame([{"id": 1, "name": "one"}])),
+        rename_map={"name": "dummy_name"},
+    )
+
+    @with_enrichment(spec)
+    def fetch(self: BaseAccess) -> pd.DataFrame:
+        return _base_df()
+
+    access = DummyAccess(MagicMock())
+    df = fetch(access, enrich=enrich_arg)
+    assert "dummy_name" in df.columns
+
+
+@pytest.mark.unit
+def test_enrich_invalid_type_raises() -> None:
+    with pytest.raises(TypeError, match="enrich must be a string or a collection"):
+        _normalize_requested_enrichments(123)
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_async_lookup_cache_hit_second_call() -> None:
+    """Second async call reuses cached lookup; async_loader awaited once."""
+    async_loader = AsyncMock(return_value=pd.DataFrame([{"id": 1, "name": "cached"}]))
+    spec = EnrichmentSpec(
+        flag="enrich_dummy",
+        id_column="id",
+        cache_key="dummy",
+        sync_loader=lambda self: pd.DataFrame(),
+        async_loader=lambda self: async_loader(self),
+        rename_map={"name": "dummy_name"},
+    )
+
+    @with_enrichment(spec)
+    async def afetch(self: BaseAccess) -> pd.DataFrame:
+        return _base_df()
+
+    access = DummyAccess(MagicMock())
+    await afetch(access, enrich_dummy=True)
+    await afetch(access, enrich_dummy=True)
+    assert async_loader.await_count == 1

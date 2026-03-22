@@ -1,6 +1,7 @@
 """Integration tests for enrichment decorator across access layers."""
 
 from collections.abc import Callable
+from typing import Any
 from unittest.mock import MagicMock
 
 import pandas as pd
@@ -51,7 +52,14 @@ class TestEnrichmentIntegration:
         units = load_sample_data("samples_raw_units.json")
         attributes = load_sample_data("samples_raw_attributes.json")
 
-        mock_api_client.get_data_by_variable.return_value = data_samples["get_data_by_variable"]
+        raw_rows = data_samples["get_data_by_variable"]
+
+        def _get_data_by_variable(*args: Any, **kwargs: Any) -> Any:
+            if kwargs.get("return_metadata"):
+                return raw_rows, {"totalRecords": len(raw_rows)}
+            return raw_rows
+
+        mock_api_client.get_data_by_variable.side_effect = _get_data_by_variable
         mock_api_client.list_units.return_value = units["list_units"]
         mock_api_client.list_attributes.return_value = attributes["list_attributes"]
 

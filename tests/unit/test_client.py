@@ -1,7 +1,7 @@
 import pytest
 from pytest import MonkeyPatch, raises
 
-from pybdl.client import APINamespace, BDL
+from pybdl.client import BDL, APINamespace
 from pybdl.config import BDLConfig, Language
 
 
@@ -101,7 +101,7 @@ def test_bdl_config_type_error() -> None:
 @pytest.mark.unit
 def test_config_invalid_language_string() -> None:
     with raises(ValueError) as e:
-        BDLConfig(api_key="dummy", language="xx")  # type: ignore[arg-type]
+        BDLConfig(api_key="dummy", language="xx")
     assert "language must be one of" in str(e.value)
 
 
@@ -110,7 +110,7 @@ def test_config_invalid_language_env(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("BDL_API_KEY", "dummy")
     monkeypatch.setenv("BDL_LANGUAGE", "xx")
     with raises(ValueError) as e:
-        BDLConfig(api_key="dummy", language="xx")  # type: ignore[arg-type]
+        BDLConfig(api_key="dummy", language="xx")
     assert "language must be one of" in str(e.value)
 
 
@@ -131,6 +131,88 @@ def test_bdl_anonymous_access(monkeypatch: MonkeyPatch) -> None:
     # Test with dict config with None api_key
     bdl3 = BDL(config={"api_key": None})
     assert bdl3.config.api_key is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.unit
+async def test_bdl_async_context_manager_calls_aclose(monkeypatch: MonkeyPatch) -> None:
+    """Async context manager awaits aclose on each API client that defines it."""
+    aclose_calls: list[str] = []
+
+    class DummyAPI:
+        def __init__(self, config: BDLConfig) -> None:
+            self.config = config
+
+        async def aclose(self) -> None:
+            aclose_calls.append(self.__class__.__name__)
+
+    monkeypatch.setattr("pybdl.api.AggregatesAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.AttributesAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.DataAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.LevelsAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.MeasuresAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.SubjectsAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.UnitsAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.VariablesAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.VersionAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.YearsAPI", DummyAPI)
+
+    async with BDL(config=BDLConfig(api_key="dummy")) as bdl:
+        assert bdl.api.data is not None
+
+    assert len(aclose_calls) == 10
+
+
+@pytest.mark.asyncio
+@pytest.mark.unit
+async def test_bdl_aclose_falls_back_to_sync_close(monkeypatch: MonkeyPatch) -> None:
+    """When aclose is missing, aclose() uses sync close() if present."""
+    close_calls: list[str] = []
+
+    class DummyAPI:
+        def __init__(self, config: BDLConfig) -> None:
+            self.config = config
+
+        def close(self) -> None:
+            close_calls.append("close")
+
+    monkeypatch.setattr("pybdl.api.AggregatesAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.AttributesAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.DataAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.LevelsAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.MeasuresAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.SubjectsAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.UnitsAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.VariablesAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.VersionAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.YearsAPI", DummyAPI)
+
+    bdl = BDL(config=BDLConfig(api_key="dummy"))
+    await bdl.aclose()
+    assert len(close_calls) == 10
+
+
+@pytest.mark.unit
+def test_bdl_close_skips_clients_without_close(monkeypatch: MonkeyPatch) -> None:
+    """close() does nothing when API objects have no close method."""
+
+    class DummyAPI:
+        def __init__(self, config: BDLConfig) -> None:
+            self.config = config
+
+    monkeypatch.setattr("pybdl.api.AggregatesAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.AttributesAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.DataAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.LevelsAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.MeasuresAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.SubjectsAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.UnitsAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.VariablesAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.VersionAPI", DummyAPI)
+    monkeypatch.setattr("pybdl.api.YearsAPI", DummyAPI)
+
+    with BDL(config=BDLConfig(api_key="dummy")):
+        pass
 
 
 @pytest.mark.unit

@@ -1,7 +1,8 @@
 from typing import Any
 
+import httpx
 import pytest
-import responses
+import respx
 
 from pybdl.api.version import VersionAPI
 from pybdl.config import BDLConfig
@@ -12,12 +13,11 @@ def version_api(dummy_config: BDLConfig) -> VersionAPI:
     return VersionAPI(dummy_config)
 
 
-@responses.activate
 @pytest.mark.unit
-def test_get_version(version_api: VersionAPI, api_url: str) -> None:
+def test_get_version(respx_mock: respx.MockRouter, version_api: VersionAPI, api_url: str) -> None:
     url = f"{api_url}/version?lang=en&format=json"
     payload = {"version": "1.2.3", "build": "2025-06-11"}
-    responses.add(responses.GET, url, json=payload, status=200)
+    respx_mock.get(url).mock(return_value=httpx.Response(200, json=payload))
     result = version_api.get_version()
     assert result["version"] == "1.2.3"
     assert result["build"] == "2025-06-11"
