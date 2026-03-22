@@ -1,11 +1,16 @@
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, cast
 
 from pybdl.api.client import (
     BaseAPIClient,
     FormatLiteral,
     LanguageLiteral,
 )
+
+# Payload + optional metadata as returned by BaseAPIClient fetch helpers for /data collection routes
+_DataJsonPayload = dict[str, Any] | list[dict[str, Any]]
+_DataWithMetadata = tuple[_DataJsonPayload, dict[str, Any]]
+_DataCollectionResult = list[dict[str, Any]] | _DataWithMetadata
 
 
 class DataAPI(BaseAPIClient):
@@ -30,10 +35,7 @@ class DataAPI(BaseAPIClient):
         resolved = variable_ids if variable_ids is not None else variable_id
         if resolved is None:
             raise TypeError("'variable_ids' is required.")
-        if isinstance(resolved, (str, int)):
-            raw_values = [resolved]
-        else:
-            raw_values = list(resolved)
+        raw_values = [resolved] if isinstance(resolved, (str, int)) else list(resolved)
         return [int(item) for item in raw_values]
 
     @staticmethod
@@ -132,7 +134,7 @@ class DataAPI(BaseAPIClient):
         headers: dict[str, str] | None,
         page_size: int,
         return_metadata: bool,
-    ) -> list[dict[str, Any]] | tuple[list[dict[str, Any]], dict[str, Any]]:
+    ) -> _DataCollectionResult:
         params_with_page_size = params.copy()
         params_with_page_size["page-size"] = page_size
         if return_metadata:
@@ -157,7 +159,7 @@ class DataAPI(BaseAPIClient):
         headers: dict[str, str] | None,
         page_size: int,
         return_metadata: bool,
-    ) -> list[dict[str, Any]] | tuple[list[dict[str, Any]], dict[str, Any]]:
+    ) -> _DataCollectionResult:
         params_with_page_size = params.copy()
         params_with_page_size["page-size"] = page_size
         if return_metadata:
@@ -183,7 +185,7 @@ class DataAPI(BaseAPIClient):
         page_size: int,
         max_pages: int | None,
         return_metadata: bool,
-    ) -> list[dict[str, Any]] | tuple[list[dict[str, Any]], dict[str, Any]]:
+    ) -> _DataCollectionResult:
         if max_pages == 1:
             params_with_page_size = params.copy()
             params_with_page_size["page-size"] = page_size
@@ -228,7 +230,7 @@ class DataAPI(BaseAPIClient):
         page_size: int,
         max_pages: int | None,
         return_metadata: bool,
-    ) -> list[dict[str, Any]] | tuple[list[dict[str, Any]], dict[str, Any]]:
+    ) -> _DataCollectionResult:
         if max_pages == 1:
             params_with_page_size = params.copy()
             params_with_page_size["page-size"] = page_size
@@ -280,7 +282,7 @@ class DataAPI(BaseAPIClient):
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
         return_metadata: bool = False,
-    ) -> tuple[list[dict[str, Any]], dict[str, Any]] | list[dict[str, Any]]:
+    ) -> _DataCollectionResult:
         endpoint = f"data/by-variable/{variable_id}"
         params, headers = self._prepare_collection_request(
             extra_params=self._data_by_variable_params(
@@ -305,10 +307,15 @@ class DataAPI(BaseAPIClient):
             return_metadata=return_metadata,
         )
 
-    def get_data_by_variable_with_metadata(self, *args: Any, **kwargs: Any) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    def get_data_by_variable_with_metadata(
+        self, *args: Any, **kwargs: Any
+    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         """Retrieve data by variable and always return `(results, metadata)`."""
         kwargs["return_metadata"] = True
-        return self.get_data_by_variable(*args, **kwargs)
+        return cast(
+            tuple[list[dict[str, Any]], dict[str, Any]],
+            self.get_data_by_variable(*args, **kwargs),
+        )
 
     def get_data_by_unit(
         self,
@@ -326,7 +333,7 @@ class DataAPI(BaseAPIClient):
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
         return_metadata: bool = False,
-    ) -> tuple[list[dict[str, Any]], dict[str, Any]] | list[dict[str, Any]]:
+    ) -> _DataCollectionResult:
         endpoint = f"data/by-unit/{unit_id}"
         params, headers = self._prepare_collection_request(
             extra_params=self._data_by_unit_params(variable_ids, variable_id, years, aggregate_id, page, extra_query),
@@ -346,7 +353,10 @@ class DataAPI(BaseAPIClient):
     def get_data_by_unit_with_metadata(self, *args: Any, **kwargs: Any) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         """Retrieve data by unit and always return `(results, metadata)`."""
         kwargs["return_metadata"] = True
-        return self.get_data_by_unit(*args, **kwargs)
+        return cast(
+            tuple[list[dict[str, Any]], dict[str, Any]],
+            self.get_data_by_unit(*args, **kwargs),
+        )
 
     def get_data_by_variable_locality(
         self,
@@ -362,7 +372,7 @@ class DataAPI(BaseAPIClient):
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
         return_metadata: bool = False,
-    ) -> tuple[list[dict[str, Any]], dict[str, Any]] | list[dict[str, Any]]:
+    ) -> _DataCollectionResult:
         endpoint = f"data/localities/by-variable/{variable_id}"
         params, headers = self._prepare_collection_request(
             extra_params=self._data_by_variable_locality_params(unit_parent_id, years, page, extra_query),
@@ -385,7 +395,10 @@ class DataAPI(BaseAPIClient):
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         """Retrieve locality data by variable and always return `(results, metadata)`."""
         kwargs["return_metadata"] = True
-        return self.get_data_by_variable_locality(*args, **kwargs)
+        return cast(
+            tuple[list[dict[str, Any]], dict[str, Any]],
+            self.get_data_by_variable_locality(*args, **kwargs),
+        )
 
     def get_data_by_unit_locality(
         self,
@@ -404,7 +417,7 @@ class DataAPI(BaseAPIClient):
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
         return_metadata: bool = False,
-    ) -> tuple[list[dict[str, Any]], dict[str, Any]] | list[dict[str, Any]]:
+    ) -> _DataCollectionResult:
         endpoint = f"data/localities/by-unit/{unit_id}"
         params, headers = self._prepare_collection_request(
             extra_params=self._data_by_unit_locality_params(
@@ -434,7 +447,10 @@ class DataAPI(BaseAPIClient):
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         """Retrieve locality data by unit and always return `(results, metadata)`."""
         kwargs["return_metadata"] = True
-        return self.get_data_by_unit_locality(*args, **kwargs)
+        return cast(
+            tuple[list[dict[str, Any]], dict[str, Any]],
+            self.get_data_by_unit_locality(*args, **kwargs),
+        )
 
     def get_data_metadata(
         self,
@@ -469,7 +485,7 @@ class DataAPI(BaseAPIClient):
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
         return_metadata: bool = False,
-    ) -> tuple[list[dict[str, Any]], dict[str, Any]] | list[dict[str, Any]]:
+    ) -> _DataCollectionResult:
         endpoint = f"data/by-variable/{variable_id}"
         params, headers = self._prepare_collection_request(
             extra_params=self._data_by_variable_params(
@@ -499,7 +515,10 @@ class DataAPI(BaseAPIClient):
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         """Asynchronously retrieve data by variable and always return `(results, metadata)`."""
         kwargs["return_metadata"] = True
-        return await self.aget_data_by_variable(*args, **kwargs)
+        return cast(
+            tuple[list[dict[str, Any]], dict[str, Any]],
+            await self.aget_data_by_variable(*args, **kwargs),
+        )
 
     async def aget_data_by_unit(
         self,
@@ -517,7 +536,7 @@ class DataAPI(BaseAPIClient):
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
         return_metadata: bool = False,
-    ) -> tuple[list[dict[str, Any]], dict[str, Any]] | list[dict[str, Any]]:
+    ) -> _DataCollectionResult:
         endpoint = f"data/by-unit/{unit_id}"
         params, headers = self._prepare_collection_request(
             extra_params=self._data_by_unit_params(variable_ids, variable_id, years, aggregate_id, page, extra_query),
@@ -539,7 +558,10 @@ class DataAPI(BaseAPIClient):
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         """Asynchronously retrieve data by unit and always return `(results, metadata)`."""
         kwargs["return_metadata"] = True
-        return await self.aget_data_by_unit(*args, **kwargs)
+        return cast(
+            tuple[list[dict[str, Any]], dict[str, Any]],
+            await self.aget_data_by_unit(*args, **kwargs),
+        )
 
     async def aget_data_by_variable_locality(
         self,
@@ -555,7 +577,7 @@ class DataAPI(BaseAPIClient):
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
         return_metadata: bool = False,
-    ) -> tuple[list[dict[str, Any]], dict[str, Any]] | list[dict[str, Any]]:
+    ) -> _DataCollectionResult:
         endpoint = f"data/localities/by-variable/{variable_id}"
         params, headers = self._prepare_collection_request(
             extra_params=self._data_by_variable_locality_params(unit_parent_id, years, page, extra_query),
@@ -578,7 +600,10 @@ class DataAPI(BaseAPIClient):
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         """Asynchronously retrieve locality data by variable and always return `(results, metadata)`."""
         kwargs["return_metadata"] = True
-        return await self.aget_data_by_variable_locality(*args, **kwargs)
+        return cast(
+            tuple[list[dict[str, Any]], dict[str, Any]],
+            await self.aget_data_by_variable_locality(*args, **kwargs),
+        )
 
     async def aget_data_by_unit_locality(
         self,
@@ -597,7 +622,7 @@ class DataAPI(BaseAPIClient):
         if_modified_since: str | None = None,
         extra_query: dict[str, Any] | None = None,
         return_metadata: bool = False,
-    ) -> tuple[list[dict[str, Any]], dict[str, Any]] | list[dict[str, Any]]:
+    ) -> _DataCollectionResult:
         endpoint = f"data/localities/by-unit/{unit_id}"
         params, headers = self._prepare_collection_request(
             extra_params=self._data_by_unit_locality_params(
@@ -627,7 +652,10 @@ class DataAPI(BaseAPIClient):
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         """Asynchronously retrieve locality data by unit and always return `(results, metadata)`."""
         kwargs["return_metadata"] = True
-        return await self.aget_data_by_unit_locality(*args, **kwargs)
+        return cast(
+            tuple[list[dict[str, Any]], dict[str, Any]],
+            await self.aget_data_by_unit_locality(*args, **kwargs),
+        )
 
     async def aget_data_metadata(
         self,
