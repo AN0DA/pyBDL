@@ -27,6 +27,7 @@ dev = [
     "bandit>=1.8.3",
     "mypy>=1.15.0",
     "notebook>=7.4.3",
+    "prek>=0.3.8",
     "pytest-asyncio>=1.0.0",
     "pytest-cov>=6.0.0",
     "pytest-mock>=3.14.0",
@@ -70,6 +71,7 @@ exclude = [
     "buck-out",
     "build",
     "dist",
+    "docs",
     "node_modules",
     "site-packages",
     "venv",
@@ -148,6 +150,9 @@ warn_return_any = false
 ignore_missing_imports = true
 disable_error_code = "abstract"
 
+[[tool.mypy.overrides]]
+module = "tests.*"
+disable_error_code = ["untyped-decorator"]
 
 
 [tool.bandit]

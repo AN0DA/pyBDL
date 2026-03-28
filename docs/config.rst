@@ -19,10 +19,10 @@ Basic Setup
 .. code-block:: python
 
     from pybdl import BDL, BDLConfig
-    
+
     # Minimal configuration (reads API key from environment)
     bdl = BDL()
-    
+
     # Or provide API key directly
     config = BDLConfig(api_key="your-api-key")
     bdl = BDL(config)
@@ -35,14 +35,14 @@ The API supports anonymous access without an API key. When ``api_key`` is explic
 .. code-block:: python
 
     from pybdl import BDL, BDLConfig
-    
+
     # Anonymous access (explicitly None - overrides environment variables)
     config = BDLConfig(api_key=None)
     bdl = BDL(config)
-    
+
     # Or simply pass None
     bdl = BDL(config=None)  # Creates default config with api_key=None
-    
+
     # Or use dict
     bdl = BDL(config={"api_key": None})
 
@@ -208,10 +208,10 @@ At a high level, caching works like this:
     # Enable file-backed caching with 10-minute expiry
     config = BDLConfig(api_key="...", cache_backend="file", cache_expire_after=600)
     bdl = BDL(config)
-    
+
     # First call hits the API
     data1 = bdl.data.get_data_by_variable("3643", years=[2021])
-    
+
     # Second call uses cache (if within expiry time)
     data2 = bdl.data.get_data_by_variable("3643", years=[2021])
 

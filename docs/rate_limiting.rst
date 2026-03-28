@@ -61,10 +61,10 @@ Rate limiting is automatically handled by the library. Simply use the API client
 .. code-block:: python
 
     from pybdl import BDL, BDLConfig
-    
+
     config = BDLConfig(api_key="your-api-key")
     bdl = BDL(config)
-    
+
     # Rate limiting is automatic - no extra code needed
     data = bdl.api.data.get_data_by_variable(variable_id="3643", years=[2021])
 
@@ -81,7 +81,7 @@ By default, the rate limiter raises a :class:`RateLimitError` when quota is exce
 .. code-block:: python
 
     from pybdl.utils.rate_limiter import RateLimitError
-    
+
     try:
         data = bdl.api.data.get_data_by_variable(variable_id="3643", years=[2021])
     except RateLimitError as e:
@@ -101,7 +101,7 @@ You can configure the rate limiter to wait automatically instead of raising exce
 
     from pybdl.utils.rate_limiter import RateLimiter, PersistentQuotaCache
     from pybdl.config import DEFAULT_QUOTAS
-    
+
     # Create a rate limiter that waits up to 30 seconds
     cache = PersistentQuotaCache(enabled=True)
     quotas = {k: v[1] for k, v in DEFAULT_QUOTAS.items()}  # Registered user quotas
@@ -112,7 +112,7 @@ You can configure the rate limiter to wait automatically instead of raising exce
         raise_on_limit=False,  # Wait instead of raising
         max_delay=30.0  # Maximum wait time in seconds
     )
-    
+
     # Use the limiter before making API calls
     limiter.acquire()
     data = bdl.api.data.get_data_by_variable(variable_id="3643", years=[2021])
@@ -126,11 +126,11 @@ Rate limiters can be used as context managers for cleaner code:
 
     from pybdl.utils.rate_limiter import RateLimiter, PersistentQuotaCache
     from pybdl.config import DEFAULT_QUOTAS
-    
+
     cache = PersistentQuotaCache(enabled=True)
     quotas = {k: v[1] for k, v in DEFAULT_QUOTAS.items()}
     limiter = RateLimiter(quotas, is_registered=True, cache=cache)
-    
+
     # Automatically acquires quota when entering context
     with limiter:
         data = bdl.api.data.get_data_by_variable(variable_id="3643", years=[2021])
@@ -144,13 +144,13 @@ You can decorate functions to automatically rate limit them:
 
     from pybdl.utils.rate_limiter import rate_limit
     from pybdl.config import DEFAULT_QUOTAS
-    
+
     quotas = {k: v[1] for k, v in DEFAULT_QUOTAS.items()}
-    
+
     @rate_limit(quotas=quotas, is_registered=True, max_delay=10)
     def fetch_data(variable_id: str, year: int):
         return bdl.api.data.get_data_by_variable(variable_id=variable_id, years=[year])
-    
+
     # Function is automatically rate limited
     data = fetch_data("3643", 2021)
 
@@ -160,9 +160,9 @@ For async functions:
 
     from pybdl.utils.rate_limiter import async_rate_limit
     from pybdl.config import DEFAULT_QUOTAS
-    
+
     quotas = {k: v[1] for k, v in DEFAULT_QUOTAS.items()}
-    
+
     @async_rate_limit(quotas=quotas, is_registered=True)
     async def async_fetch_data(variable_id: str, year: int):
         return await bdl.api.data.aget_data_by_variable(variable_id=variable_id, years=[year])
@@ -175,9 +175,9 @@ You can check how much quota remains before making API calls:
 .. code-block:: python
 
     from pybdl import BDL, BDLConfig
-    
+
     bdl = BDL(BDLConfig(api_key="your-api-key"))
-    
+
     # Get remaining quota (requires accessing the internal limiter)
     remaining = bdl._client._sync_limiter.get_remaining_quota()
     print(f"Remaining requests per second: {remaining.get(1, 0)}")
@@ -191,7 +191,7 @@ You can override default quotas for testing or special deployments:
 .. code-block:: python
 
     from pybdl import BDLConfig
-    
+
     # Custom quotas: period in seconds -> limit
     custom_quotas = {
         1: 20,        # 20 requests per second
@@ -199,7 +199,7 @@ You can override default quotas for testing or special deployments:
         43200: 2000,  # 2000 requests per 12 hours
         604800: 20000 # 20000 requests per 7 days
     }
-    
+
     config = BDLConfig(api_key="your-api-key", custom_quotas=custom_quotas)
     bdl = BDL(config)
 
@@ -222,7 +222,7 @@ You can disable persistent caching:
 .. code-block:: python
 
     from pybdl import BDLConfig
-    
+
     config = BDLConfig(api_key="your-api-key", quota_cache_enabled=False)
     bdl = BDL(config)
 
@@ -258,13 +258,13 @@ Example: Custom Rate Limiter with Wait Behavior
 
     from pybdl.utils.rate_limiter import RateLimiter, PersistentQuotaCache
     from pybdl.config import DEFAULT_QUOTAS
-    
+
     # Create cache
     cache = PersistentQuotaCache(enabled=True)
-    
+
     # Get registered user quotas
     quotas = {k: v[1] for k, v in DEFAULT_QUOTAS.items()}
-    
+
     # Create limiter that waits up to 30 seconds
     limiter = RateLimiter(
         quotas=quotas,
@@ -273,7 +273,7 @@ Example: Custom Rate Limiter with Wait Behavior
         raise_on_limit=False,
         max_delay=30.0
     )
-    
+
     # Use limiter
     limiter.acquire()  # Will wait if needed, up to 30 seconds
     # Make your API call here
@@ -285,9 +285,9 @@ Example: Handling Rate Limit Errors
 
     from pybdl import BDL, BDLConfig
     from pybdl.utils.rate_limiter import RateLimitError, RateLimitDelayExceeded
-    
+
     bdl = BDL(BDLConfig(api_key="your-api-key"))
-    
+
     try:
         data = bdl.api.data.get_data_by_variable(variable_id="3643", years=[2021])
     except RateLimitError as e:
@@ -303,16 +303,16 @@ Example: Checking Quota Before Making Calls
 .. code-block:: python
 
     from pybdl import BDL, BDLConfig
-    
+
     bdl = BDL(BDLConfig(api_key="your-api-key"))
-    
+
     # Check remaining quota
     remaining = bdl._client._sync_limiter.get_remaining_quota()
-    
+
     if remaining.get(1, 0) < 5:
         print("Warning: Low quota remaining for 1-second period")
         # Consider waiting or reducing request rate
-    
+
     # Make API call
     data = bdl.api.data.get_data_by_variable(variable_id="3643", years=[2021])
 
@@ -322,12 +322,12 @@ Example: Resetting Quota (for testing)
 .. code-block:: python
 
     from pybdl import BDL, BDLConfig
-    
+
     bdl = BDL(BDLConfig(api_key="your-api-key"))
-    
+
     # Reset quota counters (useful for testing)
     bdl._client._sync_limiter.reset()
-    
+
     # Now you can make fresh API calls
 
 Best Practices
@@ -363,4 +363,3 @@ A: The cache file is automatically recreated if corrupted. Old quota data will b
    - :doc:`config` for configuration options
    - :doc:`api_clients` for API usage examples
    - :doc:`appendix` for technical implementation details
-

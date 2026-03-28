@@ -217,7 +217,7 @@ DataFrame Conversion
 The access layer converts API responses to pandas DataFrames through several steps:
 
 1. **Column Name Normalization**: camelCase → snake_case using regex patterns
-2. **Data Type Inference**: 
+2. **Data Type Inference**:
    - Attempts numeric conversion (int/float)
    - Detects boolean values
    - Preserves strings/objects
@@ -238,7 +238,7 @@ Example transformation:
 
     # API response:
     [{"id": "1", "name": "Warsaw", "values": [{"year": 2021, "val": 1000}]}]
-    
+
     # Access layer output:
     # DataFrame with columns: unit_id, unit_name, year, val
 
@@ -285,4 +285,3 @@ Error Handling
    - :doc:`config` for user-facing configuration documentation
    - :doc:`api_clients` for API client usage
    - :doc:`access_layer` for access layer documentation
-
