@@ -6,8 +6,8 @@ from typing import Any
 
 import pytest
 
-from pybdl.api.utils import rate_limiter
-from pybdl.api.utils.rate_limiter import RateLimitError
+from pybdl.utils import rate_limiter
+from pybdl.utils.rate_limiter import RateLimitError
 
 
 @pytest.mark.unit
@@ -92,6 +92,23 @@ def test_mixed_sync_async_operations(tmp_path: Any) -> None:
             await async_limiter.acquire()
 
     asyncio.run(run())
+
+
+@pytest.mark.unit
+def test_async_remaining_quota_snapshot_reflects_shared_cache(tmp_path: Any) -> None:
+    """Async limiter snapshot helper should reflect cache shared with sync limiter."""
+    cache_file = tmp_path / "remaining_quota_cache.json"
+    cache = rate_limiter.PersistentQuotaCache(enabled=True)
+    cache.cache_file = cache_file
+
+    quotas: dict[int, int | tuple[Any, ...]] = {1: 2}
+    sync_limiter = rate_limiter.RateLimiter(quotas, is_registered=False, cache=cache)
+    async_limiter = rate_limiter.AsyncRateLimiter(quotas, is_registered=False, cache=cache)
+
+    sync_limiter.acquire()
+
+    assert sync_limiter.get_remaining_quota()[1] == 1
+    assert async_limiter.get_remaining_quota()[1] == 1
 
 
 @pytest.mark.unit

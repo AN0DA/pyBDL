@@ -6,8 +6,8 @@ import respx
 from hishel.httpx import AsyncCacheClient, SyncCacheClient
 
 from pybdl.api.client import BaseAPIClient
-from pybdl.api.utils.quota_cache import PersistentQuotaCache
 from pybdl.config import BDLConfig, Language
+from pybdl.utils.rate_limiter import PersistentQuotaCache
 
 
 def _build_config(

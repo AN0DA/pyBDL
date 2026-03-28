@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 
 from pybdl.api.exceptions import RateLimitDelayExceeded
-from pybdl.api.utils import rate_limiter
+from pybdl.utils import rate_limiter
 
 
 @pytest.mark.unit

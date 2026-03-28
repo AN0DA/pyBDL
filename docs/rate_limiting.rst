@@ -80,7 +80,7 @@ By default, the rate limiter raises a :class:`RateLimitError` when quota is exce
 
 .. code-block:: python
 
-    from pybdl.api.utils.rate_limiter import RateLimitError
+    from pybdl.utils.rate_limiter import RateLimitError
     
     try:
         data = bdl.api.data.get_data_by_variable(variable_id="3643", years=[2021])
@@ -99,7 +99,7 @@ You can configure the rate limiter to wait automatically instead of raising exce
 
 .. code-block:: python
 
-    from pybdl.api.utils.rate_limiter import RateLimiter, PersistentQuotaCache
+    from pybdl.utils.rate_limiter import RateLimiter, PersistentQuotaCache
     from pybdl.config import DEFAULT_QUOTAS
     
     # Create a rate limiter that waits up to 30 seconds
@@ -124,7 +124,7 @@ Rate limiters can be used as context managers for cleaner code:
 
 .. code-block:: python
 
-    from pybdl.api.utils.rate_limiter import RateLimiter, PersistentQuotaCache
+    from pybdl.utils.rate_limiter import RateLimiter, PersistentQuotaCache
     from pybdl.config import DEFAULT_QUOTAS
     
     cache = PersistentQuotaCache(enabled=True)
@@ -142,7 +142,7 @@ You can decorate functions to automatically rate limit them:
 
 .. code-block:: python
 
-    from pybdl.api.utils.rate_limiter import rate_limit
+    from pybdl.utils.rate_limiter import rate_limit
     from pybdl.config import DEFAULT_QUOTAS
     
     quotas = {k: v[1] for k, v in DEFAULT_QUOTAS.items()}
@@ -158,7 +158,7 @@ For async functions:
 
 .. code-block:: python
 
-    from pybdl.api.utils.rate_limiter import async_rate_limit
+    from pybdl.utils.rate_limiter import async_rate_limit
     from pybdl.config import DEFAULT_QUOTAS
     
     quotas = {k: v[1] for k, v in DEFAULT_QUOTAS.items()}
@@ -243,7 +243,7 @@ For technical implementation details, including architecture, algorithm, thread 
 API Reference
 -------------
 
-.. automodule:: pybdl.api.utils.rate_limiter
+.. automodule:: pybdl.utils.rate_limiter
     :members:
     :undoc-members:
     :show-inheritance:
@@ -256,7 +256,7 @@ Example: Custom Rate Limiter with Wait Behavior
 
 .. code-block:: python
 
-    from pybdl.api.utils.rate_limiter import RateLimiter, PersistentQuotaCache
+    from pybdl.utils.rate_limiter import RateLimiter, PersistentQuotaCache
     from pybdl.config import DEFAULT_QUOTAS
     
     # Create cache
@@ -284,7 +284,7 @@ Example: Handling Rate Limit Errors
 .. code-block:: python
 
     from pybdl import BDL, BDLConfig
-    from pybdl.api.utils.rate_limiter import RateLimitError, RateLimitDelayExceeded
+    from pybdl.utils.rate_limiter import RateLimitError, RateLimitDelayExceeded
     
     bdl = BDL(BDLConfig(api_key="your-api-key"))
     

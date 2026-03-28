@@ -16,7 +16,7 @@ def disable_rate_limiting(request: pytest.FixtureRequest) -> Generator[Any, Any,
         return None
 
     with (
-        patch("pybdl.api.utils.rate_limiter.RateLimiter.acquire", lambda self: None),
-        patch("pybdl.api.utils.rate_limiter.AsyncRateLimiter.acquire", new=_noop_async_acquire),
+        patch("pybdl.utils.rate_limiter._sync.RateLimiter.acquire", lambda self: None),
+        patch("pybdl.utils.rate_limiter._async.AsyncRateLimiter.acquire", new=_noop_async_acquire),
     ):
         yield
