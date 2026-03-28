@@ -3,16 +3,19 @@ import time
 from collections.abc import AsyncIterator, Iterator, Mapping
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
-from pathlib import Path
 from typing import Any, Literal, cast, overload
 
 import httpx
-from hishel import AsyncSqliteStorage, FilterPolicy, SyncSqliteStorage
-from hishel.httpx import AsyncCacheClient, SyncCacheClient
 from tqdm import tqdm
 
 from pybdl.api.exceptions import BDLHTTPError, BDLResponseError
 from pybdl.config import BDL_API_BASE_URL, DEFAULT_QUOTAS, BDLConfig, QuotaMap
+from pybdl.utils.http_cache import (
+    build_async_http_client,
+    build_sync_http_client,
+    is_from_http_cache,
+    resolve_http_cache_db_path,
+)
 from pybdl.utils.rate_limiter import AsyncRateLimiter, PersistentQuotaCache, RateLimiter
 
 # Centralized type literals for API parameters
@@ -63,10 +66,20 @@ class BaseAPIClient:
             raise_on_limit=config.raise_on_rate_limit,
         )
         self._proxy_url = self._build_proxy_url()
-        self._http_cache_path = self._build_http_cache_path()
+        self._http_cache_path = resolve_http_cache_db_path(config.cache_backend, self._quota_cache.cache_file)
         default_headers = self._build_default_headers(extra_headers)
-        self.session = self._build_sync_client(default_headers)
-        self._async_client = self._build_async_client(default_headers)
+        self.session = build_sync_http_client(
+            cache_backend=config.cache_backend,
+            http_cache_db_path=self._http_cache_path,
+            default_headers=default_headers,
+            proxy=self._proxy_url,
+        )
+        self._async_client = build_async_http_client(
+            cache_backend=config.cache_backend,
+            http_cache_db_path=self._http_cache_path,
+            default_headers=default_headers,
+            proxy=self._proxy_url,
+        )
 
     def _build_proxy_url(self) -> str | None:
         if not self.config.proxy_url:
@@ -87,48 +100,6 @@ class BaseAPIClient:
         if extra_headers:
             headers.update({key: str(value) for key, value in extra_headers.items() if value is not None})
         return headers
-
-    def _build_http_cache_path(self) -> Path | None:
-        if self.config.cache_backend != "file":
-            return None
-        return self._quota_cache.cache_file.with_name("http_cache.db")
-
-    def _build_cache_policy(self) -> FilterPolicy:
-        return FilterPolicy()
-
-    def _build_sync_client(self, default_headers: Mapping[str, str]) -> httpx.Client:
-        if self.config.cache_backend == "memory":
-            return SyncCacheClient(
-                headers=default_headers,
-                proxy=self._proxy_url,
-                storage=SyncSqliteStorage(database_path=":memory:"),
-                policy=self._build_cache_policy(),
-            )
-        if self.config.cache_backend == "file" and self._http_cache_path is not None:
-            return SyncCacheClient(
-                headers=default_headers,
-                proxy=self._proxy_url,
-                storage=SyncSqliteStorage(database_path=str(self._http_cache_path)),
-                policy=self._build_cache_policy(),
-            )
-        return httpx.Client(headers=default_headers, proxy=self._proxy_url)
-
-    def _build_async_client(self, default_headers: Mapping[str, str]) -> httpx.AsyncClient:
-        if self.config.cache_backend == "memory":
-            return AsyncCacheClient(
-                headers=default_headers,
-                proxy=self._proxy_url,
-                storage=AsyncSqliteStorage(database_path=":memory:"),
-                policy=self._build_cache_policy(),
-            )
-        if self.config.cache_backend == "file" and self._http_cache_path is not None:
-            return AsyncCacheClient(
-                headers=default_headers,
-                proxy=self._proxy_url,
-                storage=AsyncSqliteStorage(database_path=str(self._http_cache_path)),
-                policy=self._build_cache_policy(),
-            )
-        return httpx.AsyncClient(headers=default_headers, proxy=self._proxy_url)
 
     def close(self) -> None:
         """Close synchronous HTTP resources."""
@@ -354,7 +325,7 @@ class BaseAPIClient:
                     url=url,
                 ) from exc
 
-            if response.extensions.get("hishel_from_cache", False):
+            if is_from_http_cache(response):
                 self._sync_limiter.release(reservation)
 
             if response.status_code == 429 and 429 in self.config.retry_status_codes:
@@ -799,7 +770,7 @@ class BaseAPIClient:
                     url=url,
                 ) from exc
 
-            if response.extensions.get("hishel_from_cache", False):
+            if is_from_http_cache(response):
                 await self._async_limiter.release(reservation)
 
             if response.status_code == 429 and 429 in self.config.retry_status_codes:
