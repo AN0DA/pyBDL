@@ -132,18 +132,19 @@ jobs:
       tag: ${{ steps.release.outputs.tag }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
-        with:
-          fetch-depth: 0
-          persist-credentials: true  # zizmor: ignore[artipacked]
-
       - name: Generate GitHub App Token
         id: app-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349  # v2
         with:
           app-id: ${{ vars.GH_APP_RW_ACCESS_APP_ID }}
           private-key: ${{ secrets.GH_APP_RW_ACCESS_PRIVATE_KEY }}
+
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: true  # zizmor: ignore[artipacked]
 
       - name: Install uv
         uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9  # v7
@@ -166,7 +167,7 @@ jobs:
         uses: python-semantic-release/python-semantic-release@fb90716c1b3afbd1d88f48d7f88ba7365914a86e  # v10.5.2
         with:
           github_token: ${{ steps.app-token.outputs.token }}
-          root_options: "-vv"
+          verbosity: "2"
 
   build:
     name: Build distribution
