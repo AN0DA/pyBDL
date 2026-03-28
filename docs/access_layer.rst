@@ -50,7 +50,7 @@ All access layer methods return pandas DataFrames, making data immediately ready
 
     # Get variables as DataFrame
     variables_df = bdl.variables.list_variables()
-    
+
     # Use pandas operations directly
     filtered = variables_df[variables_df['name'].str.contains('population', case=False)]
     sorted_vars = variables_df.sort_values('name')
@@ -142,10 +142,10 @@ Administrative unit aggregation levels (country, voivodeship, county, municipali
 
     # List all levels
     levels_df = bdl.levels.list_levels()
-    
+
     # Get specific level
     level_df = bdl.levels.get_level(1)  # Level 1 = country
-    
+
     # Get metadata
     metadata_df = bdl.levels.get_levels_metadata()
 
@@ -158,13 +158,13 @@ Subject categories and hierarchy:
 
     # List all top-level subjects
     subjects_df = bdl.subjects.list_subjects()
-    
+
     # Get subjects under a parent
     child_subjects = bdl.subjects.list_subjects(parent_id="P0001")
-    
+
     # Search subjects
     results = bdl.subjects.search_subjects(name="population")
-    
+
     # Get specific subject
     subject_df = bdl.subjects.get_subject("P0001")
 
@@ -177,16 +177,16 @@ Statistical variables (indicators):
 
     # List all variables
     variables_df = bdl.variables.list_variables()
-    
+
     # Filter variables
     filtered = bdl.variables.list_variables(
         category_id="P0001",
         name="population"
     )
-    
+
     # Search variables
     results = bdl.variables.search_variables(name="unemployment")
-    
+
     # Get specific variable
     variable_df = bdl.variables.get_variable("3643")
 
@@ -203,35 +203,35 @@ Statistical data retrieval:
         years=[2021],
         unit_level=2  # Voivodeship level
     )
-    
+
     # Get data for multiple years
     df = bdl.data.get_data_by_variable(
         variable_id="3643",
         years=[2020, 2021, 2022],
         unit_level=2
     )
-    
+
     # Get data with aggregate filter
     df = bdl.data.get_data_by_variable(
         variable_id="3643",
         years=[2021],
         aggregate_id=1
     )
-    
+
     # Get data by administrative unit
     df = bdl.data.get_data_by_unit(
         unit_id="020000000000",
         variable_ids=["3643"],
         years=[2021]
     )
-    
+
     # Get data for a locality
     df = bdl.data.get_data_by_variable_locality(
         variable_id="3643",
         unit_parent_id="1465011",
         years=[2021]
     )
-    
+
     # Get data by unit locality
     df = bdl.data.get_data_by_unit_locality(
         unit_id="1465011",
@@ -281,19 +281,19 @@ Administrative units (regions, cities, etc.):
 
     # List units by level
     voivodeships = bdl.units.list_units(level=2)  # Level 2 = voivodeship
-    
+
     # Search units
     warsaw = bdl.units.search_units(name="Warsaw")
-    
+
     # Get specific unit
     unit_df = bdl.units.get_unit("020000000000")
-    
+
     # List localities (statistical localities)
     localities = bdl.units.list_localities(level=6)  # Level 6 = municipality
-    
+
     # Search localities
     warsaw_localities = bdl.units.search_localities(name="Warsaw", level=6)
-    
+
     # Get specific locality
     locality_df = bdl.units.get_locality("1465011")
 
@@ -306,7 +306,7 @@ Data attributes (dimensions):
 
     # List all attributes
     attributes_df = bdl.attributes.list_attributes()
-    
+
     # Get specific attribute
     attr_df = bdl.attributes.get_attribute("1")
 
@@ -319,7 +319,7 @@ Measure units:
 
     # List all measures
     measures_df = bdl.measures.list_measures()
-    
+
     # Get specific measure
     measure_df = bdl.measures.get_measure(1)
 
@@ -332,7 +332,7 @@ Aggregation types:
 
     # List all aggregates
     aggregates_df = bdl.aggregates.list_aggregates()
-    
+
     # Get specific aggregate
     aggregate_df = bdl.aggregates.get_aggregate("1")
 
@@ -345,7 +345,7 @@ Available years for data:
 
     # List all available years
     years_df = bdl.years.list_years()
-    
+
     # Get specific year metadata
     year_df = bdl.years.get_year(2021)
 
@@ -430,10 +430,10 @@ Most list methods support pagination:
 
     # Fetch all pages (default, max_pages=None)
     all_data = bdl.variables.list_variables()
-    
+
     # Fetch only first page
     first_page = bdl.variables.list_variables(max_pages=1, page_size=50)
-    
+
     # Limit number of pages
     limited = bdl.variables.list_variables(max_pages=5, page_size=100)
 
@@ -461,17 +461,17 @@ All access layer methods have async versions (prefixed with ``a``):
 
     async def main():
         bdl = BDL()
-        
+
         # Async methods return DataFrames
         levels_df = await bdl.levels.alist_levels()
         variables_df = await bdl.variables.alist_variables()
-        
+
         # Can run multiple requests concurrently
         levels_task = bdl.levels.alist_levels()
         variables_task = bdl.variables.alist_variables()
-        
+
         levels_df, variables_df = await asyncio.gather(levels_task, variables_task)
-        
+
         return levels_df, variables_df
 
     asyncio.run(main())
@@ -517,10 +517,10 @@ Filtering and Analysis
 
     # Get all variables
     variables = bdl.variables.list_variables()
-    
+
     # Filter using pandas
     economic_vars = variables[variables['name'].str.contains('economic', case=False)]
-    
+
     # Get data for multiple variables
     for var_id in economic_vars['id'].head(5):
         data = bdl.data.get_data_by_variable(var_id, years=[2021])
@@ -533,10 +533,10 @@ Getting Data
 
     # Get data
     df = bdl.data.get_data_by_variable("3643", years=[2021])
-    
+
     # DataFrame includes IDs and values
     print(df[['unit_name', 'attr_name', 'val']].head())
-    
+
     # Group by attribute name
     by_attr = df.groupby('attr_name')['val'].mean()
     print(by_attr)
@@ -550,15 +550,15 @@ The data endpoints automatically normalize nested structures:
 
     # API returns nested structure, but access layer flattens it
     df = bdl.data.get_data_by_variable("3643", years=[2021])
-    
+
     # Each row represents one data point
     # Columns: unit_id, unit_name, year, val, attr_id, attr_name
     print(df.head())
-    
+
     # Easy to analyze
     avg_by_unit = df.groupby('unit_name')['val'].mean()
     print(avg_by_unit)
-    
+
     # Get data for multiple years
     multi_year_df = bdl.data.get_data_by_variable("3643", years=[2020, 2021, 2022])
     # Analyze trends over time
@@ -674,4 +674,3 @@ Years
    - :doc:`api_clients` for low-level API access
    - :doc:`examples` for real-world examples
    - :doc:`config` for configuration options
-

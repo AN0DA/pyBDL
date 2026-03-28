@@ -1,5 +1,252 @@
+---
+default_language_version:
+  python: python3.11
+
+default_stages:
+  - pre-commit
+
+default_install_hook_types:
+  - pre-commit
+  - commit-msg
+  - pre-push
+  - post-checkout
+  - post-merge
+
+fail_fast: true
+
 repos:
+  ##############################################################################
+  # Policy / commit message quality
+  ##############################################################################
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: 91ab4bf57e58b32adf1a122681f6ebe164d081c8  # frozen: v4.4.0-pre1
+    hooks:
+      - id: conventional-pre-commit
+        name: "<<CHECK>> Commit"
+        alias: commit
+        stages: [commit-msg]
+        args:
+          - "--strict"
+        verbose: true
+        require_serial: true
+        always_run: true
+
+  ##############################################################################
+  # Core formatting / hygiene
+  ##############################################################################
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c  # frozen: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        name: "<< FIX >> Trailing whitespace"
+        args: [--markdown-linebreak-ext=md]
+      - id: check-added-large-files
+        name: "<<CHECK>> Added large files"
+        args: [--maxkb=1024]
+        stages: [pre-commit]
+      - id: check-case-conflict
+        name: "<<CHECK>> Conflicting upper/lower case filenames"
+      - id: check-executables-have-shebangs
+        name: "<<CHECK>> Executables have shebangs"
+        stages: [pre-commit]
+      - id: check-illegal-windows-names
+        name: "<<CHECK>> Illegal Windows filenames"
+      - id: check-json
+        name: "<<CHECK>> Valid JSON"
+      - id: check-merge-conflict
+        name: "<<CHECK>> Merge conflict markers"
+      - id: check-shebang-scripts-are-executable
+        name: "<<CHECK>> Shebang scripts are executable"
+      - id: check-symlinks
+        name: "<<CHECK>> Valid symlinks"
+      - id: check-toml
+        name: "<<CHECK>> Valid TOML"
+      - id: check-yaml
+        name: "<<CHECK>> Valid YAML"
+        args: [--unsafe]
+      - id: destroyed-symlinks
+        name: "<<CHECK>> Destroyed symlinks"
+      - id: detect-private-key
+        name: "<<CHECK>> Private keys"
+      - id: end-of-file-fixer
+        name: "<< FIX >> End of file"
+        stages: [pre-commit]
+      - id: mixed-line-ending
+        name: "<< FIX >> Mixed line endings"
+        args: [--fix=auto]
+      - id: debug-statements
+        name: "<<CHECK>> Debug statements"
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: 2ccb47ff45ad361a21071a7eedda4c37e6ae8c5a  # frozen: v2.4.2
+    hooks:
+      - id: codespell
+        alias: fix-code
+        name: "<< FIX >> Code spelling"
+        args: [--write-changes]
+        exclude: ^tests/integration/access/samples/raw/
+        verbose: true
+
+  ##############################################################################
+  # Python lint, format, typing
+  ##############################################################################
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: aca6d4c8045a504e2812ea4bedff1d0a09e437bc  # frozen: v0.15.8
+    hooks:
+      - id: ruff-check
+        name: "<<CHECK>> Ruff"
+        args: [--fix]
+      - id: ruff-format
+        name: "<< FIX >> Ruff format"
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: 75992aaa40730136014f34227e0135f63fc951b4  # frozen: v3.21.2
+    hooks:
+      - id: pyupgrade
+        name: "<< FIX >> Pyupgrade"
+        args: [--py311-plus]
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: a66e98df7b4aeeb3724184b332785976d062b92e  # frozen: v1.19.1
+    hooks:
+      - id: mypy
+        name: "<<CHECK>> mypy"
+        additional_dependencies:
+          - pydantic
+          - types-PyYAML
+
+  ##############################################################################
+  # Security & static analysis
+  ##############################################################################
+  - repo: https://github.com/semgrep/semgrep
+    rev: ab584982f6ecdaaa7954a14e5350a70c060e097f  # frozen: v1.156.0
+    hooks:
+      - id: semgrep
+        alias: check-security
+        name: "<<CHECK>> Security (Semgrep)"
+        language_version: python3.11
+        args:
+          - "--disable-version-check"
+          - "--quiet"
+          - "--skip-unknown-extensions"
+          - "--config=p/python"
+          - "--config=p/secrets"
+          - "--config=p/security-audit"
+          - "--config=p/ci"
+          - "--config=p/github-actions"
+          - "--config=p/gitleaks"
+          - "--error"
+          - "--metrics=off"
+          - "--severity=INFO"
+          - "--strict"
+        verbose: true
+
+  - repo: https://github.com/trufflesecurity/trufflehog
+    rev: 586f66d7886cd0b037c7c245d4a6e34ef357ab10  # frozen: v3.94.1
+    hooks:
+      - id: trufflehog
+        alias: secrets
+        name: "<<CHECK>> Secrets (trufflehog)"
+        verbose: true
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 92ae8b82fb422a639f0ed8d99e96cea769594e08  # frozen: 1.9.4
+    hooks:
+      - id: bandit
+        name: "<<CHECK>> Bandit"
+        args:
+          - -c
+          - pyproject.toml
+          - --exclude
+          - README.md,**/*.md,**/*.rst
+
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: ea2eb407b4cbce87cf0d502f36578950494f5ac9  # frozen: v1.23.1
+    hooks:
+      - id: zizmor
+        name: "<<CHECK>> GitHub Actions (zizmor)"
+        args:
+          - "--no-progress"
+          - "--persona"
+          - "auditor"
+          - "--verbose"
+        require_serial: true
+
+  ##############################################################################
+  # YAML / JSON Schema / Markdown quality
+  ##############################################################################
+  - repo: https://github.com/adrienverge/yamllint
+    rev: cba56bcde1fdd01c1deb3f945e69764c291a6530  # v1.38.0
+    hooks:
+      - id: yamllint
+        alias: yaml
+        name: "<<CHECK>> YAML style"
+        verbose: true
+
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 13614ab716a3113145f1294ed259d9fbe5678ff3  # frozen: 0.37.1
+    hooks:
+      - id: check-github-actions
+        name: "<<CHECK>> GitHub Actions JSON Schema"
+        args: ["--verbose"]
+      - id: check-github-workflows
+        name: "<<CHECK>> GitHub Workflows JSON Schema"
+        args: ["--verbose"]
+
+  - repo: https://github.com/jackdewinter/pymarkdown
+    rev: 6d3c1b70d44ea2202b23552af93aca3b5017ee83  # frozen: v0.9.36
+    hooks:
+      - id: pymarkdown
+        alias: fix-markdown
+        name: "<< FIX >> Markdown"
+        verbose: true
+        require_serial: true
+        entry: pymarkdown --disable-rules md007,md028,md033,md034,md041,md042
+        args: ["fix"]
+        types: [markdown]
+        additional_dependencies:
+          - application-properties
+      - id: pymarkdown
+        alias: check-markdown
+        name: "<<CHECK>> Markdown"
+        verbose: true
+        require_serial: true
+        entry: >
+          pymarkdown
+          --disable-rules md007,md028,md033,md034,md041,md042
+          --set 'plugins.line-length.line_length=$#120'
+        args: ["scan"]
+        types: [markdown]
+        additional_dependencies:
+          - application-properties
+
+  ##############################################################################
+  # uv integration
+  ##############################################################################
+  # Keep uv.lock in sync
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.6.5
+    rev: 20d6e6698b00aed95d4f269a6309b11c2c57b202  # frozen: 0.11.2
     hooks:
       - id: uv-lock
+        name: "<< FIX >> uv lock"
+
+  ##############################################################################
+  # System / self-management hooks
+  ##############################################################################
+  - repo: local
+    hooks:
+      - id: prek-config
+        verbose: true
+        name: "<<CHECK>> prek config"
+        entry: prek validate-config .pre-commit-config.yaml
+        files: "^.pre-commit-config.yaml$"
+        language: system
+
+      - id: prek-autoupdate
+        verbose: true
+        name: "<< FIX >> prek autoupdate (frozen)"
+        entry: prek auto-update --freeze
+        pass_filenames: false
+        language: system
+        require_serial: true
+        always_run: true

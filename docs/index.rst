@@ -39,14 +39,14 @@ Quick Start
 .. code-block:: python
 
     from pybdl import BDL, BDLConfig
-    
+
     # Initialize client
     bdl = BDL(BDLConfig(api_key="your-api-key"))  # Reads config from environment or defaults
-    
+
     # Use the access layer (returns pandas DataFrames)
     df = bdl.data.get_data_by_variable(variable_id="3643", years=[2021])
     print(df.head())
-    
+
     # Data is ready for analysis
     print(df.dtypes)
     print(df.columns)
@@ -93,4 +93,3 @@ Contributing & License
 
 pyBDL is open source under the MIT license. Contributions and issues are welcome!
 For details, see the `GitHub repository <https://github.com/AN0DA/pybdl>`_.
-

@@ -103,16 +103,16 @@ The format and language parameters automatically set the appropriate HTTP header
 .. code-block:: python
 
     from pybdl import BDL
-    
+
     bdl = BDL()
-    
+
     # Request data in XML format
     data = bdl.api.data.get_data_by_variable(
         variable_id="3643",
         years=[2021],
         format="xml"
     )
-    
+
     # Request data in Polish
     data = bdl.api.data.get_data_by_variable(
         variable_id="3643",

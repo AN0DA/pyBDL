@@ -634,6 +634,6 @@
     }
   ]
 },
-  "get_data_by_variable_locality": [], 
+  "get_data_by_variable_locality": [],
   "get_data_by_unit_locality": []
 }
