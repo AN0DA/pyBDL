@@ -1,6 +1,6 @@
 [project]
 name = "pyBDL"
-version = "0.0.1"
+version = "0.1.0"
 description = "A Pythonic interface for Polish GUS Local Data Bank datasets."
 readme = "README.md"
 authors = [{name = "Mikołaj Kaczmarek", email = "mikolaj.s.kaczmarek@outlook.com"}]
