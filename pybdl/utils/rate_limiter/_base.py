@@ -89,10 +89,7 @@ class RateLimiterBase:
         return wait_time
 
     def _cache_period_configs(self, now: float) -> list[tuple[str, int, float]]:
-        return [
-            (f"{self.cache_key}_{period}", self._get_limit(period), now - period)
-            for period in self.quotas
-        ]
+        return [(f"{self.cache_key}_{period}", self._get_limit(period), now - period) for period in self.quotas]
 
     def _cache_keys(self) -> list[str]:
         return [f"{self.cache_key}_{period}" for period in self.quotas]
@@ -124,10 +121,7 @@ class RateLimiterBase:
 
     def _get_remaining(self, now: float) -> dict[int, int]:
         self._cleanup_expired(now)
-        return {
-            period: max(0, self._get_limit(period) - len(self.calls[period]))
-            for period in self.quotas
-        }
+        return {period: max(0, self._get_limit(period) - len(self.calls[period])) for period in self.quotas}
 
     def _reset_all(self) -> None:
         for period in self.quotas:
