@@ -195,3 +195,4 @@ bdl_api_swagger.json
 .envrc
 .vscode/
 dev/
+.worktrees/
