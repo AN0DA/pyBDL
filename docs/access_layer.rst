@@ -241,6 +241,37 @@ Statistical data retrieval:
 
 The data endpoints automatically normalize nested ``values`` arrays into flat rows.
 
+Accessing Pagination Metadata
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Use ``return_metadata=True`` to receive a ``(DataFrame, metadata)`` tuple alongside the data.
+The metadata dictionary contains information from the first response page, including pagination
+details such as ``totalPages`` and ``totalRecords``.
+
+.. code-block:: python
+
+    # Returns (DataFrame, metadata_dict)
+    df, meta = bdl.data.get_data_by_variable(
+        variable_id="3643",
+        years=[2021],
+        return_metadata=True,
+    )
+    print(meta.get("totalPages"))
+    print(meta.get("totalRecords"))
+
+Convenience ``*_with_metadata`` wrappers always return a tuple:
+
+.. code-block:: python
+
+    df, meta = bdl.data.get_data_by_variable_with_metadata(variable_id="3643", years=[2021])
+    df, meta = bdl.data.get_data_by_unit_with_metadata(unit_id="020000000000", variable_ids=["3643"])
+    df, meta = bdl.data.get_data_by_variable_locality_with_metadata(
+        variable_id="3643", unit_parent_id="1465011", years=[2021]
+    )
+    df, meta = bdl.data.get_data_by_unit_locality_with_metadata(
+        unit_id="1465011", variable_ids=["3643"]
+    )
+
 Units
 ~~~~~
 
@@ -319,6 +350,77 @@ Available years for data:
     year_df = bdl.years.get_year(2021)
 
 
+Enrichment
+----------
+
+Many access layer methods accept an ``enrich`` parameter (or individual ``enrich_*`` flags) to
+automatically join human-readable reference data into the returned DataFrame. Enrichment fetches
+the required lookup table once per client session, caches it in memory, and left-joins the
+resolved columns onto each result row.
+
+Usage
+~~~~~
+
+Pass a list of dimension names to ``enrich``:
+
+.. code-block:: python
+
+    # Enrich variables with level names, measure descriptions, and subject names
+    variables = bdl.variables.list_variables(enrich=["levels", "measures", "subjects"])
+
+    # Enrich data with unit details, attribute labels, and aggregate descriptions
+    data = bdl.data.get_data_by_variable(
+        variable_id="3643",
+        years=[2021],
+        enrich=["units", "attributes", "aggregates"],
+    )
+
+Individual ``enrich_*`` boolean flags are also accepted (legacy style):
+
+.. code-block:: python
+
+    data = bdl.data.get_data_by_variable("3643", years=[2021], enrich_attributes=True)
+
+Supported Enrichment Dimensions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The available enrichment dimensions depend on the endpoint:
+
+.. list-table:: Enrichment Support by Endpoint
+   :header-rows: 1
+
+   * - Endpoint
+     - ``enrich`` values
+     - Added columns
+   * - Variables (``bdl.variables.*``)
+     - ``"levels"``, ``"measures"``, ``"subjects"``
+     - ``level_name``; ``measure_unit_description``; ``subject_name``
+   * - Data (``bdl.data.*``)
+     - ``"units"``, ``"attributes"``, ``"aggregates"``
+     - ``unit_name_enriched``, ``unit_level``, ``unit_parent_id``, ``unit_kind``; ``attr_name``, ``attr_symbol``, ``attr_description``; ``aggregate_name``, ``aggregate_description``, ``aggregate_level``
+   * - Units (``bdl.units.*``)
+     - ``"levels"``
+     - ``level_name``
+   * - Aggregates (``bdl.aggregates.*``)
+     - ``"levels"``
+     - ``level_name``
+
+Caching
+~~~~~~~
+
+Lookup tables are fetched once per access-layer instance and cached for the lifetime of the
+client session. Subsequent calls using the same enrichment dimension reuse the cached data
+without additional API requests.
+
+.. code-block:: python
+
+    bdl = BDL()
+    # First call: fetches the levels lookup table from the API
+    v1 = bdl.variables.list_variables(enrich=["levels"])
+    # Second call: reuses the cached levels table — no extra request
+    v2 = bdl.variables.get_variable("3643", enrich=["levels"])
+
+
 Pagination
 ----------
 
@@ -337,8 +439,15 @@ Most list methods support pagination:
 
 Parameters:
 
-- ``max_pages``: Maximum number of pages to fetch. ``None`` (default) fetches all pages, ``1`` fetches only the first page, ``N`` fetches up to N pages
-- ``page_size``: Number of results per page (default: 100 from config or 100)
+- ``max_pages``: Maximum number of pages to fetch. ``None`` (default) fetches all pages, ``1`` fetches only the first page, ``N`` fetches up to N pages.
+- ``page_size``: Number of results per page (default: 100 from config or 100).
+- ``show_progress``: Display a ``tqdm`` progress bar while fetching pages (default: ``True``).
+  Set to ``False`` to suppress output in scripts or automated pipelines.
+
+.. code-block:: python
+
+    # Suppress progress bar
+    data = bdl.data.get_data_by_variable("3643", years=[2021], show_progress=False)
 
 Async Usage
 -----------
@@ -461,10 +570,104 @@ See :doc:`examples` for more comprehensive real-world examples.
 API Reference
 -------------
 
-.. automodule:: pybdl.access
+Base Access
+~~~~~~~~~~~
+
+.. automodule:: pybdl.access.base
     :members:
     :undoc-members:
     :show-inheritance:
+    :noindex:
+
+Enrichment
+~~~~~~~~~~
+
+.. automodule:: pybdl.access.enrichment
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :noindex:
+
+Data
+~~~~
+
+.. automodule:: pybdl.access.data
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :noindex:
+
+Variables
+~~~~~~~~~
+
+.. automodule:: pybdl.access.variables
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :noindex:
+
+Subjects
+~~~~~~~~
+
+.. automodule:: pybdl.access.subjects
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :noindex:
+
+Units
+~~~~~
+
+.. automodule:: pybdl.access.units
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :noindex:
+
+Levels
+~~~~~~
+
+.. automodule:: pybdl.access.levels
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :noindex:
+
+Measures
+~~~~~~~~
+
+.. automodule:: pybdl.access.measures
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :noindex:
+
+Attributes
+~~~~~~~~~~
+
+.. automodule:: pybdl.access.attributes
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :noindex:
+
+Aggregates
+~~~~~~~~~~
+
+.. automodule:: pybdl.access.aggregates
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :noindex:
+
+Years
+~~~~~
+
+.. automodule:: pybdl.access.years
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :noindex:
 
 .. seealso::
    - :doc:`main_client` for main client usage

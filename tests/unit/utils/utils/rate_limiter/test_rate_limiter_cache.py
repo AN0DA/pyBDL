@@ -22,12 +22,12 @@ def test_persistent_quota_cache_get_set(tmp_path: Any) -> None:
     """Test basic cache get/set operations."""
     cache_file = tmp_path / "quota_cache.json"
     cache = rate_limiter.PersistentQuotaCache(enabled=True)
-    cache.cache_file = str(cache_file)
+    cache.cache_file = cache_file
     cache.set("foo", [1, 2, 3])
     assert cache.get("foo") == [1, 2, 3]
     # Test persistence
     cache2 = rate_limiter.PersistentQuotaCache(enabled=True)
-    cache2.cache_file = str(cache_file)
+    cache2.cache_file = cache_file
     cache2._load()
     assert cache2.get("foo") == [1, 2, 3]
 
@@ -81,7 +81,7 @@ def test_cache_persistence_across_instances(tmp_path: Any) -> None:
     """Test that quota state persists across different limiter instances."""
     cache_file = tmp_path / "persist_cache.json"
     cache = rate_limiter.PersistentQuotaCache(enabled=True)
-    cache.cache_file = str(cache_file)
+    cache.cache_file = cache_file
 
     quotas: dict[int, int | tuple[Any, ...]] = {1: 5}
 
@@ -131,7 +131,7 @@ def test_cache_atomic_write(tmp_path: Any) -> None:
     """Test that cache writes are atomic (temp file + rename)."""
     cache_file = tmp_path / "atomic_cache.json"
     cache = rate_limiter.PersistentQuotaCache(enabled=True)
-    cache.cache_file = str(cache_file)
+    cache.cache_file = cache_file
 
     quotas: dict[int, int | tuple[Any, ...]] = {1: 5}
     rl = rate_limiter.RateLimiter(quotas, is_registered=False, cache=cache)
@@ -144,3 +144,31 @@ def test_cache_atomic_write(tmp_path: Any) -> None:
     assert cache_file.exists()
     temp_file = cache_file.with_suffix(".tmp")
     assert not temp_file.exists(), "Temp file should be cleaned up after atomic write"
+
+
+@pytest.mark.unit
+def test_rate_limiter_release_refunds_quota() -> None:
+    quotas: dict[int, int | tuple[Any, ...]] = {1: 2}
+    rl = rate_limiter.RateLimiter(quotas, is_registered=False)
+
+    reservation = rl.acquire()
+    assert rl.get_remaining_quota()[1] == 1
+
+    rl.release(reservation)
+    assert rl.get_remaining_quota()[1] == 2
+
+
+@pytest.mark.unit
+def test_async_rate_limiter_release_refunds_quota() -> None:
+    quotas: dict[int, int | tuple[Any, ...]] = {1: 2}
+    arl = rate_limiter.AsyncRateLimiter(quotas, is_registered=False)
+
+    async def run() -> None:
+        reservation = await arl.acquire()
+        assert (await arl.get_remaining_quota_async())[1] == 1
+        await arl.release(reservation)
+        assert (await arl.get_remaining_quota_async())[1] == 2
+
+    import asyncio
+
+    asyncio.run(run())

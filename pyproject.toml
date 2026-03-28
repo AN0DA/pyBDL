@@ -1,6 +1,6 @@
 [project]
 name = "pyBDL"
-version = "0.0.1"
+version = "0.1.0"
 description = "A Pythonic interface for Polish GUS Local Data Bank datasets."
 readme = "README.md"
 authors = [{name = "Mikołaj Kaczmarek", email = "mikolaj.s.kaczmarek@outlook.com"}]
@@ -8,15 +8,18 @@ license = {text = "MIT"}
 
 requires-python = ">=3.11"
 dependencies = [
-    "dataclasses>=0.8",
     "httpx>=0.28.1",
+    "hishel[async]>=1.0.0",
+    "pandas>=2.3.0",
+    "platformdirs>=4.0.0",
+    "tqdm>=4.66.0",
+]
+
+[project.optional-dependencies]
+viz = [
     "matplotlib>=3.10.3",
     "numpy>=2.3.0",
-    "pandas>=2.3.0",
-    "requests>=2.32.4",
-    "requests-cache>=1.2.1",
     "seaborn>=0.13.2",
-    "tqdm>=4.66.0",
 ]
 
 [dependency-groups]
@@ -29,9 +32,8 @@ dev = [
     "pytest-mock>=3.14.0",
     "pytest-xdist>=3.8.0",
     "pytest>=8.3.5",
-    "responses>=0.25.7",
+    "respx>=0.22.0",
     "ruff>=0.9.10",
-    "types-requests>=2.32.0.20250306",
 ]
 docs = [
     "sphinx>=8.2.3",
@@ -132,6 +134,7 @@ markers = [
     "unit: Unit tests that test isolated components with mocked dependencies",
     "integration: Integration tests that test component interactions",
     "e2e: End-to-end tests that test full workflows (may require API key)",
+    "real_rate_limiting: Tests that exercise the real rate limiter implementation",
 ]
 
 

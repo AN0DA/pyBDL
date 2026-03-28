@@ -1,8 +1,10 @@
 from urllib.parse import urlencode
 
+import httpx
 import pytest
-import responses
+import respx
 
+from pybdl.api.exceptions import BDLHTTPError, BDLResponseError
 from pybdl.api.levels import LevelsAPI
 from pybdl.config import BDLConfig
 
@@ -13,75 +15,69 @@ def levels_api(dummy_config: BDLConfig) -> LevelsAPI:
 
 
 @pytest.mark.unit
-@responses.activate
-def test_list_levels(levels_api: LevelsAPI, api_url: str) -> None:
+def test_list_levels(respx_mock: respx.MockRouter, levels_api: LevelsAPI, api_url: str) -> None:
     url = f"{api_url}/levels?lang=en&format=json&page-size=100"
     payload = {"results": [{"id": 1, "name": "Country"}, {"id": 2, "name": "Region"}]}
-    responses.add(responses.GET, url, json=payload, status=200)
+    respx_mock.get(url).mock(return_value=httpx.Response(200, json=payload))
     # Also register page 1 as empty for pagination to finish (if paginated)
     url1 = f"{api_url}/levels?lang=en&format=json&page=1&page-size=100"
-    responses.add(responses.GET, url1, json={"results": []}, status=200)
+    respx_mock.get(url1).mock(return_value=httpx.Response(200, json={"results": []}))
     result = levels_api.list_levels()
     assert isinstance(result, list)
     assert any(r["name"] == "Country" for r in result)
-    called_url = responses.calls[0].request.url
-    assert called_url is not None and "lang=en" in called_url
-    assert "page-size=100" in called_url
+    called_url = respx_mock.calls[0].request.url
+    assert called_url is not None and "lang=en" in str(called_url)
+    assert "page-size=100" in str(called_url)
 
 
 @pytest.mark.unit
-@responses.activate
-def test_list_levels_with_sort(levels_api: LevelsAPI, api_url: str) -> None:
+def test_list_levels_with_sort(respx_mock: respx.MockRouter, levels_api: LevelsAPI, api_url: str) -> None:
     # The first request will be just with sort and lang
     params = {"sort": "Name", "lang": "en", "format": "json", "page-size": "100"}
     url = f"{api_url}/levels?{urlencode(params)}"
-    responses.add(responses.GET, url, json={"results": []}, status=200)
+    respx_mock.get(url).mock(return_value=httpx.Response(200, json={"results": []}))
     # Also register page 1 as empty (if paginated)
     url1 = f"{api_url}/levels?{urlencode({**params, 'page': '1'})}"
-    responses.add(responses.GET, url1, json={"results": []}, status=200)
+    respx_mock.get(url1).mock(return_value=httpx.Response(200, json={"results": []}))
     levels_api.list_levels(sort="Name")
-    called_url = responses.calls[0].request.url
+    called_url = respx_mock.calls[0].request.url
     assert called_url is not None
-    assert "sort=Name" in called_url
-    assert "lang=en" in called_url
-    assert "page-size=100" in called_url
+    assert "sort=Name" in str(called_url)
+    assert "lang=en" in str(called_url)
+    assert "page-size=100" in str(called_url)
 
 
 @pytest.mark.unit
-@responses.activate
-def test_get_level(levels_api: LevelsAPI, api_url: str) -> None:
+def test_get_level(respx_mock: respx.MockRouter, levels_api: LevelsAPI, api_url: str) -> None:
     url = f"{api_url}/levels/3?lang=en&format=json"
     payload = {"id": 3, "name": "Powiat"}
-    responses.add(responses.GET, url, json=payload, status=200)
+    respx_mock.get(url).mock(return_value=httpx.Response(200, json=payload))
     result = levels_api.get_level(level_id=3)
     assert result["id"] == 3
     assert result["name"] == "Powiat"
 
 
 @pytest.mark.unit
-@responses.activate
-def test_get_levels_metadata(levels_api: LevelsAPI, api_url: str) -> None:
+def test_get_levels_metadata(respx_mock: respx.MockRouter, levels_api: LevelsAPI, api_url: str) -> None:
     url = f"{api_url}/levels/metadata?lang=en&format=json"
     payload = {"version": "1.0"}
-    responses.add(responses.GET, url, json=payload, status=200)
+    respx_mock.get(url).mock(return_value=httpx.Response(200, json=payload))
     result = levels_api.get_levels_metadata()
     assert result["version"] == "1.0"
 
 
 @pytest.mark.unit
-@responses.activate
-def test_list_levels_extra_query(levels_api: LevelsAPI, api_url: str) -> None:
+def test_list_levels_extra_query(respx_mock: respx.MockRouter, levels_api: LevelsAPI, api_url: str) -> None:
     url = f"{api_url}/levels?foo=bar&lang=en&format=json&page-size=100"
-    responses.add(responses.GET, url, json={"results": [{"id": 1}]}, status=200)
+    respx_mock.get(url).mock(return_value=httpx.Response(200, json={"results": [{"id": 1}]}))
     result = levels_api.list_levels(extra_query={"foo": "bar"})
     assert result[0]["id"] == 1
 
 
 @pytest.mark.unit
-@responses.activate
-def test_get_level_extra_query(levels_api: LevelsAPI, api_url: str) -> None:
+def test_get_level_extra_query(respx_mock: respx.MockRouter, levels_api: LevelsAPI, api_url: str) -> None:
     url = f"{api_url}/levels/5?foo=bar&lang=en&format=json"
-    responses.add(responses.GET, url, json={"id": 5}, status=200)
+    respx_mock.get(url).mock(return_value=httpx.Response(200, json={"id": 5}))
     result = levels_api.get_level(level_id=5, extra_query={"foo": "bar"})
     assert result["id"] == 5
 
@@ -91,7 +87,6 @@ class DummyException(Exception):
 
 
 @pytest.mark.unit
-@responses.activate
 def test_list_levels_error(levels_api: LevelsAPI) -> None:
     def raise_exc(*a: object, **k: object) -> None:
         raise DummyException("fail")
@@ -102,7 +97,6 @@ def test_list_levels_error(levels_api: LevelsAPI) -> None:
 
 
 @pytest.mark.unit
-@responses.activate
 def test_get_level_error(levels_api: LevelsAPI) -> None:
     def raise_exc(*a: object, **k: object) -> None:
         raise DummyException("fail")
@@ -113,7 +107,6 @@ def test_get_level_error(levels_api: LevelsAPI) -> None:
 
 
 @pytest.mark.unit
-@responses.activate
 def test_get_levels_metadata_error(levels_api: LevelsAPI) -> None:
     def raise_exc(*a: object, **k: object) -> None:
         raise DummyException("fail")
@@ -124,40 +117,38 @@ def test_get_levels_metadata_error(levels_api: LevelsAPI) -> None:
 
 
 @pytest.mark.unit
-@responses.activate
-def test_list_levels_http_error(levels_api: LevelsAPI, api_url: str) -> None:
+def test_list_levels_http_error(respx_mock: respx.MockRouter, levels_api: LevelsAPI, api_url: str) -> None:
     """Test handling of HTTP errors."""
     url = f"{api_url}/levels?lang=en&format=json&page-size=100"
-    responses.add(responses.GET, url, json={"error": "Not Found"}, status=404)
-    with pytest.raises(RuntimeError):  # Should raise RuntimeError for HTTP error
+    respx_mock.get(url).mock(return_value=httpx.Response(404, json={"error": "Not Found"}))
+    with pytest.raises(BDLHTTPError):
         levels_api.list_levels()
 
 
 @pytest.mark.unit
-@responses.activate
-def test_get_level_invalid_id(levels_api: LevelsAPI, api_url: str) -> None:
+def test_get_level_invalid_id(respx_mock: respx.MockRouter, levels_api: LevelsAPI, api_url: str) -> None:
     """Test handling of invalid level ID."""
     url = f"{api_url}/levels/99999?lang=en&format=json"
-    responses.add(responses.GET, url, json={"error": "Not Found"}, status=404)
-    with pytest.raises(RuntimeError):
+    respx_mock.get(url).mock(return_value=httpx.Response(404, json={"error": "Not Found"}))
+    with pytest.raises(BDLHTTPError):
         levels_api.get_level(99999)
 
 
 @pytest.mark.unit
-@responses.activate
-def test_list_levels_empty_pagination(levels_api: LevelsAPI, api_url: str) -> None:
+def test_list_levels_empty_pagination(respx_mock: respx.MockRouter, levels_api: LevelsAPI, api_url: str) -> None:
     """Test handling of empty pagination results."""
     url = f"{api_url}/levels?lang=en&format=json&page-size=100"
-    responses.add(responses.GET, url, json={"results": [], "links": {}}, status=200)
+    respx_mock.get(url).mock(return_value=httpx.Response(200, json={"results": [], "links": {}}))
     result = levels_api.list_levels()
     assert result == []
 
 
 @pytest.mark.unit
-@responses.activate
-def test_get_level_malformed_response(levels_api: LevelsAPI, api_url: str) -> None:
+def test_get_level_malformed_response(respx_mock: respx.MockRouter, levels_api: LevelsAPI, api_url: str) -> None:
     """Test handling of malformed JSON response."""
     url = f"{api_url}/levels/3?lang=en&format=json"
-    responses.add(responses.GET, url, body="not json", status=200, content_type="text/plain")
-    with pytest.raises(ValueError):  # Should raise ValueError for malformed JSON
+    respx_mock.get(url).mock(
+        return_value=httpx.Response(200, content=b"not json", headers={"Content-Type": "text/plain"})
+    )
+    with pytest.raises(BDLResponseError):
         levels_api.get_level(3)

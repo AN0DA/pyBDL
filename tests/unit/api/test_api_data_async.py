@@ -40,10 +40,10 @@ async def test_async_get_data_by_variable_all_branches(
 @patch.object(DataAPI, "afetch_single_result", new_callable=AsyncMock)
 async def test_async_get_data_by_unit_all_branches(afetch_single_result: AsyncMock, data_api: DataAPI) -> None:
     afetch_single_result.return_value = ([{"id": 1}], {"meta": 1})
-    result = await data_api.aget_data_by_unit(unit_id="u", variable_id=[1], return_metadata=True)
+    result = await data_api.aget_data_by_unit(unit_id="u", variable_ids=[1], return_metadata=True)
     assert result == ([{"id": 1}], {"meta": 1})
     afetch_single_result.return_value = [{"id": 2}]
-    result = await data_api.aget_data_by_unit(unit_id="u", variable_id=[1], return_metadata=False)
+    result = await data_api.aget_data_by_unit(unit_id="u", variable_ids=[1], return_metadata=False)
     assert result == [{"id": 2}]
 
 
@@ -78,16 +78,18 @@ async def test_async_get_data_by_unit_locality_all_branches(
     afetch_single_result: AsyncMock, afetch_all_results: AsyncMock, data_api: DataAPI
 ) -> None:
     afetch_all_results.return_value = ([{"id": 1}], {"meta": 1})
-    result = await data_api.aget_data_by_unit_locality(unit_id="u", variable_id=[1], return_metadata=True)
+    result = await data_api.aget_data_by_unit_locality(unit_id="u", variable_ids=[1], return_metadata=True)
     assert result == ([{"id": 1}], {"meta": 1})
     afetch_all_results.return_value = [{"id": 2}]
-    result = await data_api.aget_data_by_unit_locality(unit_id="u", variable_id=[1], return_metadata=False)
+    result = await data_api.aget_data_by_unit_locality(unit_id="u", variable_ids=[1], return_metadata=False)
     assert result == [{"id": 2}]
     afetch_single_result.return_value = ([{"id": 3}], {"meta": 3})
-    result = await data_api.aget_data_by_unit_locality(unit_id="u", variable_id=[1], max_pages=1, return_metadata=True)
+    result = await data_api.aget_data_by_unit_locality(unit_id="u", variable_ids=[1], max_pages=1, return_metadata=True)
     assert result == ([{"id": 3}], {"meta": 3})
     afetch_single_result.return_value = [{"id": 4}]
-    result = await data_api.aget_data_by_unit_locality(unit_id="u", variable_id=[1], max_pages=1, return_metadata=False)
+    result = await data_api.aget_data_by_unit_locality(
+        unit_id="u", variable_ids=[1], max_pages=1, return_metadata=False
+    )
     assert result == [{"id": 4}]
 
 
@@ -128,7 +130,7 @@ async def test_async_get_data_by_unit_params(afetch_single_result: AsyncMock, da
     afetch_single_result.return_value = {"year": 2021, "format": "csv", "bar": "baz"}
     result = await data_api.aget_data_by_unit(
         unit_id="u",
-        variable_id=[1],
+        variable_ids=[1],
         years=[2021],
         format="csv",
         extra_query={"bar": "baz"},
@@ -162,7 +164,7 @@ async def test_async_get_data_by_unit_locality_params(afetch_all_results: AsyncM
     afetch_all_results.return_value = ({"year": 2023, "format": "csv", "qux": "quux"}, {"meta": 1})
     result, meta = await data_api.aget_data_by_unit_locality(
         unit_id="u",
-        variable_id=[1],
+        variable_ids=[1],
         years=[2023],
         format="csv",
         extra_query={"qux": "quux"},
@@ -191,9 +193,9 @@ async def test_async_get_data_by_variable_edge_cases(afetch_all_results: AsyncMo
 async def test_async_get_data_by_unit_locality_edge_cases(afetch_all_results: AsyncMock, data_api: DataAPI) -> None:
     # Empty results
     afetch_all_results.return_value = ([], {"meta": 1})
-    result = await data_api.aget_data_by_unit_locality(unit_id="u", variable_id=[1], return_metadata=True)
+    result = await data_api.aget_data_by_unit_locality(unit_id="u", variable_ids=[1], return_metadata=True)
     assert result == ([], {"meta": 1})
     # Missing metadata
     afetch_all_results.return_value = ([{"id": 1}], None)
-    result = await data_api.aget_data_by_unit_locality(unit_id="u", variable_id=[1], return_metadata=True)
+    result = await data_api.aget_data_by_unit_locality(unit_id="u", variable_ids=[1], return_metadata=True)
     assert result == ([{"id": 1}], None)

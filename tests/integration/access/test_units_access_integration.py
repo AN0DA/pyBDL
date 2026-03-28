@@ -33,6 +33,23 @@ class TestUnitsAccessIntegration:
         assert str(first_id) == "000000000000" or first_id == 0
         assert result["name"].iloc[0] == "POLSKA"
 
+    def test_list_units_with_enrichment(
+        self,
+        mock_api_client: MagicMock,
+        load_sample_data: Callable[[str], dict[str, Any]],
+    ) -> None:
+        """Test level enrichment for units."""
+        units_sample = load_sample_data("samples_raw_units.json")
+        levels_sample = load_sample_data("samples_raw_levels.json")
+        mock_api_client.list_units.return_value = units_sample["list_units"]
+        mock_api_client.list_levels.return_value = levels_sample["list_levels"]
+
+        access = UnitsAccess(mock_api_client)
+        result = access.list_units(enrich_levels=True)
+
+        assert "level_name" in result.columns
+        assert result["level_name"].notna().any()
+
     def test_get_unit(
         self,
         mock_api_client: MagicMock,

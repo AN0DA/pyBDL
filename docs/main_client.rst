@@ -120,6 +120,46 @@ Using Both Interfaces
         data, meta = metadata
         print(f"Total pages: {meta.get('totalPages', 'unknown')}")
 
+Context Manager and Session Lifecycle
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``BDL`` can be used as a context manager to ensure HTTP sessions and underlying resources are
+properly closed when you are done. This is especially important in long-running processes and
+scripts that should not leave open connections behind.
+
+.. code-block:: python
+
+    from pybdl import BDL, BDLConfig
+
+    # Context manager — sessions are closed automatically on exit
+    with BDL(BDLConfig(api_key="your-api-key")) as bdl:
+        levels = bdl.levels.list_levels()
+        data = bdl.data.get_data_by_variable("3643", years=[2021])
+
+When **not** using the context manager, call ``bdl.close()`` explicitly when finished:
+
+.. code-block:: python
+
+    bdl = BDL()
+    try:
+        data = bdl.data.get_data_by_variable("3643", years=[2021])
+    finally:
+        bdl.close()
+
+The async interface supports ``async with``:
+
+.. code-block:: python
+
+    import asyncio
+    from pybdl import BDL
+
+    async def main():
+        async with BDL() as bdl:
+            data = await bdl.data.aget_data_by_variable("3643", years=[2021])
+        return data
+
+    asyncio.run(main())
+
 Async Usage
 ~~~~~~~~~~~
 

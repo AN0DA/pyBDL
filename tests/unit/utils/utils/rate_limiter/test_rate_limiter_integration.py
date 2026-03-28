@@ -15,7 +15,7 @@ def test_sync_async_share_cache_file(tmp_path: Any) -> None:
     """Test that sync and async rate limiters share the same cache file."""
     cache_file = tmp_path / "shared_cache.json"
     cache = rate_limiter.PersistentQuotaCache(enabled=True)
-    cache.cache_file = str(cache_file)
+    cache.cache_file = cache_file
 
     quotas: dict[int, int | tuple[Any, ...]] = {1: 3}
     sync_limiter = rate_limiter.RateLimiter(quotas, is_registered=False, cache=cache)
@@ -40,7 +40,7 @@ def test_sync_async_share_quota_via_cache(tmp_path: Any) -> None:
     """Test that sync and async rate limiters share quota state via cache."""
     cache_file = tmp_path / "shared_quota.json"
     cache = rate_limiter.PersistentQuotaCache(enabled=True)
-    cache.cache_file = str(cache_file)
+    cache.cache_file = cache_file
 
     quotas: dict[int, int | tuple[Any, ...]] = {1: 5}
 
@@ -71,7 +71,7 @@ def test_mixed_sync_async_operations(tmp_path: Any) -> None:
     """Test mixed sync and async operations sharing cache."""
     cache_file = tmp_path / "mixed_cache.json"
     cache = rate_limiter.PersistentQuotaCache(enabled=True)
-    cache.cache_file = str(cache_file)
+    cache.cache_file = cache_file
 
     quotas: dict[int, int | tuple[Any, ...]] = {1: 10}
 
@@ -99,7 +99,7 @@ def test_concurrent_sync_async_mixed(tmp_path: Any) -> None:
     """Test concurrent sync and async operations."""
     cache_file = tmp_path / "concurrent_cache.json"
     cache = rate_limiter.PersistentQuotaCache(enabled=True)
-    cache.cache_file = str(cache_file)
+    cache.cache_file = cache_file
 
     quotas: dict[int, int | tuple[Any, ...]] = {1: 10}
     sync_limiter = rate_limiter.RateLimiter(quotas, is_registered=False, cache=cache)

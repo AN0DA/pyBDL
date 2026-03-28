@@ -108,3 +108,74 @@ class TestDataAccess:
         mock_api_client.aget_data_by_unit = AsyncMock(return_value=[{"id": "1", "value": 100}])
         result = await data_access.aget_data_by_unit("999", variable_ids=["3643"])
         assert isinstance(result, pd.DataFrame)
+
+    def test_get_data_by_variable_with_metadata_wrapper_sets_flag(
+        self, data_access: DataAccess, mock_api_client: MagicMock
+    ) -> None:
+        """Convenience wrapper always requests metadata from the API client."""
+        mock_data = [{"id": "1", "name": "X", "values": [{"year": "2020", "val": 1, "attrId": 1}]}]
+        mock_api_client.get_data_by_variable.return_value = (mock_data, {"total": 1})
+        df, meta = data_access.get_data_by_variable_with_metadata("3643")
+        assert isinstance(df, pd.DataFrame)
+        assert meta == {"total": 1}
+        call_kw = mock_api_client.get_data_by_variable.call_args.kwargs
+        assert call_kw.get("return_metadata") is True
+
+    def test_get_data_by_unit_with_metadata_wrapper_sets_flag(
+        self, data_access: DataAccess, mock_api_client: MagicMock
+    ) -> None:
+        mock_api_client.get_data_by_unit.return_value = ([{"id": "1"}], {"m": 2})
+        _, meta = data_access.get_data_by_unit_with_metadata("999", variable_ids=["3643"])
+        assert meta == {"m": 2}
+        assert mock_api_client.get_data_by_unit.call_args.kwargs.get("return_metadata") is True
+
+    def test_get_data_by_variable_locality_with_metadata_wrapper_sets_flag(
+        self, data_access: DataAccess, mock_api_client: MagicMock
+    ) -> None:
+        mock_api_client.get_data_by_variable_locality.return_value = ([{"id": "1"}], {"m": 3})
+        _, meta = data_access.get_data_by_variable_locality_with_metadata("7", "2")
+        assert meta == {"m": 3}
+        assert mock_api_client.get_data_by_variable_locality.call_args.kwargs.get("return_metadata") is True
+
+    def test_get_data_by_unit_locality_with_metadata_wrapper_sets_flag(
+        self, data_access: DataAccess, mock_api_client: MagicMock
+    ) -> None:
+        mock_api_client.get_data_by_unit_locality.return_value = ([{"id": "1"}], {"m": 4})
+        _, meta = data_access.get_data_by_unit_locality_with_metadata("44", variable_id=[3643])
+        assert meta == {"m": 4}
+        assert mock_api_client.get_data_by_unit_locality.call_args.kwargs.get("return_metadata") is True
+
+    @pytest.mark.asyncio
+    async def test_aget_data_by_variable_with_metadata_wrapper_sets_flag(
+        self, data_access: DataAccess, mock_api_client: MagicMock
+    ) -> None:
+        mock_data = [{"id": "1", "name": "X", "values": [{"year": "2020", "val": 1, "attrId": 1}]}]
+        mock_api_client.aget_data_by_variable = AsyncMock(return_value=(mock_data, {"total": 1}))
+        df, meta = await data_access.aget_data_by_variable_with_metadata("3643")
+        assert isinstance(df, pd.DataFrame)
+        assert meta == {"total": 1}
+        assert mock_api_client.aget_data_by_variable.await_args.kwargs.get("return_metadata") is True
+
+    @pytest.mark.asyncio
+    async def test_aget_data_by_unit_with_metadata_wrapper_sets_flag(
+        self, data_access: DataAccess, mock_api_client: MagicMock
+    ) -> None:
+        mock_api_client.aget_data_by_unit = AsyncMock(return_value=([{"id": "1"}], {"m": 2}))
+        await data_access.aget_data_by_unit_with_metadata("999", variable_ids=["3643"])
+        assert mock_api_client.aget_data_by_unit.await_args.kwargs.get("return_metadata") is True
+
+    @pytest.mark.asyncio
+    async def test_aget_data_by_variable_locality_with_metadata_wrapper_sets_flag(
+        self, data_access: DataAccess, mock_api_client: MagicMock
+    ) -> None:
+        mock_api_client.aget_data_by_variable_locality = AsyncMock(return_value=([{"id": "1"}], {"m": 3}))
+        await data_access.aget_data_by_variable_locality_with_metadata("7", "2")
+        assert mock_api_client.aget_data_by_variable_locality.await_args.kwargs.get("return_metadata") is True
+
+    @pytest.mark.asyncio
+    async def test_aget_data_by_unit_locality_with_metadata_wrapper_sets_flag(
+        self, data_access: DataAccess, mock_api_client: MagicMock
+    ) -> None:
+        mock_api_client.aget_data_by_unit_locality = AsyncMock(return_value=([{"id": "1"}], {"m": 4}))
+        await data_access.aget_data_by_unit_locality_with_metadata("44", variable_id=[3643])
+        assert mock_api_client.aget_data_by_unit_locality.await_args.kwargs.get("return_metadata") is True

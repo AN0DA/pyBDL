@@ -34,6 +34,29 @@ class TestDataAccessIntegration:
         # Check that year was converted to integer
         assert result["year"].dtype in ("Int64", "int64")
 
+    def test_get_data_by_variable_with_enrichment(
+        self,
+        mock_api_client: MagicMock,
+        load_sample_data: Callable[[str], dict[str, Any]],
+    ) -> None:
+        """Test enrichment for units and attributes when fetching data."""
+        samples = load_sample_data("samples_raw_data.json")
+        units_sample = load_sample_data("samples_raw_units.json")
+        attributes_sample = load_sample_data("samples_raw_attributes.json")
+
+        mock_api_client.get_data_by_variable.return_value = samples["get_data_by_variable"]
+        mock_api_client.list_units.return_value = units_sample["list_units"]
+        mock_api_client.list_attributes.return_value = attributes_sample["list_attributes"]
+
+        access = DataAccess(mock_api_client)
+        result = access.get_data_by_variable("3643", enrich_units=True, enrich_attributes=True)
+
+        assert "unit_level" in result.columns
+        assert "unit_parent_id" in result.columns
+        assert "attr_description" in result.columns
+        # Ensure enrichment added non-null values for known ids
+        assert result["attr_description"].notna().any()
+
     def test_get_data_by_variable_with_metadata(
         self,
         mock_api_client: MagicMock,

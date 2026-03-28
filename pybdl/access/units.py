@@ -5,11 +5,13 @@ from typing import Any
 import pandas as pd
 
 from pybdl.access.base import BaseAccess
+from pybdl.access.enrichment import LEVELS_SPEC, with_enrichment
 
 
 class UnitsAccess(BaseAccess):
     """Access layer for units API, converting responses to DataFrames."""
 
+    @with_enrichment(LEVELS_SPEC)
     def list_units(
         self,
         parent_id: str | None = None,
@@ -45,6 +47,7 @@ class UnitsAccess(BaseAccess):
         data = self.api_client.list_units(**resolved_params, **kwargs)
         return self._to_dataframe(data)
 
+    @with_enrichment(LEVELS_SPEC)
     def get_unit(
         self,
         unit_id: str,
@@ -63,6 +66,7 @@ class UnitsAccess(BaseAccess):
         data = self.api_client.get_unit(unit_id, **kwargs)
         return self._to_dataframe(data)
 
+    @with_enrichment(LEVELS_SPEC)
     def search_units(
         self,
         name: str | None = None,
@@ -104,6 +108,7 @@ class UnitsAccess(BaseAccess):
         data = self.api_client.search_units(**resolved_params, **kwargs)
         return self._to_dataframe(data)
 
+    @with_enrichment(LEVELS_SPEC)
     def list_localities(
         self,
         parent_id: str | None = None,
@@ -134,6 +139,7 @@ class UnitsAccess(BaseAccess):
         data = self.api_client.list_localities(**resolved_params, **kwargs)
         return self._to_dataframe(data)
 
+    @with_enrichment(LEVELS_SPEC)
     def get_locality(
         self,
         locality_id: str,
@@ -152,6 +158,7 @@ class UnitsAccess(BaseAccess):
         data = self.api_client.get_locality(locality_id, **kwargs)
         return self._to_dataframe(data)
 
+    @with_enrichment(LEVELS_SPEC)
     def search_localities(
         self,
         name: str | None = None,
@@ -186,6 +193,7 @@ class UnitsAccess(BaseAccess):
         return self._to_dataframe(data)
 
     # Async versions
+    @with_enrichment(LEVELS_SPEC)
     async def alist_units(
         self,
         parent_id: str | None = None,
@@ -221,6 +229,7 @@ class UnitsAccess(BaseAccess):
         data = await self.api_client.alist_units(**resolved_params, **kwargs)
         return self._to_dataframe(data)
 
+    @with_enrichment(LEVELS_SPEC)
     async def aget_unit(
         self,
         unit_id: str,
@@ -239,6 +248,7 @@ class UnitsAccess(BaseAccess):
         data = await self.api_client.aget_unit(unit_id, **kwargs)
         return self._to_dataframe(data)
 
+    @with_enrichment(LEVELS_SPEC)
     async def asearch_units(
         self,
         name: str | None = None,
@@ -280,6 +290,7 @@ class UnitsAccess(BaseAccess):
         data = await self.api_client.asearch_units(**resolved_params, **kwargs)
         return self._to_dataframe(data)
 
+    @with_enrichment(LEVELS_SPEC)
     async def alist_localities(
         self,
         parent_id: str | None = None,
@@ -310,6 +321,7 @@ class UnitsAccess(BaseAccess):
         data = await self.api_client.alist_localities(**resolved_params, **kwargs)
         return self._to_dataframe(data)
 
+    @with_enrichment(LEVELS_SPEC)
     async def aget_locality(
         self,
         locality_id: str,
@@ -328,6 +340,7 @@ class UnitsAccess(BaseAccess):
         data = await self.api_client.aget_locality(locality_id, **kwargs)
         return self._to_dataframe(data)
 
+    @with_enrichment(LEVELS_SPEC)
     async def asearch_localities(
         self,
         name: str | None = None,

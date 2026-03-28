@@ -1,6 +1,7 @@
 import pytest
 
 from pybdl.api.client import BaseAPIClient
+from pybdl.api.exceptions import BDLResponseError
 from pybdl.config import BDLConfig
 
 
@@ -35,7 +36,7 @@ async def test_async_fetch_all_results_missing_results_key_raises(
         yield {"notresults": []}
 
     monkeypatch.setattr(async_client, "_paginated_request_async", fake_paginated)
-    with pytest.raises(ValueError):
+    with pytest.raises(BDLResponseError):
         await async_client.afetch_all_results("data/bad", results_key="results", page_size=2, show_progress=False)
 
 
@@ -74,7 +75,7 @@ async def test_async_paginated_request_missing_results_key(
 
     monkeypatch.setattr(async_client, "_request_async", fake_request_async)
     it = async_client._paginated_request_async("endpoint", results_key="results")
-    with pytest.raises(StopAsyncIteration):
+    with pytest.raises(BDLResponseError):
         await it.__anext__()
 
 
@@ -101,7 +102,7 @@ async def test_afetch_all_results_metadata_and_error(
         yield {"notresults": []}
 
     monkeypatch.setattr(async_client, "_paginated_request_async", fake_bad)
-    with pytest.raises(ValueError):
+    with pytest.raises(BDLResponseError):
         await async_client.afetch_all_results("endpoint", results_key="results", show_progress=False)
 
 
@@ -152,5 +153,5 @@ async def test_afetch_single_result_metadata_and_error(
         return {"notresults": []}
 
     monkeypatch.setattr(async_client, "_request_async", fake_bad)
-    with pytest.raises(ValueError):
+    with pytest.raises(BDLResponseError):
         await async_client.afetch_single_result("endpoint", results_key="results")

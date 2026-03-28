@@ -1,6 +1,7 @@
 """Base access class for converting API responses to DataFrames."""
 
-import inspect
+import re
+import sys
 from typing import Any
 
 import pandas as pd
@@ -13,7 +14,8 @@ class BaseAccess:
     Supports per-function column renaming through the `_column_renames` class attribute.
     Child classes can define column rename mappings that apply to both sync and async methods.
 
-    Example:
+    Example::
+
         class MyAccess(BaseAccess):
             _column_renames = {
                 "list_items": {
@@ -38,6 +40,8 @@ class BaseAccess:
             api_client: API client instance (e.g., LevelsAPI, AttributesAPI).
         """
         self.api_client = api_client
+        # Cache for enrichment lookups (e.g., levels, measures) to avoid refetching
+        self._enrichment_cache: dict[str, Any] = {}
 
     def _get_default_page_size(self) -> int:
         """
@@ -88,16 +92,18 @@ class BaseAccess:
     def _to_dataframe(
         self,
         data: list[dict[str, Any]] | dict[str, Any],
+        *,
+        function_name: str | None = None,
     ) -> pd.DataFrame:
         """
         Convert API response to DataFrame with proper column names and data types.
 
-        Automatically detects the calling function name to apply column renames defined
-        in `_column_renames`. Both sync and async methods are supported (async names are
-        normalized by removing 'a' prefix).
+        Applies per-method column renames defined in `_column_renames`. Both sync and
+        async methods are supported (async names are normalized by removing 'a' prefix).
 
         Args:
             data: List of dictionaries or single dictionary from API response.
+            function_name: Optional explicit function name for column rename lookup.
 
         Returns:
             DataFrame with normalized column names and proper data types.
@@ -118,8 +124,8 @@ class BaseAccess:
         # Infer and convert data types
         df = self._infer_dtypes(df)
 
-        # Automatically detect calling function name for column renames
-        function_name = self._get_calling_function_name()
+        if function_name is None:
+            function_name = self._get_calling_function_name()
         if function_name:
             df = self._apply_column_renames(df, function_name)
 
@@ -136,18 +142,12 @@ class BaseAccess:
         Returns:
             Function name if found, None otherwise.
         """
-        stack = inspect.stack()
-        # Skip frames:
-        # 0: _get_calling_function_name (this method)
-        # 1: _to_dataframe (the method that called this)
-        # 2: The actual calling method (what we want)
-        if len(stack) > 2:
-            frame_info = stack[2]
-            func_name = frame_info.function
-            # Return the function name (could be sync like 'list_aggregates' or async like 'alist_aggregates')
-            # Skip only if it's a module-level call or internal method
-            if func_name != "<module>" and not func_name.startswith("__"):
-                return func_name
+        try:
+            func_name = sys._getframe(2).f_code.co_name
+        except ValueError:
+            return None
+        if func_name != "<module>" and not func_name.startswith("__"):
+            return func_name
         return None
 
     @staticmethod
@@ -220,8 +220,6 @@ class BaseAccess:
         Returns:
             Column name in snake_case.
         """
-        import re
-
         # Insert underscore before uppercase letters (except at the start)
         s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
         # Insert underscore before uppercase letters that follow lowercase
@@ -242,24 +240,27 @@ class BaseAccess:
         df = df.copy()
 
         for col in df.columns:
-            # Skip if already has proper type
-            if df[col].dtype == "object":
-                # Try to convert to numeric
-                try:
-                    # Try integer first
-                    pd.to_numeric(df[col], errors="raise")
-                    # If successful, check if it's integer or float
-                    if df[col].dropna().apply(lambda x: isinstance(x, (int, float)) and float(x).is_integer()).all():
-                        df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
-                    else:
-                        df[col] = pd.to_numeric(df[col], errors="coerce")
-                except (ValueError, TypeError):
-                    # Try boolean
-                    if df[col].dtype == "object":
-                        bool_values = {"true": True, "false": False, "True": True, "False": False}
-                        if df[col].dropna().isin(bool_values.keys()).all():
-                            df[col] = df[col].map(bool_values)
-                        # Otherwise keep as string/object
+            series = df[col]
+            if not (pd.api.types.is_object_dtype(series.dtype) or pd.api.types.is_string_dtype(series.dtype)):
+                continue
+
+            try:
+                pd.to_numeric(series, errors="raise")
+                non_na = series.dropna()
+                if (
+                    len(non_na) > 0
+                    and non_na.apply(lambda x: isinstance(x, (int, float)) and float(x).is_integer()).all()
+                ):
+                    df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
+                else:
+                    df[col] = pd.to_numeric(df[col], errors="coerce")
+            except (ValueError, TypeError):
+                bool_values = {"true": True, "false": False, "True": True, "False": False}
+                non_na = df[col].dropna()
+                if len(non_na) > 0 and non_na.isin(bool_values.keys()).all():
+                    df[col] = df[col].map(bool_values)
+                elif pd.api.types.is_string_dtype(df[col].dtype):
+                    df[col] = df[col].astype(object)
 
         return df
 
