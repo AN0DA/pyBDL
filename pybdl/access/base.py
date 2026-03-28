@@ -14,7 +14,8 @@ class BaseAccess:
     Supports per-function column renaming through the `_column_renames` class attribute.
     Child classes can define column rename mappings that apply to both sync and async methods.
 
-    Example:
+    Example::
+
         class MyAccess(BaseAccess):
             _column_renames = {
                 "list_items": {
