@@ -240,24 +240,29 @@ class BaseAccess:
         df = df.copy()
 
         for col in df.columns:
-            # Skip if already has proper type
-            if df[col].dtype == "object":
-                # Try to convert to numeric
-                try:
-                    # Try integer first
-                    pd.to_numeric(df[col], errors="raise")
-                    # If successful, check if it's integer or float
-                    if df[col].dropna().apply(lambda x: isinstance(x, (int, float)) and float(x).is_integer()).all():
-                        df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
-                    else:
-                        df[col] = pd.to_numeric(df[col], errors="coerce")
-                except (ValueError, TypeError):
-                    # Try boolean
-                    if df[col].dtype == "object":
-                        bool_values = {"true": True, "false": False, "True": True, "False": False}
-                        if df[col].dropna().isin(bool_values.keys()).all():
-                            df[col] = df[col].map(bool_values)
-                        # Otherwise keep as string/object
+            series = df[col]
+            if not (
+                pd.api.types.is_object_dtype(series.dtype)
+                or pd.api.types.is_string_dtype(series.dtype)
+            ):
+                continue
+
+            try:
+                pd.to_numeric(series, errors="raise")
+                non_na = series.dropna()
+                if len(non_na) > 0 and non_na.apply(
+                    lambda x: isinstance(x, (int, float)) and float(x).is_integer()
+                ).all():
+                    df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
+                else:
+                    df[col] = pd.to_numeric(df[col], errors="coerce")
+            except (ValueError, TypeError):
+                bool_values = {"true": True, "false": False, "True": True, "False": False}
+                non_na = df[col].dropna()
+                if len(non_na) > 0 and non_na.isin(bool_values.keys()).all():
+                    df[col] = df[col].map(bool_values)
+                elif pd.api.types.is_string_dtype(df[col].dtype):
+                    df[col] = df[col].astype(object)
 
         return df
 
