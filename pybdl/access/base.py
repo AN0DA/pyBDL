@@ -241,18 +241,16 @@ class BaseAccess:
 
         for col in df.columns:
             series = df[col]
-            if not (
-                pd.api.types.is_object_dtype(series.dtype)
-                or pd.api.types.is_string_dtype(series.dtype)
-            ):
+            if not (pd.api.types.is_object_dtype(series.dtype) or pd.api.types.is_string_dtype(series.dtype)):
                 continue
 
             try:
                 pd.to_numeric(series, errors="raise")
                 non_na = series.dropna()
-                if len(non_na) > 0 and non_na.apply(
-                    lambda x: isinstance(x, (int, float)) and float(x).is_integer()
-                ).all():
+                if (
+                    len(non_na) > 0
+                    and non_na.apply(lambda x: isinstance(x, (int, float)) and float(x).is_integer()).all()
+                ):
                     df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
                 else:
                     df[col] = pd.to_numeric(df[col], errors="coerce")
