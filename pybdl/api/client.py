@@ -12,8 +12,8 @@ from hishel.httpx import AsyncCacheClient, SyncCacheClient
 from tqdm import tqdm
 
 from pybdl.api.exceptions import BDLHTTPError, BDLResponseError
-from pybdl.api.utils.rate_limiter import AsyncRateLimiter, PersistentQuotaCache, RateLimiter
 from pybdl.config import BDL_API_BASE_URL, DEFAULT_QUOTAS, BDLConfig, QuotaMap
+from pybdl.utils.rate_limiter import AsyncRateLimiter, PersistentQuotaCache, RateLimiter
 
 # Centralized type literals for API parameters
 LanguageLiteral = Literal["pl", "en"]

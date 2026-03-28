@@ -6,8 +6,8 @@ from typing import Any
 
 import pytest
 
-from pybdl.api.utils import rate_limiter
-from pybdl.api.utils.rate_limiter import RateLimitError
+from pybdl.utils import rate_limiter
+from pybdl.utils.rate_limiter import RateLimitError
 
 
 @pytest.mark.unit
