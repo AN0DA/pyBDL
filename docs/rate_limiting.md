@@ -85,17 +85,21 @@ bdl = BDL(config)
 data = bdl.api.data.get_data_by_variable(variable_id="3643", years=[2021])
 ```
 
-The rate limiter will automatically: - Track your API usage across all
-calls - Enforce quota limits - Raise exceptions if limits are exceeded
-(default behavior)
+The rate limiter will automatically:
+
+- Track your API usage across all calls
+- Enforce quota limits across all configured time windows
+- **Wait** until quota is available (default). Set `raise_on_rate_limit=True`
+  in `BDLConfig` to raise `RateLimitError` immediately instead.
 
 ### Handling Rate Limit Errors
 
-By default, the rate limiter raises a `RateLimitError` when quota is
-exceeded:
+When `raise_on_rate_limit=True` is set, the client raises `RateLimitError`
+instead of waiting. Import it from either location:
 
 ``` python
-from pybdl.utils.rate_limiter import RateLimitError
+from pybdl.api.exceptions import RateLimitError
+# or: from pybdl.utils.rate_limiter import RateLimitError
 
 try:
     data = bdl.api.data.get_data_by_variable(variable_id="3643", years=[2021])
