@@ -96,7 +96,8 @@ constructor arguments always take precedence over environment variables.
 | `BDL_API_KEY` | *(none)* | API key for authenticated access. Omit for anonymous access. |
 | `BDL_LANGUAGE` | `en` | Response language: `en` or `pl`. |
 | `BDL_FORMAT` | `json` | Response format: `json`, `jsonapi`, or `xml`. |
-| `BDL_USE_CACHE` | `true` | Enable HTTP response caching: `true` or `false`. |
+| `BDL_USE_CACHE` | `true` | Legacy boolean toggle. Use `BDL_CACHE_BACKEND` for backend selection. `false` is equivalent to `BDL_CACHE_BACKEND=` (disabled). |
+| `BDL_CACHE_BACKEND` | `file` | Cache backend: `"file"` (persistent), `"memory"` (in-process), or omit to disable. |
 | `BDL_CACHE_EXPIRY` | `3600` | Cache expiry time in seconds. |
 | `BDL_PAGE_SIZE` | `100` | Default page size for paginated requests. |
 | `BDL_PROXY_URL` | *(none)* | Proxy server URL, e.g. `http://proxy.example.com:8080`. |
