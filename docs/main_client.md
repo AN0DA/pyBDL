@@ -102,17 +102,18 @@ from pybdl import BDL
 
 bdl = BDL()
 
-# Access layer for DataFrame analysis
+# Access layer: DataFrame analysis
 df = bdl.data.get_data_by_variable("3643", years=[2021])
-avg_value = df['val'].mean()
+avg_value = df["val"].mean()
+print(f"Mean value: {avg_value:.2f}")
 
-# API layer for raw metadata
-metadata = bdl.api.data.get_data_by_variable(
-    "3643", years=[2021], return_metadata=True
-)
-if isinstance(metadata, tuple):
-    data, meta = metadata
-    print(f"Total pages: {meta.get('totalPages', 'unknown')}")
+# Access layer with metadata (pagination info)
+df, meta = bdl.data.get_data_by_variable_with_metadata("3643", years=[2021])
+print(f"Total pages available: {meta.get('totalPages', 'unknown')}")
+
+# API layer: raw JSON when you need the full response structure
+raw = bdl.api.data.get_data_by_variable("3643", years=[2021])
+print(f"API returned {len(raw)} unit records")
 ```
 
 ### Context Manager and Session Lifecycle
@@ -185,9 +186,7 @@ asyncio.run(main())
 
 !!! seealso
 
-```markdown
-- [Access layer](access_layer.md) — comprehensive access layer documentation
-- [API clients](api_clients.md) — API layer details
-- [Examples](examples.ipynb) — real-world usage
-- [Configuration](config.md) — configuration options
-```
+    - [Access layer](access_layer.md) — comprehensive access layer documentation
+    - [API clients](api_clients.md) — API layer details
+    - [Examples](examples.ipynb) — real-world usage
+    - [Configuration](config.md) — configuration options
