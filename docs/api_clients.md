@@ -51,15 +51,17 @@ concurrent applications. Async methods are named with an
 `a` prefix (e.g.,
 `aget_data_by_variable`).
 
-    import asyncio
-    from pybdl import BDL
+```python
+import asyncio
+from pybdl import BDL
 
-    async def main():
-        bdl = BDL()
-        data = await bdl.api.data.aget_data_by_variable(variable_id="3643", years=[2021])
-        print(data)
+async def main():
+    bdl = BDL()
+    data = await bdl.api.data.aget_data_by_variable(variable_id="3643", years=[2021])
+    print(data)
 
-    asyncio.run(main())
+asyncio.run(main())
+```
 
 > [!NOTE]
 > Async methods are available for all endpoints. See the API reference
@@ -80,23 +82,25 @@ The format and language parameters automatically set the appropriate
 HTTP headers: - `Accept` header is set based on the format parameter -
 `Accept-Language` header is set based on the language parameter
 
-    from pybdl import BDL
+```python
+from pybdl import BDL
 
-    bdl = BDL()
+bdl = BDL()
 
-    # Request data in XML format
-    data = bdl.api.data.get_data_by_variable(
-        variable_id="3643",
-        years=[2021],
-        format="xml"
-    )
+# Request data in XML format
+data = bdl.api.data.get_data_by_variable(
+    variable_id="3643",
+    years=[2021],
+    format="xml"
+)
 
-    # Request data in Polish
-    data = bdl.api.data.get_data_by_variable(
-        variable_id="3643",
-        years=[2021],
-        lang="pl"
-    )
+# Request data in Polish
+data = bdl.api.data.get_data_by_variable(
+    variable_id="3643",
+    years=[2021],
+    lang="pl"
+)
+```
 
 ### Aggregates
 

@@ -201,7 +201,7 @@ repos:
         name: "<< FIX >> Markdown"
         verbose: true
         require_serial: true
-        entry: pymarkdown --disable-rules md007,md028,md033,md034,md041,md042
+        entry: pymarkdown --disable-rules md007,md028,md033,md034,md041,md042,md046
         args: ["fix"]
         types: [markdown]
         additional_dependencies:
@@ -213,7 +213,7 @@ repos:
         require_serial: true
         entry: >
           pymarkdown
-          --disable-rules md007,md028,md033,md034,md041,md042
+          --disable-rules md007,md028,md033,md034,md041,md042,md046
           --set 'plugins.line-length.line_length=$#120'
         args: ["scan"]
         types: [markdown]
