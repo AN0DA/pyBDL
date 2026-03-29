@@ -113,9 +113,11 @@ make docs
 # or: uv run mkdocs serve   # live reload at http://127.0.0.1:8000
 ```
 
-The static site is written to `site/` (gitignored). Published URLs use version directories and a `latest`
-alias; configure the repository **Settings → Pages** to deploy from the **`gh-pages`** branch at **`/`
-(root)**.
+The static site is written to `site/` (gitignored). On **GitHub Pages** (`gh-pages` branch, **`/` root)**:
+
+- Pushes to **`main`** update the **`main`** mike version (tip-of-tree docs).
+- A successful **Release** workflow run deploys **`{semver}`** and moves the **`latest`** alias to that release;
+  the site root redirects to **`latest`**.
 
 Key documentation pages:
 

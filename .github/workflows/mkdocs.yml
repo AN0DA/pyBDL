@@ -61,8 +61,11 @@ jobs:
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    name: Deploy versioned docs (mike → gh-pages)
+    name: Deploy main-branch docs (mike → gh-pages)
     needs: build
+    concurrency:
+      group: mike-gh-pages-${{ github.repository }}
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     permissions:
       contents: write  # Push versioned HTML and mike metadata to the gh-pages branch.
@@ -94,22 +97,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Read version from pyproject.toml
-        id: version
-        run: |
-          v="$(uv run python -c \
-            'import tomllib as t;print(t.load(open("pyproject.toml","rb"))["project"]["version"])')"
-          echo "version=${v}" >> "${GITHUB_OUTPUT}"
-
-      - name: Deploy to gh-pages with mike
-        env:
-          MIKE_VERSION: ${{ steps.version.outputs.version }}
-        run: >
-          uv run mike deploy
-          --push
-          --update-aliases
-          "${MIKE_VERSION}"
-          latest
-
-      - name: Point site root at latest (redirect)
-        run: uv run mike set-default latest --push
+      # Tip of main only — stable semver + latest alias come from the Release workflow.
+      - name: Deploy main to gh-pages
+        run: uv run mike deploy --push main

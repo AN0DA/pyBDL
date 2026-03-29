@@ -270,3 +270,63 @@ jobs:
           shopt -s nullglob
           assets=(dist/*.tar.gz dist/*.whl)
           gh release upload "${RELEASE_TAG}" "${assets[@]}" --repo "${GITHUB_REPOSITORY}"
+
+  deploy-docs:
+    name: Deploy released docs (mike → gh-pages)
+    runs-on: ubuntu-latest
+    needs: release
+    if: needs.release.outputs.released == 'true'
+
+    concurrency:
+      group: mike-gh-pages-${{ github.repository }}
+      cancel-in-progress: false
+
+    environment: release
+
+    permissions:
+      contents: write  # mike: push gh-pages
+
+    steps:
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349  # v2
+        with:
+          app-id: ${{ vars.GH_APP_RW_ACCESS_APP_ID }}
+          private-key: ${{ secrets.GH_APP_RW_ACCESS_PRIVATE_KEY }}
+
+      - name: Checkout main (post-release version)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: true  # zizmor: ignore[artipacked]
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9  # v7
+        with:
+          enable-cache: false
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install project and docs dependencies
+        run: uv sync --group docs
+
+      - name: Configure Git for mike
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Deploy release version and update latest alias
+        env:
+          DOCS_VERSION: ${{ needs.release.outputs.version }}
+        run: >
+          uv run mike deploy
+          --push
+          --update-aliases
+          "${DOCS_VERSION}"
+          latest
+
+      - name: Point site root at latest (redirect)
+        run: uv run mike set-default latest --push
