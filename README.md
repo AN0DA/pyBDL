@@ -103,21 +103,26 @@ payload_with_meta = bdl.api.data.get_data_by_variable_with_metadata(
 
 ## Documentation
 
-Full documentation is built with Sphinx. To build locally:
+Documentation uses [MkDocs Material](https://squidfunk.github.io/mkdocs-material/) with
+[mkdocstrings](https://mkdocstrings.github.io/) and [mike](https://github.com/jimporter/mike) for versioned
+[GitHub Pages](https://pages.github.com/) (`gh-pages` branch). To build locally:
 
 ```bash
+uv sync --group docs
 make docs
-# or: cd docs && make html
+# or: uv run mkdocs serve   # live reload at http://127.0.0.1:8000
 ```
 
-The built HTML is written to `docs/_build/html/`.
+The static site is written to `site/` (gitignored). Published URLs use version directories and a `latest`
+alias; configure the repository **Settings → Pages** to deploy from the **`gh-pages`** branch at **`/`
+(root)**.
 
 Key documentation pages:
 
-- [Main Client](docs/main_client.rst) — BDL client, access vs API layer, context manager, async
-- [Access Layer](docs/access_layer.rst) — DataFrame interface, enrichment, pagination, metadata
-- [API Clients](docs/api_clients.rst) — Low-level raw-JSON clients
-- [Configuration](docs/config.rst) — All options and environment variables
-- [Rate Limiting](docs/rate_limiting.rst) — Quotas, retry, custom limits
+- [Main client](docs/main_client.md) — BDL client, access vs API layer, context manager, async
+- [Access layer](docs/access_layer.md) — DataFrame interface, enrichment, pagination, metadata
+- [API clients](docs/api_clients.md) — Low-level raw-JSON clients
+- [Configuration](docs/config.md) — All options and environment variables
+- [Rate limiting](docs/rate_limiting.md) — Quotas, retry, custom limits
 - [Examples](docs/examples.ipynb) — Jupyter notebook with real-world examples
 - [Changelog](CHANGELOG.md) — Release history

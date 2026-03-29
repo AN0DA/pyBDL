@@ -37,10 +37,11 @@ dev = [
     "ruff>=0.9.10",
 ]
 docs = [
-    "sphinx>=8.2.3",
-    "sphinx-autodoc-typehints>=3.2.0",
-    "sphinx-rtd-theme>=3.0.2",
-    "myst-nb>=1.1.0",
+    "mike>=2.1.0",
+    "mkdocs-include-markdown-plugin>=7.2.0",
+    "mkdocs-jupyter>=0.25.1",
+    "mkdocs-material>=9.6.0",
+    "mkdocstrings[python]>=0.30.0",
 ]
 
 [tool.ruff]

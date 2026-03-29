@@ -1,0 +1,115 @@
+---
+name: Docs
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "pybdl/**"
+      - ".github/workflows/mkdocs.yml"
+      - "mkdocs.yml"
+      - "pyproject.toml"
+      - "CHANGELOG.md"
+  pull_request:
+    paths:
+      - "docs/**"
+      - "pybdl/**"
+      - ".github/workflows/mkdocs.yml"
+      - "mkdocs.yml"
+      - "pyproject.toml"
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  build:
+    name: Build MkDocs site
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9  # v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install project and docs dependencies
+        run: uv sync --group docs
+
+      - name: Build site (strict)
+        run: uv run mkdocs build --strict
+
+      - name: Upload site artifact
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4  # v5
+        with:
+          name: mkdocs-site
+          path: site
+          retention-days: 7
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    name: Deploy versioned docs (mike → gh-pages)
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Push versioned HTML and mike metadata to the gh-pages branch.
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Authenticate git for push
+        run: git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9  # v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install project and docs dependencies
+        run: uv sync --group docs
+
+      - name: Configure Git for mike
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Read version from pyproject.toml
+        id: version
+        run: |
+          v="$(uv run python -c \
+            'import tomllib as t;print(t.load(open("pyproject.toml","rb"))["project"]["version"])')"
+          echo "version=${v}" >> "${GITHUB_OUTPUT}"
+
+      - name: Deploy to gh-pages with mike
+        env:
+          MIKE_VERSION: ${{ steps.version.outputs.version }}
+        run: >
+          uv run mike deploy
+          --push
+          --update-aliases
+          "${MIKE_VERSION}"
+          latest
+
+      - name: Point site root at latest (redirect)
+        run: uv run mike set-default latest --push

@@ -14,4 +14,4 @@ test:
 	uv run pytest --cov --cov-report term-missing:skip-covered
 
 docs:
-	uv run sphinx-build -W --keep-going -b html docs docs/_build/html
+	uv run --group docs mkdocs build --strict

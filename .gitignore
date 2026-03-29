@@ -97,7 +97,7 @@ instance/
 # Scrapy stuff:
 .scrapy
 
-# Sphinx documentation
+# Legacy Sphinx output (MkDocs uses /site at repo root)
 docs/_build/
 
 # PyBuilder
