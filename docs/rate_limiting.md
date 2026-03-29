@@ -114,6 +114,9 @@ information
 
 ### Waiting Instead of Raising
 
+The `BDL` client already waits by default; this section covers direct
+`RateLimiter` usage.
+
 You can configure the rate limiter to wait automatically instead of
 raising exceptions. This requires creating a custom rate limiter:
 
@@ -296,7 +299,7 @@ limiter.acquire()  # Will wait if needed, up to 30 seconds
 from pybdl import BDL, BDLConfig
 from pybdl.utils.rate_limiter import RateLimitError, RateLimitDelayExceeded
 
-bdl = BDL(BDLConfig(api_key="your-api-key"))
+bdl = BDL(BDLConfig(api_key="your-api-key", raise_on_rate_limit=True))
 
 try:
     data = bdl.api.data.get_data_by_variable(variable_id="3643", years=[2021])
@@ -341,10 +344,13 @@ bdl._client._sync_limiter.reset()
 
 ## Best Practices
 
-1. **Use default behavior**: The default raise-on-limit behavior is
-   usually best for most applications
-2. **Handle exceptions**: Always catch `RateLimitError` and implement
-   retry logic
+1. **Use default behavior**: The default wait behavior handles rate limits
+   automatically and is suitable for most applications. Use
+   `raise_on_rate_limit=True` only when you need fail-fast behavior
+   (e.g. tests, CLI tools with user-facing feedback).
+2. **Handle exceptions**: When `raise_on_rate_limit=True` is set, catch
+   `RateLimitError` and implement retry logic (or user-facing handling) as
+   needed.
 3. **Monitor quota**: Check remaining quota periodically to avoid
    hitting limits unexpectedly
 4. **Use persistent cache**: Keep `quota_cache_enabled=True` (default)
