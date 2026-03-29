@@ -1,0 +1,93 @@
+---
+site_name: pyBDL
+site_description: Python client for Polish GUS Local Data Bank (BDL)
+site_url: https://an0da.github.io/pybdl/
+repo_url: https://github.com/AN0DA/pybdl
+repo_name: AN0DA/pybdl
+edit_uri: edit/main/docs/
+
+docs_dir: docs
+site_dir: site
+strict: true
+
+exclude_docs: |
+  conf.py
+  _build/**
+  .cache/**
+
+watch:
+  - pybdl
+
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - navigation.tabs
+    - navigation.sections
+    - search.suggest
+    - search.highlight
+    - navigation.expand
+    - toc.follow
+  palette:
+    - scheme: default
+      primary: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+extra:
+  version:
+    provider: mike
+
+plugins:
+  - search
+  - include-markdown
+  - mkdocs-jupyter:
+      execute: false
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [.]
+          options:
+            docstring_style: google
+            members_order: source
+            show_root_heading: true
+            show_root_full_path: false
+            show_source: true
+            show_if_no_docstring: true
+            inherited_members: true
+            merge_init_into_class: true
+            show_bases: true
+            separate_signature: true
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - User Guide:
+      - Main client: main_client.md
+      - Access layer: access_layer.md
+      - Examples: examples.ipynb
+      - API clients: api_clients.md
+      - Configuration: config.md
+      - Rate limiting: rate_limiting.md
+  - Reference:
+      - Appendix: appendix.md
+      - Changelog: changelog.md
