@@ -15,13 +15,6 @@ dependencies = [
     "tqdm>=4.66.0",
 ]
 
-[project.optional-dependencies]
-viz = [
-    "matplotlib>=3.10.3",
-    "numpy>=2.3.0",
-    "seaborn>=0.13.2",
-]
-
 [dependency-groups]
 dev = [
     "bandit>=1.8.3",

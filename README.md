@@ -12,12 +12,6 @@ It offers two complementary interfaces:
 pip install pyBDL
 ```
 
-Optional visualization dependencies used in notebooks and examples:
-
-```bash
-pip install "pyBDL[viz]"
-```
-
 ## Quick Start
 
 ```python
