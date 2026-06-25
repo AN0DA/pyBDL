@@ -123,6 +123,8 @@ xfail_strict = true
 filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::PendingDeprecationWarning",
+    "ignore:unclosed database:ResourceWarning",
+    "ignore:unclosed event loop:ResourceWarning",
 ]
 
 # Test discovery

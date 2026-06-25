@@ -4,46 +4,40 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from pybdl.api.data import DataAPI
-from pybdl.config import BDLConfig
-
-
-@pytest.fixture
-def data_api(dummy_config: BDLConfig) -> DataAPI:
-    return DataAPI(dummy_config)
 
 
 @pytest.mark.asyncio
 @patch.object(DataAPI, "afetch_all_results", new_callable=AsyncMock)
 @patch.object(DataAPI, "afetch_single_result", new_callable=AsyncMock)
 async def test_async_get_data_by_variable_all_branches(
-    afetch_single_result: AsyncMock, afetch_all_results: AsyncMock, data_api: DataAPI
+    afetch_single_result: AsyncMock, afetch_all_results: AsyncMock, data_api_async: DataAPI
 ) -> None:
     # max_pages=None (default, all pages), return_metadata=True
     afetch_all_results.return_value = ([{"id": 1}], {"meta": 1})
-    result = await data_api.aget_data_by_variable("v", return_metadata=True)
+    result = await data_api_async.aget_data_by_variable("v", return_metadata=True)
     assert result == ([{"id": 1}], {"meta": 1})
     # max_pages=None (default, all pages), return_metadata=False
     afetch_all_results.return_value = [{"id": 2}]
-    result = await data_api.aget_data_by_variable("v", return_metadata=False)
+    result = await data_api_async.aget_data_by_variable("v", return_metadata=False)
     assert result == [{"id": 2}]
     # max_pages=1 (single page), return_metadata=True
     afetch_single_result.return_value = ([{"id": 3}], {"meta": 3})
-    result = await data_api.aget_data_by_variable("v", max_pages=1, return_metadata=True)
+    result = await data_api_async.aget_data_by_variable("v", max_pages=1, return_metadata=True)
     assert result == ([{"id": 3}], {"meta": 3})
     # max_pages=1 (single page), return_metadata=False
     afetch_single_result.return_value = [{"id": 4}]
-    result = await data_api.aget_data_by_variable("v", max_pages=1, return_metadata=False)
+    result = await data_api_async.aget_data_by_variable("v", max_pages=1, return_metadata=False)
     assert result == [{"id": 4}]
 
 
 @pytest.mark.asyncio
 @patch.object(DataAPI, "afetch_single_result", new_callable=AsyncMock)
-async def test_async_get_data_by_unit_all_branches(afetch_single_result: AsyncMock, data_api: DataAPI) -> None:
+async def test_async_get_data_by_unit_all_branches(afetch_single_result: AsyncMock, data_api_async: DataAPI) -> None:
     afetch_single_result.return_value = ([{"id": 1}], {"meta": 1})
-    result = await data_api.aget_data_by_unit(unit_id="u", variable_ids=[1], return_metadata=True)
+    result = await data_api_async.aget_data_by_unit(unit_id="u", variable_ids=[1], return_metadata=True)
     assert result == ([{"id": 1}], {"meta": 1})
     afetch_single_result.return_value = [{"id": 2}]
-    result = await data_api.aget_data_by_unit(unit_id="u", variable_ids=[1], return_metadata=False)
+    result = await data_api_async.aget_data_by_unit(unit_id="u", variable_ids=[1], return_metadata=False)
     assert result == [{"id": 2}]
 
 
@@ -51,21 +45,25 @@ async def test_async_get_data_by_unit_all_branches(afetch_single_result: AsyncMo
 @patch.object(DataAPI, "afetch_all_results", new_callable=AsyncMock)
 @patch.object(DataAPI, "afetch_single_result", new_callable=AsyncMock)
 async def test_async_get_data_by_variable_locality_all_branches(
-    afetch_single_result: AsyncMock, afetch_all_results: AsyncMock, data_api: DataAPI
+    afetch_single_result: AsyncMock, afetch_all_results: AsyncMock, data_api_async: DataAPI
 ) -> None:
     afetch_all_results.return_value = ([{"id": 1}], {"meta": 1})
-    result = await data_api.aget_data_by_variable_locality(variable_id="v", unit_parent_id="l", return_metadata=True)
+    result = await data_api_async.aget_data_by_variable_locality(
+        variable_id="v", unit_parent_id="l", return_metadata=True
+    )
     assert result == ([{"id": 1}], {"meta": 1})
     afetch_all_results.return_value = [{"id": 2}]
-    result = await data_api.aget_data_by_variable_locality(variable_id="v", unit_parent_id="l", return_metadata=False)
+    result = await data_api_async.aget_data_by_variable_locality(
+        variable_id="v", unit_parent_id="l", return_metadata=False
+    )
     assert result == [{"id": 2}]
     afetch_single_result.return_value = ([{"id": 3}], {"meta": 3})
-    result = await data_api.aget_data_by_variable_locality(
+    result = await data_api_async.aget_data_by_variable_locality(
         variable_id="v", unit_parent_id="l", max_pages=1, return_metadata=True
     )
     assert result == ([{"id": 3}], {"meta": 3})
     afetch_single_result.return_value = [{"id": 4}]
-    result = await data_api.aget_data_by_variable_locality(
+    result = await data_api_async.aget_data_by_variable_locality(
         variable_id="v", unit_parent_id="l", max_pages=1, return_metadata=False
     )
     assert result == [{"id": 4}]
@@ -75,19 +73,21 @@ async def test_async_get_data_by_variable_locality_all_branches(
 @patch.object(DataAPI, "afetch_all_results", new_callable=AsyncMock)
 @patch.object(DataAPI, "afetch_single_result", new_callable=AsyncMock)
 async def test_async_get_data_by_unit_locality_all_branches(
-    afetch_single_result: AsyncMock, afetch_all_results: AsyncMock, data_api: DataAPI
+    afetch_single_result: AsyncMock, afetch_all_results: AsyncMock, data_api_async: DataAPI
 ) -> None:
     afetch_all_results.return_value = ([{"id": 1}], {"meta": 1})
-    result = await data_api.aget_data_by_unit_locality(unit_id="u", variable_ids=[1], return_metadata=True)
+    result = await data_api_async.aget_data_by_unit_locality(unit_id="u", variable_ids=[1], return_metadata=True)
     assert result == ([{"id": 1}], {"meta": 1})
     afetch_all_results.return_value = [{"id": 2}]
-    result = await data_api.aget_data_by_unit_locality(unit_id="u", variable_ids=[1], return_metadata=False)
+    result = await data_api_async.aget_data_by_unit_locality(unit_id="u", variable_ids=[1], return_metadata=False)
     assert result == [{"id": 2}]
     afetch_single_result.return_value = ([{"id": 3}], {"meta": 3})
-    result = await data_api.aget_data_by_unit_locality(unit_id="u", variable_ids=[1], max_pages=1, return_metadata=True)
+    result = await data_api_async.aget_data_by_unit_locality(
+        unit_id="u", variable_ids=[1], max_pages=1, return_metadata=True
+    )
     assert result == ([{"id": 3}], {"meta": 3})
     afetch_single_result.return_value = [{"id": 4}]
-    result = await data_api.aget_data_by_unit_locality(
+    result = await data_api_async.aget_data_by_unit_locality(
         unit_id="u", variable_ids=[1], max_pages=1, return_metadata=False
     )
     assert result == [{"id": 4}]
@@ -95,20 +95,20 @@ async def test_async_get_data_by_unit_locality_all_branches(
 
 @pytest.mark.asyncio
 @patch.object(DataAPI, "afetch_single_result", new_callable=AsyncMock)
-async def test_async_get_data_metadata(afetch_single_result: AsyncMock, data_api: DataAPI) -> None:
+async def test_async_get_data_metadata(afetch_single_result: AsyncMock, data_api_async: DataAPI) -> None:
     afetch_single_result.return_value = {"meta": "data"}
-    result = await data_api.aget_data_metadata()
+    result = await data_api_async.aget_data_metadata()
     assert result == {"meta": "data"}
 
 
 @pytest.mark.asyncio
 @patch.object(DataAPI, "afetch_all_results", new_callable=AsyncMock)
-async def test_async_get_data_by_variable_params(afetch_all_results: AsyncMock, data_api: DataAPI) -> None:
+async def test_async_get_data_by_variable_params(afetch_all_results: AsyncMock, data_api_async: DataAPI) -> None:
     afetch_all_results.return_value = (
         {"year": 2020, "unit-level": 2, "parent-id": "pid", "format": "csv", "foo": "bar"},
         {"meta": 1},
     )
-    result, meta = await data_api.aget_data_by_variable(
+    result, meta = await data_api_async.aget_data_by_variable(
         variable_id="v",
         years=[2020],
         unit_level=2,
@@ -126,9 +126,9 @@ async def test_async_get_data_by_variable_params(afetch_all_results: AsyncMock, 
 
 @pytest.mark.asyncio
 @patch.object(DataAPI, "afetch_single_result", new_callable=AsyncMock)
-async def test_async_get_data_by_unit_params(afetch_single_result: AsyncMock, data_api: DataAPI) -> None:
+async def test_async_get_data_by_unit_params(afetch_single_result: AsyncMock, data_api_async: DataAPI) -> None:
     afetch_single_result.return_value = {"year": 2021, "format": "csv", "bar": "baz"}
-    result = await data_api.aget_data_by_unit(
+    result = await data_api_async.aget_data_by_unit(
         unit_id="u",
         variable_ids=[1],
         years=[2021],
@@ -143,9 +143,11 @@ async def test_async_get_data_by_unit_params(afetch_single_result: AsyncMock, da
 
 @pytest.mark.asyncio
 @patch.object(DataAPI, "afetch_all_results", new_callable=AsyncMock)
-async def test_async_get_data_by_variable_locality_params(afetch_all_results: AsyncMock, data_api: DataAPI) -> None:
+async def test_async_get_data_by_variable_locality_params(
+    afetch_all_results: AsyncMock, data_api_async: DataAPI
+) -> None:
     afetch_all_results.return_value = ({"year": 2022, "format": "csv", "baz": "qux"}, {"meta": 1})
-    result, meta = await data_api.aget_data_by_variable_locality(
+    result, meta = await data_api_async.aget_data_by_variable_locality(
         variable_id="v",
         unit_parent_id="l",
         years=[2022],
@@ -160,9 +162,9 @@ async def test_async_get_data_by_variable_locality_params(afetch_all_results: As
 
 @pytest.mark.asyncio
 @patch.object(DataAPI, "afetch_all_results", new_callable=AsyncMock)
-async def test_async_get_data_by_unit_locality_params(afetch_all_results: AsyncMock, data_api: DataAPI) -> None:
+async def test_async_get_data_by_unit_locality_params(afetch_all_results: AsyncMock, data_api_async: DataAPI) -> None:
     afetch_all_results.return_value = ({"year": 2023, "format": "csv", "qux": "quux"}, {"meta": 1})
-    result, meta = await data_api.aget_data_by_unit_locality(
+    result, meta = await data_api_async.aget_data_by_unit_locality(
         unit_id="u",
         variable_ids=[1],
         years=[2023],
@@ -177,25 +179,27 @@ async def test_async_get_data_by_unit_locality_params(afetch_all_results: AsyncM
 
 @pytest.mark.asyncio
 @patch.object(DataAPI, "afetch_all_results", new_callable=AsyncMock)
-async def test_async_get_data_by_variable_edge_cases(afetch_all_results: AsyncMock, data_api: DataAPI) -> None:
+async def test_async_get_data_by_variable_edge_cases(afetch_all_results: AsyncMock, data_api_async: DataAPI) -> None:
     # Empty results
     afetch_all_results.return_value = ([], {"meta": 1})
-    result = await data_api.aget_data_by_variable(variable_id="v", return_metadata=True)
+    result = await data_api_async.aget_data_by_variable(variable_id="v", return_metadata=True)
     assert result == ([], {"meta": 1})
     # Missing metadata
     afetch_all_results.return_value = ([{"id": 1}], None)
-    result = await data_api.aget_data_by_variable(variable_id="v", return_metadata=True)
+    result = await data_api_async.aget_data_by_variable(variable_id="v", return_metadata=True)
     assert result == ([{"id": 1}], None)
 
 
 @pytest.mark.asyncio
 @patch.object(DataAPI, "afetch_all_results", new_callable=AsyncMock)
-async def test_async_get_data_by_unit_locality_edge_cases(afetch_all_results: AsyncMock, data_api: DataAPI) -> None:
+async def test_async_get_data_by_unit_locality_edge_cases(
+    afetch_all_results: AsyncMock, data_api_async: DataAPI
+) -> None:
     # Empty results
     afetch_all_results.return_value = ([], {"meta": 1})
-    result = await data_api.aget_data_by_unit_locality(unit_id="u", variable_ids=[1], return_metadata=True)
+    result = await data_api_async.aget_data_by_unit_locality(unit_id="u", variable_ids=[1], return_metadata=True)
     assert result == ([], {"meta": 1})
     # Missing metadata
     afetch_all_results.return_value = ([{"id": 1}], None)
-    result = await data_api.aget_data_by_unit_locality(unit_id="u", variable_ids=[1], return_metadata=True)
+    result = await data_api_async.aget_data_by_unit_locality(unit_id="u", variable_ids=[1], return_metadata=True)
     assert result == ([{"id": 1}], None)

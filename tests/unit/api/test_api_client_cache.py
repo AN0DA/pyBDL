@@ -34,16 +34,18 @@ def test_cache_backend_memory_no_file_created(tmp_path: Path) -> None:
         return_value=httpx.Response(200, json={"results": [{"id": 1}]})
     )
     client = BaseAPIClient(_build_config(cache_backend="memory", quota_cache_file=tmp_path / "quota_cache.json"))
+    try:
+        assert client._http_cache_path is None
+        assert isinstance(client.session, SyncCacheClient)
+        assert isinstance(client._async_client, AsyncCacheClient)
 
-    assert client._http_cache_path is None
-    assert isinstance(client.session, SyncCacheClient)
-    assert isinstance(client._async_client, AsyncCacheClient)
+        first = client._request_sync("data/cache-memory")
+        second = client._request_sync("data/cache-memory")
 
-    first = client._request_sync("data/cache-memory")
-    second = client._request_sync("data/cache-memory")
-
-    assert first == second == {"results": [{"id": 1}]}
-    assert not (tmp_path / "http_cache.db").exists()
+        assert first == second == {"results": [{"id": 1}]}
+        assert not (tmp_path / "http_cache.db").exists()
+    finally:
+        client.close()
 
 
 @pytest.mark.unit
@@ -56,50 +58,54 @@ async def test_cache_backend_file_shared_between_sync_and_async(tmp_path: Path) 
         return_value=httpx.Response(200, json={"results": [{"id": 1}]})
     )
     client = BaseAPIClient(_build_config(cache_backend="file", quota_cache_file=quota_cache_file))
+    try:
+        sync_result = client._request_sync("data/cache-file")
+        async_result = await client._request_async("data/cache-file")
 
-    sync_result = client._request_sync("data/cache-file")
-    async_result = await client._request_async("data/cache-file")
-
-    assert sync_result == async_result == {"results": [{"id": 1}]}
-    assert isinstance(client.session, SyncCacheClient)
-    assert isinstance(client._async_client, AsyncCacheClient)
-    assert client._http_cache_path == quota_cache_file.with_name("http_cache.db")
-    assert client._http_cache_path.exists()
+        assert sync_result == async_result == {"results": [{"id": 1}]}
+        assert isinstance(client.session, SyncCacheClient)
+        assert isinstance(client._async_client, AsyncCacheClient)
+        assert client._http_cache_path == quota_cache_file.with_name("http_cache.db")
+        assert client._http_cache_path.exists()
+    finally:
+        await client.aclose()
 
 
 @pytest.mark.unit
 @pytest.mark.real_rate_limiting
 def test_quota_not_consumed_on_cache_hit_sync(monkeypatch: pytest.MonkeyPatch) -> None:
     client = BaseAPIClient(_build_config(cache_backend=None))
+    try:
+        responses = [
+            httpx.Response(
+                200,
+                json={"results": [{"id": 1}]},
+                request=httpx.Request("GET", "https://bdl.stat.gov.pl/api/v1/data/cache-quota-sync?lang=en"),
+                extensions={"hishel_from_cache": False},
+            ),
+            httpx.Response(
+                200,
+                json={"results": [{"id": 1}]},
+                request=httpx.Request("GET", "https://bdl.stat.gov.pl/api/v1/data/cache-quota-sync?lang=en"),
+                extensions={"hishel_from_cache": True},
+            ),
+        ]
 
-    responses = [
-        httpx.Response(
-            200,
-            json={"results": [{"id": 1}]},
-            request=httpx.Request("GET", "https://bdl.stat.gov.pl/api/v1/data/cache-quota-sync?lang=en"),
-            extensions={"hishel_from_cache": False},
-        ),
-        httpx.Response(
-            200,
-            json={"results": [{"id": 1}]},
-            request=httpx.Request("GET", "https://bdl.stat.gov.pl/api/v1/data/cache-quota-sync?lang=en"),
-            extensions={"hishel_from_cache": True},
-        ),
-    ]
+        def _request(*args: object, **kwargs: object) -> httpx.Response:
+            return responses.pop(0)
 
-    def _request(*args: object, **kwargs: object) -> httpx.Response:
-        return responses.pop(0)
+        monkeypatch.setattr(client.session, "request", _request)
 
-    monkeypatch.setattr(client.session, "request", _request)
+        assert client._sync_limiter.get_remaining_quota()[1] == 2
+        client._request_sync("data/cache-quota-sync")
+        after_miss = client._sync_limiter.get_remaining_quota()[1]
+        client._request_sync("data/cache-quota-sync")
+        after_hit = client._sync_limiter.get_remaining_quota()[1]
 
-    assert client._sync_limiter.get_remaining_quota()[1] == 2
-    client._request_sync("data/cache-quota-sync")
-    after_miss = client._sync_limiter.get_remaining_quota()[1]
-    client._request_sync("data/cache-quota-sync")
-    after_hit = client._sync_limiter.get_remaining_quota()[1]
-
-    assert after_miss == 1
-    assert after_hit == 1
+        assert after_miss == 1
+        assert after_hit == 1
+    finally:
+        client.close()
 
 
 @pytest.mark.unit
@@ -107,35 +113,37 @@ def test_quota_not_consumed_on_cache_hit_sync(monkeypatch: pytest.MonkeyPatch) -
 @pytest.mark.asyncio
 async def test_quota_not_consumed_on_cache_hit_async(monkeypatch: pytest.MonkeyPatch) -> None:
     client = BaseAPIClient(_build_config(cache_backend=None))
+    try:
+        responses = [
+            httpx.Response(
+                200,
+                json={"results": [{"id": 1}]},
+                request=httpx.Request("GET", "https://bdl.stat.gov.pl/api/v1/data/cache-quota-async?lang=en"),
+                extensions={"hishel_from_cache": False},
+            ),
+            httpx.Response(
+                200,
+                json={"results": [{"id": 1}]},
+                request=httpx.Request("GET", "https://bdl.stat.gov.pl/api/v1/data/cache-quota-async?lang=en"),
+                extensions={"hishel_from_cache": True},
+            ),
+        ]
 
-    responses = [
-        httpx.Response(
-            200,
-            json={"results": [{"id": 1}]},
-            request=httpx.Request("GET", "https://bdl.stat.gov.pl/api/v1/data/cache-quota-async?lang=en"),
-            extensions={"hishel_from_cache": False},
-        ),
-        httpx.Response(
-            200,
-            json={"results": [{"id": 1}]},
-            request=httpx.Request("GET", "https://bdl.stat.gov.pl/api/v1/data/cache-quota-async?lang=en"),
-            extensions={"hishel_from_cache": True},
-        ),
-    ]
+        async def _request(*args: object, **kwargs: object) -> httpx.Response:
+            return responses.pop(0)
 
-    async def _request(*args: object, **kwargs: object) -> httpx.Response:
-        return responses.pop(0)
+        monkeypatch.setattr(client._async_client, "request", _request)
 
-    monkeypatch.setattr(client._async_client, "request", _request)
+        assert (await client._async_limiter.get_remaining_quota_async())[1] == 2
+        await client._request_async("data/cache-quota-async")
+        after_miss = (await client._async_limiter.get_remaining_quota_async())[1]
+        await client._request_async("data/cache-quota-async")
+        after_hit = (await client._async_limiter.get_remaining_quota_async())[1]
 
-    assert (await client._async_limiter.get_remaining_quota_async())[1] == 2
-    await client._request_async("data/cache-quota-async")
-    after_miss = (await client._async_limiter.get_remaining_quota_async())[1]
-    await client._request_async("data/cache-quota-async")
-    after_hit = (await client._async_limiter.get_remaining_quota_async())[1]
-
-    assert after_miss == 1
-    assert after_hit == 1
+        assert after_miss == 1
+        assert after_hit == 1
+    finally:
+        await client.aclose()
 
 
 @pytest.mark.unit

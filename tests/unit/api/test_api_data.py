@@ -8,12 +8,6 @@ import pytest
 import respx
 
 from pybdl.api.data import DataAPI
-from pybdl.config import BDLConfig
-
-
-@pytest.fixture
-def data_api(dummy_config: BDLConfig) -> DataAPI:
-    return DataAPI(dummy_config)
 
 
 @pytest.mark.unit
