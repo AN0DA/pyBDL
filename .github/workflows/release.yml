@@ -16,6 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      checks: write  # publish-unit-test-result-action: create check runs
+      pull-requests: write  # publish-unit-test-result-action: annotate PR
+      id-token: write  # codecov-action: OIDC token when not using CODECOV_TOKEN
     strategy:
       fail-fast: false
       matrix:
@@ -39,7 +42,7 @@ jobs:
         run: uv python install "${UV_PYTHON_VERSION}"
 
       - name: Install dependencies
-        run: uv sync --all-extras --dev
+        run: uv sync --group dev
 
       - name: Run Ruff linter
         if: ${{ !cancelled() }}
@@ -57,47 +60,9 @@ jobs:
         if: ${{ !cancelled() }}
         run: uv run mypy pybdl/ tests/
 
-  test:
-    name: Test (Python ${{ matrix.python-version }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.11", "3.12", "3.13", "3.14"]
-
-    permissions:
-      contents: read
-      checks: write  # publish-unit-test-result-action: create check runs
-      pull-requests: write  # publish-unit-test-result-action: annotate PR
-      id-token: write  # codecov-action: OIDC token when not using CODECOV_TOKEN
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
-        with:
-          persist-credentials: false
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9  # v7
-        with:
-          enable-cache: false
-
-      - name: Set up Python ${{ matrix.python-version }}
-        env:
-          UV_PYTHON_VERSION: ${{ matrix.python-version }}
-        run: uv python install "${UV_PYTHON_VERSION}"
-
-      - name: Install dependencies
-        run: uv sync --all-extras --dev
-
       - name: Run tests with coverage
-        run: uv run coverage run -m pytest --junitxml=./test_results.xml
-
-      - name: Generate coverage report
         if: ${{ !cancelled() }}
-        run: |
-          uv run coverage report
-          uv run coverage xml
+        run: uv run pytest --cov --cov-report term --cov-report xml --junitxml=./test_results.xml
 
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action@2ceeed2b8f26e15b06c3846719f75354febd9e7b  # v2
@@ -118,7 +83,7 @@ jobs:
   release:
     name: Semantic release
     runs-on: ubuntu-latest
-    needs: [quality-checks, test]
+    needs: [quality-checks]
     if: github.ref == 'refs/heads/main'
 
     environment: release
@@ -138,6 +103,8 @@ jobs:
         with:
           app-id: ${{ vars.GH_APP_RW_ACCESS_APP_ID }}
           private-key: ${{ secrets.GH_APP_RW_ACCESS_PRIVATE_KEY }}
+          permission-contents: write
+          permission-metadata: read
 
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
@@ -155,7 +122,7 @@ jobs:
         run: uv python install
 
       - name: Install dependencies
-        run: uv sync --dev
+        run: uv sync --group dev
 
       - name: Setup Git
         run: |
@@ -259,6 +226,8 @@ jobs:
         with:
           app-id: ${{ vars.GH_APP_RW_ACCESS_APP_ID }}
           private-key: ${{ secrets.GH_APP_RW_ACCESS_PRIVATE_KEY }}
+          permission-contents: write
+          permission-metadata: read
 
       - name: Upload to GitHub Release
         env:
@@ -293,6 +262,8 @@ jobs:
         with:
           app-id: ${{ vars.GH_APP_RW_ACCESS_APP_ID }}
           private-key: ${{ secrets.GH_APP_RW_ACCESS_PRIVATE_KEY }}
+          permission-contents: write
+          permission-metadata: read
 
       - name: Checkout main (post-release version)
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6

@@ -33,11 +33,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  lint:
-    name: Linting (Python ${{ matrix.python-version }})
+  quality:
+    name: Quality (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    needs: conventional-pr
     permissions:
       contents: read
+      checks: write  # publish-unit-test-result-action: create check runs
+      pull-requests: write  # publish-unit-test-result-action: annotate PR
     strategy:
       fail-fast: false
       matrix:
@@ -59,8 +62,8 @@ jobs:
           UV_PYTHON_VERSION: ${{ matrix.python-version }}
         run: uv python install "${UV_PYTHON_VERSION}"
 
-      - name: Install project (dev + extras)
-        run: uv sync --all-extras --dev
+      - name: Install project (dev)
+        run: uv sync --group dev
 
       - name: Ruff linter
         run: uv run ruff check --config pyproject.toml --output-format=github pybdl/ tests/
@@ -71,75 +74,11 @@ jobs:
       - name: Bandit
         run: uv run bandit -c pyproject.toml -r pybdl/
 
-  mypy:
-    name: Mypy (Python ${{ matrix.python-version }})
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.11", "3.12", "3.13", "3.14"]
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
-        with:
-          persist-credentials: false
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9  # v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-
-      - name: Set up Python ${{ matrix.python-version }}
-        env:
-          UV_PYTHON_VERSION: ${{ matrix.python-version }}
-        run: uv python install "${UV_PYTHON_VERSION}"
-
-      - name: Install project (dev + extras)
-        run: uv sync --all-extras --dev
-
       - name: Mypy
         run: uv run mypy pybdl/ tests/
 
-  tests:
-    name: Tests (Python ${{ matrix.python-version }})
-    runs-on: ubuntu-latest
-    needs:
-      - lint
-      - mypy
-      - conventional-pr
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.11", "3.12", "3.13", "3.14"]
-    permissions:
-      contents: read
-      checks: write  # publish-unit-test-result-action: create check runs
-      pull-requests: write  # publish-unit-test-result-action: annotate PR
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
-        with:
-          persist-credentials: false
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9  # v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-
-      - name: Set up Python ${{ matrix.python-version }}
-        env:
-          UV_PYTHON_VERSION: ${{ matrix.python-version }}
-        run: uv python install "${UV_PYTHON_VERSION}"
-
-      - name: Install project (dev + extras)
-        run: uv sync --all-extras --dev
-
       - name: Run tests with coverage
-        run: uv run coverage run -m pytest --junitxml=./test_results.xml
+        run: uv run pytest --cov --junitxml=./test_results.xml
 
       - name: Publish test results to GitHub
         if: ${{ !cancelled() }}

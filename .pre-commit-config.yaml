@@ -125,10 +125,12 @@ repos:
         alias: check-security
         name: "<<CHECK>> Security (Semgrep)"
         language_version: python3.11
+        exclude: ^uv\.lock$
         args:
           - "--disable-version-check"
           - "--quiet"
           - "--skip-unknown-extensions"
+          - "--exclude=uv.lock"
           - "--config=p/python"
           - "--config=p/secrets"
           - "--config=p/security-audit"
