@@ -1,13 +1,14 @@
 """Exceptions for pyBDL API client."""
 
+import warnings
 from typing import Any
 
 
-class GUSBDLError(Exception):
-    """Base exception for all GUS BDL API errors."""
+class BDLError(Exception):
+    """Base exception for all pyBDL errors."""
 
 
-class BDLHTTPError(GUSBDLError):
+class BDLHTTPError(BDLError):
     """Raised when the BDL API responds with an HTTP error or the request fails."""
 
     def __init__(
@@ -34,7 +35,7 @@ class BDLHTTPError(GUSBDLError):
         super().__init__(message)
 
 
-class BDLResponseError(GUSBDLError):
+class BDLResponseError(BDLError):
     """Raised when the BDL API returns an unexpected or invalid payload."""
 
     def __init__(self, message: str, *, payload: Any = None) -> None:
@@ -42,7 +43,7 @@ class BDLResponseError(GUSBDLError):
         super().__init__(message)
 
 
-class RateLimitError(GUSBDLError):
+class BDLRateLimitError(BDLError):
     """Raised when rate limit is exceeded."""
 
     def __init__(
@@ -61,7 +62,7 @@ class RateLimitError(GUSBDLError):
         super().__init__(message)
 
 
-class RateLimitDelayExceeded(RateLimitError):
+class BDLRateLimitDelayError(BDLRateLimitError):
     """Raised when required delay exceeds max_delay setting."""
 
     def __init__(
@@ -79,3 +80,20 @@ class RateLimitDelayExceeded(RateLimitError):
             limit_info=limit_info,
             message=message,
         )
+
+
+def __getattr__(name: str) -> type[Exception]:
+    deprecated = {
+        "GUSBDLError": ("BDLError", BDLError),
+        "RateLimitError": ("BDLRateLimitError", BDLRateLimitError),
+        "RateLimitDelayExceeded": ("BDLRateLimitDelayError", BDLRateLimitDelayError),
+    }
+    if name in deprecated:
+        replacement_name, replacement = deprecated[name]
+        warnings.warn(
+            f"{name} is deprecated; use {replacement_name} instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return replacement
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

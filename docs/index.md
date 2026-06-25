@@ -19,7 +19,7 @@
       human-readable reference columns
     - **Pagination**: `max_pages=None` (default) fetches all pages;
       `max_pages=1` fetches one page
-    - **Exceptions base**: `pybdl.api.exceptions.GUSBDLError`
+    - **Exceptions base**: `pybdl.api.exceptions.BDLError`
 
 ## What is the Local Data Bank (BDL)?
 

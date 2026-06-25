@@ -1,17 +1,17 @@
 # Error Handling
 
 pyBDL raises structured exceptions for all error conditions. All exceptions
-inherit from `GUSBDLError` so you can catch the entire hierarchy with a single
+inherit from `BDLError` so you can catch the entire hierarchy with a single
 `except` clause.
 
 ## Exception hierarchy
 
 ```text
-GUSBDLError (base)
+BDLError (base)
 ├── BDLHTTPError               - HTTP-level error (4xx, 5xx, network failure)
 ├── BDLResponseError           - Unexpected or invalid API payload
-└── RateLimitError             - Client-side quota exceeded
-    └── RateLimitDelayExceeded - Wait time would exceed max_delay
+└── BDLRateLimitError          - Client-side quota exceeded
+    └── BDLRateLimitDelayError - Wait time would exceed max_delay
 ```
 
 ## BDLHTTPError
@@ -49,37 +49,37 @@ except BDLResponseError as e:
     print(f"Unexpected payload: {e.payload}")
 ```
 
-## RateLimitError
+## BDLRateLimitError
 
 Raised when the client-side quota is exhausted and `raise_on_rate_limit=True`
 is configured. The default behavior is to wait, not raise.
 
 ```python
 from pybdl import BDL, BDLConfig
-from pybdl.api.exceptions import RateLimitDelayExceeded, RateLimitError
+from pybdl.api.exceptions import BDLRateLimitDelayError, BDLRateLimitError
 
 config = BDLConfig(api_key="...", raise_on_rate_limit=True)
 bdl = BDL(config)
 
 try:
     data = bdl.data.get_data_by_variable("3643", years=[2021])
-except RateLimitDelayExceeded as e:
+except BDLRateLimitDelayError as e:
     print(f"Would need to wait {e.actual_delay:.1f}s (max allowed: {e.max_delay:.1f}s)")
-except RateLimitError as e:
+except BDLRateLimitError as e:
     print(f"Quota exceeded - retry in {e.retry_after:.1f}s")
     print(f"Quota details: {e.limit_info}")
 ```
 
-`RateLimitDelayExceeded` is a subclass of `RateLimitError`, so catch it first.
+`BDLRateLimitDelayError` is a subclass of `BDLRateLimitError`, so catch it first.
 
 ## Catching all pyBDL errors
 
 ```python
-from pybdl.api.exceptions import GUSBDLError
+from pybdl.api.exceptions import BDLError
 
 try:
     data = bdl.data.get_data_by_variable("3643", years=[2021])
-except GUSBDLError as e:
+except BDLError as e:
     print(f"pyBDL error: {e}")
 ```
 

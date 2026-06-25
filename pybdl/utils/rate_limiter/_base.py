@@ -3,7 +3,7 @@
 from collections import deque
 from typing import Any
 
-from pybdl.api.exceptions import RateLimitDelayExceeded, RateLimitError
+from pybdl.api.exceptions import BDLRateLimitDelayError, BDLRateLimitError
 from pybdl.utils.rate_limiter._cache import PersistentQuotaCache
 
 
@@ -76,12 +76,12 @@ class RateLimiterBase:
 
         wait_time = raw_wait + self.buffer_seconds
         if self.raise_on_limit:
-            raise RateLimitError(
+            raise BDLRateLimitError(
                 retry_after=wait_time,
                 limit_info=self._get_limit_info(),
             )
         if self.max_delay is not None and wait_time > self.max_delay:
-            raise RateLimitDelayExceeded(
+            raise BDLRateLimitDelayError(
                 actual_delay=wait_time,
                 max_delay=self.max_delay,
                 limit_info=self._get_limit_info(),

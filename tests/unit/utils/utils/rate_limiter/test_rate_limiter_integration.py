@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 
 from pybdl.utils import rate_limiter
-from pybdl.utils.rate_limiter import RateLimitError
+from pybdl.utils.rate_limiter import BDLRateLimitError
 
 
 @pytest.mark.unit
@@ -29,7 +29,7 @@ def test_sync_async_share_cache_file(tmp_path: Any) -> None:
     async def run() -> None:
         await async_limiter.acquire()
         # Next call should fail (would be 4th call)
-        with pytest.raises(RateLimitError):
+        with pytest.raises(BDLRateLimitError):
             await async_limiter.acquire()
 
     asyncio.run(run())
@@ -60,7 +60,7 @@ def test_sync_async_share_quota_via_cache(tmp_path: Any) -> None:
         await async_limiter.acquire()
         await async_limiter.acquire()
         # Next call should fail
-        with pytest.raises(RateLimitError):
+        with pytest.raises(BDLRateLimitError):
             await async_limiter.acquire()
 
     asyncio.run(run())
@@ -88,7 +88,7 @@ def test_mixed_sync_async_operations(tmp_path: Any) -> None:
             await async_limiter.acquire()
 
         # Next call should fail
-        with pytest.raises(RateLimitError):
+        with pytest.raises(BDLRateLimitError):
             await async_limiter.acquire()
 
     asyncio.run(run())
@@ -129,14 +129,14 @@ def test_concurrent_sync_async_mixed(tmp_path: Any) -> None:
         try:
             sync_limiter.acquire()
             sync_calls.append(1)
-        except RateLimitError:
+        except BDLRateLimitError:
             pass
 
     async def async_worker() -> None:
         try:
             await async_limiter.acquire()
             async_calls.append(1)
-        except RateLimitError:
+        except BDLRateLimitError:
             pass
 
     # Run 10 sync calls concurrently

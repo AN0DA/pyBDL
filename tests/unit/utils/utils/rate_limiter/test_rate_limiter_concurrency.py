@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 
 from pybdl.utils import rate_limiter
-from pybdl.utils.rate_limiter import RateLimitError
+from pybdl.utils.rate_limiter import BDLRateLimitError
 
 
 @pytest.mark.unit
@@ -20,7 +20,7 @@ def test_rate_limiter_thread_safety() -> None:
     def worker() -> None:
         try:
             rl.acquire()
-        except RateLimitError:
+        except BDLRateLimitError:
             errors.append(1)
 
     threads = [threading.Thread(target=worker) for _ in range(10)]
@@ -41,7 +41,7 @@ def test_async_rate_limiter_concurrent() -> None:
     async def worker() -> None:
         try:
             await arl.acquire()
-        except RateLimitError:
+        except BDLRateLimitError:
             errors.append(1)
 
     async def run() -> None:

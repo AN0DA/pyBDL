@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 
 from pybdl.utils import rate_limiter
-from pybdl.utils.rate_limiter import RateLimitDelayExceeded, RateLimitError
+from pybdl.utils.rate_limiter import BDLRateLimitDelayError, BDLRateLimitError
 
 
 @pytest.mark.unit
@@ -30,14 +30,14 @@ def test_rate_limiter_wait_behavior() -> None:
 
 @pytest.mark.unit
 def test_rate_limiter_max_delay_exceeded() -> None:
-    """Test that RateLimitDelayExceeded is raised when max_delay is exceeded."""
+    """Test that BDLRateLimitDelayError is raised when max_delay is exceeded."""
     quotas: dict[int, int | tuple[Any, ...]] = {1: 2}
     rl = rate_limiter.RateLimiter(quotas, is_registered=False, raise_on_limit=False, max_delay=0.5)
 
     rl.acquire()
     rl.acquire()
     # Third call would need to wait ~1s, but max_delay is 0.5s
-    with pytest.raises(RateLimitDelayExceeded) as e:
+    with pytest.raises(BDLRateLimitDelayError) as e:
         rl.acquire()
     assert e.value.actual_delay > e.value.max_delay
     assert "exceeds maximum allowed delay" in str(e.value)
@@ -53,7 +53,7 @@ def test_rate_limiter_with_zero_max_delay() -> None:
     rl.acquire()
 
     # Should raise immediately (max_delay=0 means don't wait)
-    with pytest.raises(RateLimitDelayExceeded):
+    with pytest.raises(BDLRateLimitDelayError):
         rl.acquire()
 
 
@@ -89,7 +89,7 @@ def test_rate_limiter_context_manager() -> None:
         pass
 
     # Third call should raise
-    with pytest.raises(RateLimitError), rl:
+    with pytest.raises(BDLRateLimitError), rl:
         pass
 
 
@@ -110,7 +110,7 @@ def test_async_rate_limiter_context_manager() -> None:
             pass
 
         # Third call should raise
-        with pytest.raises(RateLimitError):
+        with pytest.raises(BDLRateLimitError):
             async with arl:
                 pass
 
@@ -133,7 +133,7 @@ def test_rate_limit_decorator() -> None:
     assert test_function() == 1
     assert test_function() == 2
     # Third call should raise
-    with pytest.raises(RateLimitError):
+    with pytest.raises(BDLRateLimitError):
         test_function()
 
 
@@ -155,7 +155,7 @@ def test_async_rate_limit_decorator() -> None:
         assert await test_function() == 1
         assert await test_function() == 2
         # Third call should raise
-        with pytest.raises(RateLimitError):
+        with pytest.raises(BDLRateLimitError):
             await test_function()
 
     asyncio.run(run())
@@ -212,7 +212,7 @@ def test_reset_quota() -> None:
     rl.acquire()
     rl.acquire()
     rl.acquire()
-    with pytest.raises(RateLimitError):
+    with pytest.raises(BDLRateLimitError):
         rl.acquire()
 
 
@@ -259,7 +259,7 @@ def test_async_reset_quota() -> None:
         await arl.acquire()
         await arl.acquire()
         await arl.acquire()
-        with pytest.raises(RateLimitError):
+        with pytest.raises(BDLRateLimitError):
             await arl.acquire()
 
     asyncio.run(run())
@@ -304,14 +304,14 @@ def test_rate_limiter_buffer() -> None:
 
 @pytest.mark.unit
 def test_rate_limit_error_attributes() -> None:
-    """Test RateLimitError has proper attributes."""
+    """Test BDLRateLimitError has proper attributes."""
     quotas: dict[int, int | tuple[Any, ...]] = {1: 2}
     rl = rate_limiter.RateLimiter(quotas, is_registered=False)
 
     rl.acquire()
     rl.acquire()
 
-    with pytest.raises(RateLimitError) as e:
+    with pytest.raises(BDLRateLimitError) as e:
         rl.acquire()
 
     assert hasattr(e.value, "retry_after")

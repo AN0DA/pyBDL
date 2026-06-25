@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from pybdl.api.exceptions import RateLimitDelayExceeded
+from pybdl.api.exceptions import BDLRateLimitDelayError
 from pybdl.utils import rate_limiter
 
 
@@ -13,7 +13,7 @@ def test_sync_rate_limiter_reset_clears_counters() -> None:
     quotas: dict[int, int | tuple[Any, ...]] = {1: 1}
     rl = rate_limiter.RateLimiter(quotas, is_registered=False)
     rl.acquire()
-    with pytest.raises(rate_limiter.RateLimitError):
+    with pytest.raises(rate_limiter.BDLRateLimitError):
         rl.acquire()
     rl.reset()
     rl.acquire()
@@ -26,7 +26,7 @@ def test_sync_rate_limiter_release_refunds_slot() -> None:
     t1 = rl.acquire()
     t2 = rl.acquire()
     assert t1 is not None and t2 is not None
-    with pytest.raises(rate_limiter.RateLimitError):
+    with pytest.raises(rate_limiter.BDLRateLimitError):
         rl.acquire()
     rl.release(t1)
     rl.acquire()
@@ -41,13 +41,13 @@ def test_sync_rate_limiter_context_manager_acquires() -> None:
     # One slot consumed by __enter__; two more fit before limit
     rl.acquire()
     rl.acquire()
-    with pytest.raises(rate_limiter.RateLimitError):
+    with pytest.raises(rate_limiter.BDLRateLimitError):
         rl.acquire()
 
 
 @pytest.mark.unit
 def test_sync_rate_limiter_max_delay_exceeded() -> None:
-    """When waiting would exceed max_delay, raise RateLimitDelayExceeded (no immediate raise)."""
+    """When waiting would exceed max_delay, raise BDLRateLimitDelayError (no immediate raise)."""
     quotas: dict[int, int | tuple[Any, ...]] = {1: 1}
     rl = rate_limiter.RateLimiter(
         quotas,
@@ -56,7 +56,7 @@ def test_sync_rate_limiter_max_delay_exceeded() -> None:
         max_delay=0.01,
     )
     rl.acquire()
-    with pytest.raises(RateLimitDelayExceeded):
+    with pytest.raises(BDLRateLimitDelayError):
         rl.acquire()
 
 
@@ -99,12 +99,12 @@ async def test_async_reset_and_reset_async() -> None:
     quotas: dict[int, int | tuple[Any, ...]] = {1: 1}
     arl = rate_limiter.AsyncRateLimiter(quotas, is_registered=False)
     await arl.acquire()
-    with pytest.raises(rate_limiter.RateLimitError):
+    with pytest.raises(rate_limiter.BDLRateLimitError):
         await arl.acquire()
     arl.reset()
     await arl.acquire()
 
-    with pytest.raises(rate_limiter.RateLimitError):
+    with pytest.raises(rate_limiter.BDLRateLimitError):
         await arl.acquire()
     await arl.reset_async()
     await arl.acquire()
@@ -119,7 +119,7 @@ async def test_async_release_refunds() -> None:
     t1 = await arl.acquire()
     assert t1 is not None
     await arl.acquire()
-    with pytest.raises(rate_limiter.RateLimitError):
+    with pytest.raises(rate_limiter.BDLRateLimitError):
         await arl.acquire()
     await arl.release(t1)
     await arl.acquire()
@@ -142,7 +142,7 @@ async def test_async_context_manager() -> None:
         pass
     await arl.acquire()
     await arl.acquire()
-    with pytest.raises(rate_limiter.RateLimitError):
+    with pytest.raises(rate_limiter.BDLRateLimitError):
         await arl.acquire()
 
 
@@ -157,5 +157,5 @@ async def test_async_max_delay_exceeded() -> None:
         max_delay=0.01,
     )
     await arl.acquire()
-    with pytest.raises(RateLimitDelayExceeded):
+    with pytest.raises(BDLRateLimitDelayError):
         await arl.acquire()

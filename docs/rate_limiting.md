@@ -30,7 +30,7 @@ The `pybdl.config.BDLConfig` used by the API client defaults to
 **waiting** when a local quota slot is not yet available
 (`raise_on_rate_limit=False`). Set `raise_on_rate_limit=True` (or
 environment variable `BDL_RATE_LIMIT_RAISE=true`) to raise
-`pybdl.api.exceptions.RateLimitError` immediately instead, for example
+`pybdl.api.exceptions.BDLRateLimitError` immediately instead, for example
 in tests that must fail fast.
 
 When the **server** responds with HTTP **429** (Too Many Requests), the
@@ -90,20 +90,20 @@ The rate limiter will automatically:
 - Track your API usage across all calls
 - Enforce quota limits across all configured time windows
 - **Wait** until quota is available (default). Set `raise_on_rate_limit=True`
-  in `BDLConfig` to raise `RateLimitError` immediately instead.
+  in `BDLConfig` to raise `BDLRateLimitError` immediately instead.
 
 ### Handling Rate Limit Errors
 
-When `raise_on_rate_limit=True` is set, the client raises `RateLimitError`
+When `raise_on_rate_limit=True` is set, the client raises `BDLRateLimitError`
 instead of waiting. Import it from either location:
 
 ``` python
-from pybdl.api.exceptions import RateLimitError
-# or: from pybdl.utils.rate_limiter import RateLimitError
+from pybdl.api.exceptions import BDLRateLimitError
+# or: from pybdl.utils.rate_limiter import BDLRateLimitError
 
 try:
     data = bdl.api.data.get_data_by_variable(variable_id="3643", years=[2021])
-except RateLimitError as e:
+except BDLRateLimitError as e:
     print(f"Rate limit exceeded. Retry after {e.retry_after:.1f} seconds")
     print(f"Limit info: {e.limit_info}")
 ```
@@ -297,14 +297,14 @@ limiter.acquire()  # Will wait if needed, up to 30 seconds
 
 ``` python
 from pybdl import BDL, BDLConfig
-from pybdl.utils.rate_limiter import RateLimitError, RateLimitDelayExceeded
+from pybdl.utils.rate_limiter import BDLRateLimitError, BDLRateLimitDelayError
 
 bdl = BDL(BDLConfig(api_key="your-api-key", raise_on_rate_limit=True))
 
 try:
     data = bdl.api.data.get_data_by_variable(variable_id="3643", years=[2021])
-except RateLimitError as e:
-    if isinstance(e, RateLimitDelayExceeded):
+except BDLRateLimitError as e:
+    if isinstance(e, BDLRateLimitDelayError):
         print(f"Would need to wait {e.actual_delay:.1f}s, exceeds max {e.max_delay:.1f}s")
     else:
         print(f"Rate limit exceeded. Retry after {e.retry_after:.1f}s")
@@ -349,7 +349,7 @@ bdl._client._sync_limiter.reset()
    `raise_on_rate_limit=True` only when you need fail-fast behavior
    (e.g. tests, CLI tools with user-facing feedback).
 2. **Handle exceptions**: When `raise_on_rate_limit=True` is set, catch
-   `RateLimitError` and implement retry logic (or user-facing handling) as
+   `BDLRateLimitError` and implement retry logic (or user-facing handling) as
    needed.
 3. **Monitor quota**: Check remaining quota periodically to avoid
    hitting limits unexpectedly
@@ -362,7 +362,7 @@ bdl._client._sync_limiter.reset()
 
 ## Troubleshooting
 
-### RateLimitError despite few calls
+### BDLRateLimitError despite few calls
 
 The persistent cache may contain old quota data. Try resetting the
 quota or clearing the cache file.

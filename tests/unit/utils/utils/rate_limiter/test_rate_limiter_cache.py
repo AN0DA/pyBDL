@@ -43,14 +43,14 @@ def test_persistent_quota_cache_disabled() -> None:
 @pytest.mark.unit
 def test_rate_limiter_cache(tmp_path: Any) -> None:
     """Test that rate limiter saves to cache."""
-    from pybdl.utils.rate_limiter import RateLimitError
+    from pybdl.utils.rate_limiter import BDLRateLimitError
 
     quotas: dict[int, int | tuple[Any, ...]] = {1: 2}
     cache = DummyCache()
     rl = rate_limiter.RateLimiter(quotas, is_registered=False, cache=cache)
     rl.acquire()
     rl.acquire()
-    with pytest.raises(RateLimitError):
+    with pytest.raises(BDLRateLimitError):
         rl.acquire()  # Triggers save
     assert cache.saved
 
@@ -60,7 +60,7 @@ def test_async_rate_limiter_cache(tmp_path: Any) -> None:
     """Test that async rate limiter saves to cache."""
     import asyncio
 
-    from pybdl.utils.rate_limiter import RateLimitError
+    from pybdl.utils.rate_limiter import BDLRateLimitError
 
     quotas: dict[int, int | tuple[Any, ...]] = {1: 2}
     cache = DummyCache()
@@ -69,7 +69,7 @@ def test_async_rate_limiter_cache(tmp_path: Any) -> None:
     async def run() -> None:
         await arl.acquire()
         await arl.acquire()
-        with pytest.raises(RateLimitError):
+        with pytest.raises(BDLRateLimitError):
             await arl.acquire()  # Triggers save
         assert cache.saved
 
@@ -96,9 +96,9 @@ def test_cache_persistence_across_instances(tmp_path: Any) -> None:
     # Should only be able to make 2 more calls
     rl2.acquire()
     rl2.acquire()
-    from pybdl.utils.rate_limiter import RateLimitError
+    from pybdl.utils.rate_limiter import BDLRateLimitError
 
-    with pytest.raises(RateLimitError):
+    with pytest.raises(BDLRateLimitError):
         rl2.acquire()
 
 
@@ -113,9 +113,9 @@ def test_cache_disabled_behavior() -> None:
     rl.acquire()
     rl.acquire()
     rl.acquire()
-    from pybdl.utils.rate_limiter import RateLimitError
+    from pybdl.utils.rate_limiter import BDLRateLimitError
 
-    with pytest.raises(RateLimitError):
+    with pytest.raises(BDLRateLimitError):
         rl.acquire()
 
     # But cache should not be used

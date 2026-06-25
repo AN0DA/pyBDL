@@ -77,7 +77,7 @@ class BDLConfig:
         retry_backoff_factor: Base backoff factor in seconds for retries (default: 0.5).
         max_retry_delay: Maximum time to wait between retries in seconds (default: 30).
         retry_status_codes: HTTP status codes that should be retried.
-        raise_on_rate_limit: If True, raise RateLimitError when client-side quota is exhausted;
+        raise_on_rate_limit: If True, raise BDLRateLimitError when client-side quota is exhausted;
             if False (default), wait until a slot is available.
         http_429_max_retries: Max retry attempts when the server returns HTTP 429 (separate from
             request_retries for 5xx). Uses Retry-After or backoff up to http_429_max_delay seconds.

@@ -63,14 +63,14 @@ This allows sync and async limiters to share quota state.
 ### Exception Hierarchy
 
 ``` text
-GUSBDLError (base exception)
-└── RateLimitError
-    └── RateLimitDelayExceeded
+BDLError (base exception)
+└── BDLRateLimitError
+    └── BDLRateLimitDelayError
 ```
 
-- **GUSBDLError**: Base exception for all GUS BDL API errors
-- **RateLimitError**: Raised when rate limit is exceeded
-- **RateLimitDelayExceeded**: Raised when required delay exceeds
+- **BDLError**: Base exception for all pyBDL errors
+- **BDLRateLimitError**: Raised when rate limit is exceeded
+- **BDLRateLimitDelayError**: Raised when required delay exceeds
   `max_delay`
 
 ### Rate Limiter Configuration Options
@@ -286,8 +286,8 @@ All API clients inherit from a base client class that handles:
 
 ### Error Handling
 
-- HTTP 4xx/5xx errors → `GUSBDLError` or subclasses
-- Rate limit errors → `RateLimitError`
+- HTTP 4xx/5xx errors → `BDLError` or subclasses
+- Rate limit errors → `BDLRateLimitError`
 - Network errors → Standard Python exceptions
 - JSON parsing errors → `ValueError`
 

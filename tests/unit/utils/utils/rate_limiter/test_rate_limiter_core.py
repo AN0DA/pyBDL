@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 
 from pybdl.utils import rate_limiter
-from pybdl.utils.rate_limiter import RateLimitError
+from pybdl.utils.rate_limiter import BDLRateLimitError
 
 
 @pytest.mark.unit
@@ -18,7 +18,7 @@ def test_rate_limiter_basic() -> None:
     rl.acquire()
     rl.acquire()
     # Should raise on third call within 1s
-    with pytest.raises(RateLimitError) as e:
+    with pytest.raises(BDLRateLimitError) as e:
         rl.acquire()
     assert "Rate limit exceeded" in str(e.value)
 
@@ -30,7 +30,7 @@ def test_rate_limiter_respects_period() -> None:
     rl = rate_limiter.RateLimiter(quotas, is_registered=False)
     rl.acquire()
     rl.acquire()
-    with pytest.raises(RateLimitError):
+    with pytest.raises(BDLRateLimitError):
         rl.acquire()
     time.sleep(1.1)
     rl.acquire()  # Should not raise after period expires
@@ -43,11 +43,11 @@ def test_rate_limiter_tuple_quota() -> None:
     rl_anon = rate_limiter.RateLimiter(quotas, is_registered=False)
     rl_reg = rate_limiter.RateLimiter(quotas, is_registered=True)
     rl_anon.acquire()
-    with pytest.raises(RateLimitError):
+    with pytest.raises(BDLRateLimitError):
         rl_anon.acquire()
     rl_reg.acquire()
     rl_reg.acquire()
-    with pytest.raises(RateLimitError):
+    with pytest.raises(BDLRateLimitError):
         rl_reg.acquire()
 
 
@@ -60,7 +60,7 @@ def test_async_rate_limiter_basic() -> None:
     async def run() -> None:
         await arl.acquire()
         await arl.acquire()
-        with pytest.raises(RateLimitError):
+        with pytest.raises(BDLRateLimitError):
             await arl.acquire()
 
     asyncio.run(run())
@@ -75,11 +75,11 @@ def test_async_rate_limiter_tuple_quota() -> None:
 
     async def run() -> None:
         await arl_anon.acquire()
-        with pytest.raises(RateLimitError):
+        with pytest.raises(BDLRateLimitError):
             await arl_anon.acquire()
         await arl_reg.acquire()
         await arl_reg.acquire()
-        with pytest.raises(RateLimitError):
+        with pytest.raises(BDLRateLimitError):
             await arl_reg.acquire()
 
     asyncio.run(run())
@@ -95,7 +95,7 @@ def test_multiple_periods() -> None:
     rl.acquire()
     rl.acquire()
     rl.acquire()
-    with pytest.raises(RateLimitError):
+    with pytest.raises(BDLRateLimitError):
         rl.acquire()
 
     # Wait for 1-second period to expire
@@ -105,7 +105,7 @@ def test_multiple_periods() -> None:
     rl.acquire()
     rl.acquire()
     rl.acquire()
-    with pytest.raises(RateLimitError):
+    with pytest.raises(BDLRateLimitError):
         rl.acquire()
 
 
@@ -120,7 +120,7 @@ def test_registered_vs_anonymous_quotas() -> None:
     # Anonymous: can make 2 calls
     rl_anon.acquire()
     rl_anon.acquire()
-    with pytest.raises(RateLimitError):
+    with pytest.raises(BDLRateLimitError):
         rl_anon.acquire()
 
     # Registered: can make 5 calls
@@ -129,7 +129,7 @@ def test_registered_vs_anonymous_quotas() -> None:
     rl_reg.acquire()
     rl_reg.acquire()
     rl_reg.acquire()
-    with pytest.raises(RateLimitError):
+    with pytest.raises(BDLRateLimitError):
         rl_reg.acquire()
 
 
