@@ -80,7 +80,8 @@ class BDLConfig:
         raise_on_rate_limit: If True, raise BDLRateLimitError when client-side quota is exhausted;
             if False (default), wait until a slot is available.
         http_429_max_retries: Max retry attempts when the server returns HTTP 429 (separate from
-            request_retries for 5xx). Uses Retry-After or backoff up to http_429_max_delay seconds.
+            request_retries for 5xx). Waits follow client-side quota when exhausted; otherwise
+            uses exponential backoff up to http_429_max_delay seconds.
         http_429_max_delay: Upper bound in seconds for wait between 429 retries (default 900).
     """
 

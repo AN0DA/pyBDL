@@ -1,14 +1,13 @@
 import asyncio
 import time
+import warnings
 from collections.abc import AsyncIterator, Iterator, Mapping
-from datetime import UTC, datetime
-from email.utils import parsedate_to_datetime
 from typing import Any, Literal, cast, overload
 
 import httpx
 from tqdm import tqdm
 
-from pybdl.api.exceptions import BDLHTTPError, BDLResponseError
+from pybdl.api.exceptions import BDLHTTPError, BDLQuotaDesyncWarning, BDLResponseError
 from pybdl.config import BDL_API_BASE_URL, DEFAULT_QUOTAS, BDLConfig, QuotaMap
 from pybdl.utils.http_cache import (
     build_async_http_client,
@@ -250,44 +249,37 @@ class BaseAPIClient:
     def _should_retry_status(self, status_code: int) -> bool:
         return status_code in self.config.retry_status_codes
 
-    @staticmethod
-    def _parse_retry_after_seconds(response: httpx.Response) -> float | None:
-        raw = response.headers.get("Retry-After")
-        if raw is None:
-            return None
-        text = str(raw).strip()
-        if not text:
-            return None
-        try:
-            return max(0.0, float(text))
-        except ValueError:
-            pass
-        try:
-            dt = parsedate_to_datetime(text)
-        except (TypeError, ValueError):
-            return None
-        if dt is None:
-            return None
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=UTC)
-        now = datetime.now(dt.tzinfo)
-        return max(0.0, (dt - now).total_seconds())
-
-    def _retry_delay(self, attempt: int, response: httpx.Response | None = None) -> float:
-        if response is not None:
-            parsed = BaseAPIClient._parse_retry_after_seconds(response)
-            if parsed is not None:
-                return min(parsed, self.config.max_retry_delay)
+    def _retry_delay(self, attempt: int) -> float:
         delay = self.config.retry_backoff_factor * (2**attempt)
         return min(delay, self.config.max_retry_delay)
 
-    def _retry_delay_after_429(self, attempt: int, response: httpx.Response) -> float:
-        """Wait after HTTP 429: honor ``Retry-After`` when set, else exponential backoff."""
-        parsed = self._parse_retry_after_seconds(response)
-        if parsed is not None:
-            return min(parsed, self.config.http_429_max_delay)
+    def _fallback_429_delay(self, attempt: int) -> float:
         delay = self.config.retry_backoff_factor * (2**attempt)
-        return min(self.config.http_429_max_delay, delay)
+        return min(delay, self.config.http_429_max_delay)
+
+    def _handle_http_429_retry(self, limiter: RateLimiter, attempt: int) -> None:
+        quota_wait = limiter.seconds_until_available()
+        if quota_wait > 0:
+            return
+        warnings.warn(
+            "HTTP 429 from BDL API but client-side quota has an immediate slot; "
+            "using exponential backoff. Enable quota_cache or reduce parallelism if this persists.",
+            BDLQuotaDesyncWarning,
+            stacklevel=3,
+        )
+        time.sleep(self._fallback_429_delay(attempt))
+
+    async def _handle_http_429_retry_async(self, limiter: AsyncRateLimiter, attempt: int) -> None:
+        quota_wait = await limiter.seconds_until_available()
+        if quota_wait > 0:
+            return
+        warnings.warn(
+            "HTTP 429 from BDL API but client-side quota has an immediate slot; "
+            "using exponential backoff. Enable quota_cache or reduce parallelism if this persists.",
+            BDLQuotaDesyncWarning,
+            stacklevel=3,
+        )
+        await asyncio.sleep(self._fallback_429_delay(attempt))
 
     def _request_sync_url(
         self,
@@ -331,7 +323,7 @@ class BaseAPIClient:
             if response.status_code == 429 and 429 in self.config.retry_status_codes:
                 if retries_429 < self.config.http_429_max_retries:
                     retries_429 += 1
-                    time.sleep(self._retry_delay_after_429(retries_429 - 1, response))
+                    self._handle_http_429_retry(self._sync_limiter, retries_429 - 1)
                     continue
                 return self._process_response(response)
 
@@ -341,7 +333,7 @@ class BaseAPIClient:
                 and retries_other < self.config.request_retries
             ):
                 retries_other += 1
-                time.sleep(self._retry_delay(retries_other - 1, response))
+                time.sleep(self._retry_delay(retries_other - 1))
                 continue
 
             return self._process_response(response)
@@ -776,7 +768,7 @@ class BaseAPIClient:
             if response.status_code == 429 and 429 in self.config.retry_status_codes:
                 if retries_429 < self.config.http_429_max_retries:
                     retries_429 += 1
-                    await asyncio.sleep(self._retry_delay_after_429(retries_429 - 1, response))
+                    await self._handle_http_429_retry_async(self._async_limiter, retries_429 - 1)
                     continue
                 return self._process_response(response)
 
@@ -786,7 +778,7 @@ class BaseAPIClient:
                 and retries_other < self.config.request_retries
             ):
                 retries_other += 1
-                await asyncio.sleep(self._retry_delay(retries_other - 1, response))
+                await asyncio.sleep(self._retry_delay(retries_other - 1))
                 continue
 
             return self._process_response(response)

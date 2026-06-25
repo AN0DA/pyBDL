@@ -70,6 +70,12 @@ class RateLimiterBase:
                 max_wait = max(max_wait, period - (now - q[0]))
         return max_wait
 
+    def _seconds_until_available_at(self, now: float) -> float:
+        """Seconds until a quota slot is available (0 if immediate). Includes buffer_seconds."""
+        self._cleanup_expired(now)
+        wait = self._compute_wait(now)
+        return (wait + self.buffer_seconds) if wait > 0 else 0.0
+
     def _check_wait_and_raise(self, raw_wait: float) -> float:
         if raw_wait <= 0:
             return 0.0

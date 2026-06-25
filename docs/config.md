@@ -108,7 +108,7 @@ constructor arguments always take precedence over environment variables.
 | `BDL_MAX_RETRY_DELAY` | `30.0` | Maximum time in seconds to wait between retries. |
 | `BDL_RETRY_STATUS_CODES` | `429,500,502,503,504` | Comma-separated HTTP status codes that trigger a retry. |
 | `BDL_RATE_LIMIT_RAISE` | `false` | If `true`, raise `BDLRateLimitError` when client-side quota is exhausted; if `false` (default), wait until a slot is available. |
-| `BDL_HTTP_429_MAX_RETRIES` | `12` | Max retries when the **server** returns HTTP 429 (separate from `BDL_REQUEST_RETRIES` for 5xx). Honors `Retry-After` up to `BDL_HTTP_429_MAX_DELAY`; otherwise uses exponential backoff from `BDL_RETRY_BACKOFF_FACTOR`. |
+| `BDL_HTTP_429_MAX_RETRIES` | `12` | Max retries when the **server** returns HTTP 429 (separate from `BDL_REQUEST_RETRIES` for 5xx). Waits follow client-side quota when exhausted; otherwise uses exponential backoff from `BDL_RETRY_BACKOFF_FACTOR` up to `BDL_HTTP_429_MAX_DELAY`. |
 | `BDL_HTTP_429_MAX_DELAY` | `900` | Max seconds to wait between HTTP 429 retries (15 minutes; aligns with common BDL quota windows). |
 | `BDL_QUOTAS` | *(BDL defaults)* | JSON object overriding rate-limit quotas, e.g. `'{"1": 20, "900": 500}'`. |
 | `BDL_QUOTA_CACHE_ENABLED` | `true` | Persist quota usage across process restarts. |

@@ -35,12 +35,17 @@ in tests that must fail fast.
 
 When the **server** responds with HTTP **429** (Too Many Requests), the
 client retries with a separate budget (`http_429_max_retries` /
-`BDL_HTTP_429_MAX_RETRIES`), honoring `Retry-After` when present
-(seconds or HTTP-date) up to `http_429_max_delay` (default 900 seconds).
-If `Retry-After` is omitted, waits use **exponential backoff**
-`retry_backoff_factor × 2^attempt` (capped by `http_429_max_delay`).
-This is independent of `request_retries`, which applies to other
-retryable status codes.
+`BDL_HTTP_429_MAX_RETRIES`). Retry timing is driven primarily by the
+**client-side rate limiter**: if local quota is exhausted, the next
+`acquire()` waits until a slot opens (sliding-window wait). If the server
+returns 429 while local quota still reports an immediate slot (desync),
+pyBDL emits `BDLQuotaDesyncWarning` and falls back to **exponential
+backoff** (`retry_backoff_factor × 2^attempt`, capped by
+`http_429_max_delay`, default 900 seconds). This is independent of
+`request_retries`, which applies to other retryable status codes.
+
+See [HTTP 429 retry strategy](#http-429-retry-strategy) and
+[Server response headers (undocumented)](#server-response-headers-undocumented).
 
 ## Default Quotas
 
@@ -67,6 +72,56 @@ The library automatically determines your registration status:
 
 The rate limiter uses separate quota tracking for registered and
 anonymous users, ensuring that each user type gets the correct limits.
+
+## Server response headers (undocumented)
+
+The BDL API may include `X-Rate-Limit-*` headers on HTTP responses. These
+headers are **not described** in the official GUS documentation ([BDL API
+portal](https://api.stat.gov.pl/Home/BdlApi?lang=en), [Methods Description
+PDF](https://api.stat.gov.pl/Content/files/bdl/Methods_Description_API_BDL_v1.pdf)),
+and pyBDL has **not** systematically validated their behaviour (including on
+HTTP 429 responses).
+
+Empirical observations (not guaranteed, subject to change):
+
+| Header | Example | Likely meaning |
+|--------|---------|----------------|
+| `X-Rate-Limit-Limit` | `7d` | Label of the reported quota window (`1s`, `15m`, `12h`, `7d`), not a numeric cap |
+| `X-Rate-Limit-Remaining` | `9998` | Remaining requests in that window |
+| `X-Rate-Limit-Reset` | `2026-07-02T21:05:39Z` | Window reset time (ISO 8601, UTC) |
+
+Open questions: which window the server reports at a given moment, whether
+headers appear on 429 responses, and whether values match registered vs.
+anonymous users.
+
+**pyBDL does not parse these headers.** Limits are enforced by the internal
+client-side rate limiter (`RateLimiter`, `DEFAULT_QUOTAS`, persistent quota
+cache). Default quota values come from the official GUS documentation, not
+from response headers.
+
+## HTTP 429 retry strategy
+
+When the server responds with HTTP 429:
+
+1. **Local quota exhausted** — no extra sleep in the 429 handler; the next
+   `acquire()` waits based on `_compute_wait()` (sliding window across all
+   configured periods).
+2. **Desync** (429 but local quota reports an immediate slot) — common when
+   multiple processes share no quota cache, or server limits diverge from
+   `DEFAULT_QUOTAS`. pyBDL emits `BDLQuotaDesyncWarning` and uses exponential
+   backoff before retrying.
+
+The BDL API does **not** document a `Retry-After` header; pyBDL does not
+parse it.
+
+To show the warning at most once per process:
+
+```python
+import warnings
+from pybdl.api.exceptions import BDLQuotaDesyncWarning
+
+warnings.filterwarnings("once", category=BDLQuotaDesyncWarning)
+```
 
 ## User Guide
 

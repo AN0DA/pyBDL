@@ -143,3 +143,34 @@ def test_rate_limiter_edge_case_empty_quotas() -> None:
     rl.acquire()
     rl.acquire()
     rl.acquire()
+
+
+@pytest.mark.unit
+def test_seconds_until_available_empty_quota() -> None:
+    quotas: dict[int, int | tuple[Any, ...]] = {1: 2}
+    rl = rate_limiter.RateLimiter(quotas, is_registered=False)
+    assert rl.seconds_until_available() == 0.0
+
+
+@pytest.mark.unit
+def test_seconds_until_available_exhausted_quota() -> None:
+    quotas: dict[int, int | tuple[Any, ...]] = {1: 1}
+    rl = rate_limiter.RateLimiter(quotas, is_registered=False, raise_on_limit=True)
+    rl.acquire()
+    wait = rl.seconds_until_available()
+    assert wait > 0.0
+    assert wait <= 1.0 + rl.buffer_seconds
+
+
+@pytest.mark.unit
+def test_async_seconds_until_available_exhausted_quota() -> None:
+    quotas: dict[int, int | tuple[Any, ...]] = {1: 1}
+    arl = rate_limiter.AsyncRateLimiter(quotas, is_registered=False, raise_on_limit=True)
+
+    async def run() -> float:
+        await arl.acquire()
+        return await arl.seconds_until_available()
+
+    wait = asyncio.run(run())
+    assert wait > 0.0
+    assert wait <= 1.0 + arl.buffer_seconds

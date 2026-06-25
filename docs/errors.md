@@ -87,9 +87,27 @@ except BDLError as e:
 
 When the server responds with HTTP 429 (Too Many Requests), pyBDL retries
 automatically using the `http_429_max_retries` / `BDL_HTTP_429_MAX_RETRIES`
-budget, honoring `Retry-After` headers. This is separate from
-`raise_on_rate_limit` and from `request_retries` (which covers 5xx errors).
-See [Rate limiting](rate_limiting.md) for details.
+budget. Waits follow client-side quota when exhausted; otherwise exponential
+backoff applies (see [Rate limiting](rate_limiting.md#http-429-retry-strategy)).
+This is separate from `raise_on_rate_limit` and from `request_retries`
+(which covers 5xx errors).
+
+The server may return undocumented `X-Rate-Limit-*` headers; pyBDL does not
+interpret them. See [Rate limiting — server headers](rate_limiting.md#server-response-headers-undocumented).
+
+## BDLQuotaDesyncWarning
+
+If the server returns HTTP 429 while the client-side rate limiter still has
+an immediate slot, pyBDL emits `BDLQuotaDesyncWarning` (a `UserWarning`
+subclass) and retries with exponential backoff. Enable shared
+`quota_cache` or reduce parallelism if this warning appears often.
+
+```python
+import warnings
+from pybdl.api.exceptions import BDLQuotaDesyncWarning
+
+warnings.filterwarnings("once", category=BDLQuotaDesyncWarning)
+```
 
 ## API reference
 

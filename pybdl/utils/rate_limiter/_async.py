@@ -88,6 +88,12 @@ class AsyncRateLimiter(RateLimiterBase):
                 self._sync_from_cache()
             return self._get_remaining(time.monotonic())
 
+    async def seconds_until_available(self) -> float:
+        async with self.lock:
+            if self.cache and self.cache.enabled:
+                self._sync_from_cache()
+            return self._seconds_until_available_at(time.monotonic())
+
     def reset(self) -> None:
         """Synchronous convenience helper for non-concurrent contexts."""
         self._reset_all()

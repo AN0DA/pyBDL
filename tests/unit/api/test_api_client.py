@@ -5,7 +5,7 @@ import pytest
 import respx
 
 from pybdl.api.client import BaseAPIClient
-from pybdl.api.exceptions import BDLHTTPError, BDLResponseError
+from pybdl.api.exceptions import BDLHTTPError, BDLQuotaDesyncWarning, BDLResponseError
 from pybdl.config import DEFAULT_QUOTAS, BDLConfig, Language
 
 
@@ -467,7 +467,7 @@ def test_make_request_retries_http_429_then_success(
     url = f"{api_url}/data/retry429?lang=en"
     respx_mock.get(url).mock(
         side_effect=[
-            httpx.Response(429, json={"errorResult": "quota"}, headers={"Retry-After": "1"}),
+            httpx.Response(429, json={"errorResult": "quota"}),
             httpx.Response(200, json={"results": [{"id": 1}]}),
         ]
     )
@@ -479,15 +479,40 @@ def test_make_request_retries_http_429_then_success(
 
 
 @pytest.mark.unit
-def test_retry_delay_after_429_exponential_without_retry_after(dummy_config: BDLConfig) -> None:
+def test_fallback_429_delay_exponential(dummy_config: BDLConfig) -> None:
     client = BaseAPIClient(dummy_config)
-    resp = httpx.Response(429, json={"error": "x"}, headers={})
-    d0 = client._retry_delay_after_429(0, resp)
-    d1 = client._retry_delay_after_429(1, resp)
-    d2 = client._retry_delay_after_429(2, resp)
+    d0 = client._fallback_429_delay(0)
+    d1 = client._fallback_429_delay(1)
+    d2 = client._fallback_429_delay(2)
     assert d0 == pytest.approx(dummy_config.retry_backoff_factor)
     assert d1 == pytest.approx(dummy_config.retry_backoff_factor * 2)
     assert d2 == pytest.approx(dummy_config.retry_backoff_factor * 4)
+
+
+@pytest.mark.unit
+def test_http_429_desync_emits_warning_and_backoff(dummy_config: BDLConfig, monkeypatch: pytest.MonkeyPatch) -> None:
+    sleeps: list[float] = []
+    monkeypatch.setattr("time.sleep", lambda seconds: sleeps.append(seconds))
+    client = BaseAPIClient(dummy_config)
+    monkeypatch.setattr(client._sync_limiter, "seconds_until_available", lambda: 0.0)
+
+    with pytest.warns(BDLQuotaDesyncWarning):
+        client._handle_http_429_retry(client._sync_limiter, 1)
+
+    assert len(sleeps) == 1
+    assert sleeps[0] == pytest.approx(dummy_config.retry_backoff_factor * 2)
+
+
+@pytest.mark.unit
+def test_http_429_local_quota_wait_skips_backoff(dummy_config: BDLConfig, monkeypatch: pytest.MonkeyPatch) -> None:
+    sleeps: list[float] = []
+    monkeypatch.setattr("time.sleep", lambda seconds: sleeps.append(seconds))
+    client = BaseAPIClient(dummy_config)
+    monkeypatch.setattr(client._sync_limiter, "seconds_until_available", lambda: 2.5)
+
+    client._handle_http_429_retry(client._sync_limiter, 0)
+
+    assert sleeps == []
 
 
 @pytest.mark.unit

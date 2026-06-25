@@ -62,6 +62,10 @@ class BDLRateLimitError(BDLError):
         super().__init__(message)
 
 
+class BDLQuotaDesyncWarning(UserWarning):
+    """Server returned HTTP 429 while client-side quota reports an immediate slot."""
+
+
 class BDLRateLimitDelayError(BDLRateLimitError):
     """Raised when required delay exceeds max_delay setting."""
 
