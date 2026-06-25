@@ -91,7 +91,7 @@ repos:
   # Python lint, format, typing
   ##############################################################################
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: aca6d4c8045a504e2812ea4bedff1d0a09e437bc  # frozen: v0.15.8
+    rev: c59bba8fb259db0fec2bbb77ad8ba51ea7341b56  # frozen: v0.15.20
     hooks:
       - id: ruff-check
         name: "<<CHECK>> Ruff"
@@ -107,7 +107,7 @@ repos:
         args: [--py311-plus]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: a66e98df7b4aeeb3724184b332785976d062b92e  # frozen: v1.19.1
+    rev: d2823d321df3af8f878f7ee3414dc94d037145b9  # frozen: v2.1.0
     hooks:
       - id: mypy
         name: "<<CHECK>> mypy"
@@ -119,7 +119,7 @@ repos:
   # Security & static analysis
   ##############################################################################
   - repo: https://github.com/semgrep/semgrep
-    rev: ab584982f6ecdaaa7954a14e5350a70c060e097f  # frozen: v1.156.0
+    rev: 3167f9c4edb5ad588c558e311c5a1a03b7f593da  # frozen: v1.168.0
     hooks:
       - id: semgrep
         alias: check-security
@@ -142,7 +142,7 @@ repos:
         verbose: true
 
   - repo: https://github.com/trufflesecurity/trufflehog
-    rev: 586f66d7886cd0b037c7c245d4a6e34ef357ab10  # frozen: v3.94.1
+    rev: 30d5bb91af1a771378349dbbb0c82129392acf70  # frozen: v3.95.6
     hooks:
       - id: trufflehog
         alias: secrets
@@ -161,7 +161,7 @@ repos:
           - README.md,**/*.md,**/*.rst
 
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: ea2eb407b4cbce87cf0d502f36578950494f5ac9  # frozen: v1.23.1
+    rev: e3eebf65325ccc992422292cb7a4baee967cf815  # frozen: v1.26.1
     hooks:
       - id: zizmor
         name: "<<CHECK>> GitHub Actions (zizmor)"
@@ -184,7 +184,7 @@ repos:
         verbose: true
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 13614ab716a3113145f1294ed259d9fbe5678ff3  # frozen: 0.37.1
+    rev: 5030dca3047414c338091455ac41803200ec1f0f  # frozen: 0.37.3
     hooks:
       - id: check-github-actions
         name: "<<CHECK>> GitHub Actions JSON Schema"
@@ -194,7 +194,7 @@ repos:
         args: ["--verbose"]
 
   - repo: https://github.com/jackdewinter/pymarkdown
-    rev: 6d3c1b70d44ea2202b23552af93aca3b5017ee83  # frozen: v0.9.36
+    rev: 5a91b386476b633c4a594951397139aa5ab45a78  # frozen: v0.9.38
     hooks:
       - id: pymarkdown
         alias: fix-markdown
@@ -225,7 +225,7 @@ repos:
   ##############################################################################
   # Keep uv.lock in sync
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 20d6e6698b00aed95d4f269a6309b11c2c57b202  # frozen: 0.11.2
+    rev: 73c2d77a42a113aee9e4b748c24937f09557b82d  # frozen: 0.11.24
     hooks:
       - id: uv-lock
         name: "<< FIX >> uv lock"
