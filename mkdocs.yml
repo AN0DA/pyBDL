@@ -82,12 +82,14 @@ markdown_extensions:
 nav:
   - Home: index.md
   - User Guide:
+      - Concepts: concepts.md
       - Main client: main_client.md
       - Access layer: access_layer.md
       - Examples: examples.ipynb
       - API clients: api_clients.md
       - Configuration: config.md
       - Rate limiting: rate_limiting.md
+      - Error handling: errors.md
   - Reference:
       - Appendix: appendix.md
       - Changelog: changelog.md

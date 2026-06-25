@@ -1,0 +1,7 @@
+{
+  "plugins": {
+    "no-duplicate-heading": {
+      "allow_different_nesting_levels": true
+    }
+  }
+}
