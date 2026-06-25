@@ -134,6 +134,13 @@ level_df = bdl.levels.get_level(1)  # Level 1 = country
 metadata_df = bdl.levels.get_levels_metadata()
 ```
 
+#### Levels columns
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `int` | Numeric level identifier (0 = country, 7 = statistical locality) |
+| `name` | `str` | Level name |
+
 ### Subjects
 
 Subject categories and hierarchy:
@@ -151,6 +158,20 @@ results = bdl.subjects.search_subjects(name="population")
 # Get specific subject
 subject_df = bdl.subjects.get_subject("P0001")
 ```
+
+#### Subjects columns
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `str` | Subject identifier |
+| `name` | `str` | Subject name |
+| `has_variables` | `bool` | Whether the subject has directly associated variables |
+| `children` | `object` | List of child subject IDs |
+| `levels` | `object` | Administrative levels where this subject is available |
+| `parent_id` | `str` | Parent subject identifier (absent for top-level subjects) |
+
+`get_subject` additionally returns `years`, `availability`, `dimensions`,
+`last_update`, and `description` columns.
 
 ### Variables
 
@@ -172,6 +193,21 @@ results = bdl.variables.search_variables(name="unemployment")
 # Get specific variable
 variable_df = bdl.variables.get_variable("3643")
 ```
+
+#### Variables columns
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `Int64` | Variable identifier |
+| `subject_id` | `str` | Subject category identifier |
+| `n1` | `str` | First dimension label |
+| `n2` | `str` | Second dimension label (present when the variable has two dimensions) |
+| `level` | `Int64` | Administrative level at which data is available |
+| `measure_unit_id` | `Int64` | Measure unit identifier |
+| `measure_unit_name` | `str` | Measure unit abbreviation (e.g. `"osoba"`, `"%"`) |
+
+`get_variable` additionally returns a `years` column (list of years for
+which data exists).
 
 ### Data
 
@@ -223,6 +259,42 @@ df = bdl.data.get_data_by_unit_locality(
 
 The data endpoints automatically normalize nested `values` arrays into
 flat rows.
+
+#### Data columns
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `unit_id` | `str` | Administrative unit identifier |
+| `unit_name` | `str` | Administrative unit name |
+| `year` | `Int64` | Statistical year |
+| `val` | `float` | Indicator value |
+| `attr_id` | `Int64` | Attribute identifier (data quality flag, see [Attributes](#attributes)) |
+
+**`get_data_by_unit`** — one row per variable (nested values not normalized):
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `Int64` | Variable identifier |
+| `measure_unit_id` | `Int64` | Measure unit identifier |
+| `last_update` | `str` | Timestamp of the most recent data update |
+| `values` | `object` | Nested list of `{year, val, attrId}` records |
+
+**`get_data_by_variable_locality`** — one row per locality (nested values not normalized):
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `str` | Locality identifier |
+| `name` | `str` | Locality name |
+| `values` | `object` | Nested list of `{year, val, attrId}` records |
+
+**`get_data_by_unit_locality`** — one row per variable (nested values not normalized):
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `Int64` | Variable identifier |
+| `measure_unit_id` | `Int64` | Measure unit identifier |
+| `last_update` | `str` | Timestamp of the most recent data update |
+| `values` | `object` | Nested list of `{year, val, attrId}` records |
 
 #### Accessing Pagination Metadata
 
@@ -279,6 +351,32 @@ warsaw_localities = bdl.units.search_localities(name="Warsaw", level=6)
 locality_df = bdl.units.get_locality("1465011")
 ```
 
+#### Units columns
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `str` | Unit identifier |
+| `name` | `str` | Unit name |
+| `level` | `Int64` | Administrative level |
+| `has_description` | `bool` | Whether the unit has a textual description |
+| `parent_id` | `str` | Parent unit identifier (absent for the top-level country unit) |
+| `kind` | `str` | Unit type code (present at levels 5–6 only) |
+
+`get_unit` additionally returns a `years` column.
+
+**`list_localities` / `search_localities` / `get_locality`**:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `str` | Locality identifier |
+| `name` | `str` | Locality name |
+| `parent_id` | `str` | Parent unit identifier |
+| `level` | `Int64` | Administrative level (7 = statistical locality) |
+| `kind` | `str` | Locality type code |
+| `has_description` | `bool` | Whether the locality has a textual description |
+
+`get_locality` additionally returns a `years` column.
+
 ### Attributes
 
 Data attributes (dimensions):
@@ -290,6 +388,15 @@ attributes_df = bdl.attributes.list_attributes()
 # Get specific attribute
 attr_df = bdl.attributes.get_attribute("1")
 ```
+
+#### Attributes columns
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `Int64` | Attribute identifier |
+| `name` | `str` | Value type label (e.g. `"wartość"`, `"-"`) |
+| `symbol` | `str` | Symbol shown in data reports (e.g. `" "`, `"x"`, `"s"`) |
+| `description` | `str` | Explanation of the attribute flag |
 
 ### Measures
 
@@ -303,6 +410,14 @@ measures_df = bdl.measures.list_measures()
 measure_df = bdl.measures.get_measure(1)
 ```
 
+#### Measures columns
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `Int64` | Measure unit identifier |
+| `name` | `str` | Abbreviated unit name (e.g. `"kg"`, `"%"`, `"osoba"`) |
+| `description` | `str` | Full unit description |
+
 ### Aggregates
 
 Aggregation types:
@@ -315,6 +430,15 @@ aggregates_df = bdl.aggregates.list_aggregates()
 aggregate_df = bdl.aggregates.get_aggregate("1")
 ```
 
+#### Aggregates columns
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `Int64` | Aggregate identifier |
+| `name` | `str` | Aggregate name (e.g. `"ogółem"`, `"gminy miejskie"`) |
+| `level` | `Int64` | Administrative level this aggregate applies to |
+| `description` | `str` | Aggregation method description (may be absent) |
+
 ### Years
 
 Available years for data:
@@ -326,6 +450,14 @@ years_df = bdl.years.list_years()
 # Get specific year metadata
 year_df = bdl.years.get_year(2021)
 ```
+
+#### Years columns
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `Int64` | Year value |
+| `has_localities` | `bool` | Whether locality-level data is available for this year |
+| `quarterly` | `str` | Data frequency code (`"R"` = annual, `"M"` = monthly, `"K"` = quarterly) |
 
 ## Enrichment
 
@@ -576,9 +708,7 @@ See [examples](examples.ipynb) for more comprehensive real-world examples.
 
 !!! seealso
 
-```markdown
-- [Main client](main_client.md) — main client usage
-- [API clients](api_clients.md) — low-level API access
-- [Examples](examples.ipynb) — real-world examples
-- [Configuration](config.md) — configuration options
-```
+    - [Main client](main_client.md) — main client usage
+    - [API clients](api_clients.md) — low-level API access
+    - [Examples](examples.ipynb) — real-world examples
+    - [Configuration](config.md) — configuration options

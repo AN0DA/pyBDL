@@ -1,5 +1,26 @@
 # pyBDL documentation
 
+??? abstract "Quick-reference facts (LLM / tool context)"
+
+    - **Package**: `pybdl`; public API: `from pybdl import BDL, BDLConfig`
+    - **Two layers**: `bdl.*` (access layer -> `pd.DataFrame`),
+      `bdl.api.*` (API layer -> `dict/list`)
+    - **All endpoints**: `aggregates`, `attributes`, `data`, `levels`,
+      `measures`, `subjects`, `units`, `variables`, `years`
+      (+ `version` on API layer only)
+    - **Async prefix**: every method has an `a` prefix async twin,
+      e.g. `bdl.data.aget_data_by_variable()`
+    - **Session cleanup**: use `with BDL() as bdl:` or call `bdl.close()`
+    - **Rate limiting**: automatic; default is *wait* for quota
+      (set `raise_on_rate_limit=True` to raise instead)
+    - **Caching**: HTTP responses cached by default
+      (`cache_backend="file"`, 1-hour TTL)
+    - **Enrichment**: pass `enrich=["units", "attributes", ...]` to join
+      human-readable reference columns
+    - **Pagination**: `max_pages=None` (default) fetches all pages;
+      `max_pages=1` fetches one page
+    - **Exceptions base**: `pybdl.api.exceptions.GUSBDLError`
+
 ## What is the Local Data Bank (BDL)?
 
 The Local Data Bank (BDL, Bank Danych Lokalnych) is Poland's official
