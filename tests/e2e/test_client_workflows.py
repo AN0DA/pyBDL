@@ -6,22 +6,13 @@ import pandas as pd
 import pytest
 
 from pybdl.client import BDL
-from pybdl.config import BDLConfig
+from tests.e2e.conftest import E2E_PAGE_SIZE
 
 
 @pytest.mark.e2e
 @pytest.mark.skipif(not os.getenv("BDL_API_KEY"), reason="BDL_API_KEY not set")
 class TestClientWorkflows:
     """End-to-end tests for client initialization and usage."""
-
-    @pytest.fixture
-    def bdl_client(self) -> BDL:
-        """Create an BDL client for e2e tests."""
-        api_key = os.getenv("BDL_API_KEY")
-        if not api_key:
-            pytest.skip("BDL_API_KEY not set")
-        config = BDLConfig(api_key=api_key, use_cache=False)
-        return BDL(config=config)
 
     def test_client_initialization(self, bdl_client: BDL) -> None:
         """Test that client initializes all access and API layers."""
@@ -43,9 +34,14 @@ class TestClientWorkflows:
 
     def test_access_vs_api_layer(self, bdl_client: BDL) -> None:
         """Test that access layer returns DataFrames while API layer returns dicts."""
-        # Access layer returns DataFrame
-        df = bdl_client.levels.list_levels()
+        df = bdl_client.levels.list_levels(max_pages=1, page_size=E2E_PAGE_SIZE)
         assert isinstance(df, pd.DataFrame)
-        # API layer returns list/dict
-        api_result = bdl_client.api.levels.list_levels()
+        api_result = bdl_client.api.levels.list_levels(max_pages=1, page_size=E2E_PAGE_SIZE)
         assert isinstance(api_result, list)
+
+    def test_context_manager_workflow(self, bdl_client: BDL) -> None:
+        """Test that the client context manager closes resources after use."""
+        with bdl_client as bdl:
+            df = bdl.levels.list_levels(max_pages=1, page_size=E2E_PAGE_SIZE)
+            assert isinstance(df, pd.DataFrame)
+            assert not df.empty

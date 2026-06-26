@@ -2,11 +2,12 @@
 
 import os
 
+import httpx
 import pandas as pd
 import pytest
 
 from pybdl.client import BDL
-from pybdl.config import BDLConfig
+from tests.e2e.conftest import E2E_PAGE_SIZE, STUDY_VARIABLE_ID
 
 
 @pytest.mark.e2e
@@ -14,36 +15,44 @@ from pybdl.config import BDLConfig
 class TestEnrichmentE2E:
     """Verify enrichment works against live API responses."""
 
-    @pytest.fixture
-    def bdl_client(self) -> BDL:
-        """Create BDL client with API key."""
-        api_key = os.getenv("BDL_API_KEY")
-        if not api_key:
-            pytest.skip("BDL_API_KEY not set")
-        config = BDLConfig(api_key=api_key, use_cache=False)
-        return BDL(config=config)
-
     def test_variables_enrichment_live(self, bdl_client: BDL) -> None:
         """List variables and enrich with level and measure metadata."""
-        df = bdl_client.variables.list_variables(max_pages=1, page_size=10, enrich_levels=True, enrich_measures=True)
+        df = bdl_client.variables.list_variables(
+            max_pages=1,
+            page_size=E2E_PAGE_SIZE,
+            enrich_levels=True,
+            enrich_measures=True,
+        )
         assert isinstance(df, pd.DataFrame)
         assert "level_name" in df.columns
         assert "measure_unit_description" in df.columns
 
-    def test_data_enrichment_live(self, bdl_client: BDL) -> None:
-        """Fetch data by variable and enrich unit/attribute metadata."""
+    def test_data_enrichment_attributes_live(self, bdl_client: BDL) -> None:
+        """Fetch data and enrich attribute metadata only (small dictionary)."""
         try:
             df = bdl_client.data.get_data_by_variable(
-                "3643",
+                STUDY_VARIABLE_ID,
                 max_pages=1,
-                page_size=10,
-                enrich_units=True,
+                page_size=E2E_PAGE_SIZE,
                 enrich_attributes=True,
             )
-        except Exception:
-            pytest.skip("Variable ID may not exist or API unavailable")
+        except (httpx.HTTPError, ValueError) as exc:
+            pytest.skip(f"Variable ID may not exist or API unavailable: {exc}")
 
         assert isinstance(df, pd.DataFrame)
-        assert "unit_level" in df.columns
-        assert "unit_parent_id" in df.columns
+        assert "attr_description" in df.columns
+
+    def test_data_enrichment_list_syntax_live(self, bdl_client: BDL) -> None:
+        """Fetch data using enrich list syntax with a lightweight dictionary."""
+        try:
+            df = bdl_client.data.get_data_by_variable(
+                STUDY_VARIABLE_ID,
+                max_pages=1,
+                page_size=E2E_PAGE_SIZE,
+                enrich=["attributes"],
+            )
+        except (httpx.HTTPError, ValueError) as exc:
+            pytest.skip(f"Variable ID may not exist or API unavailable: {exc}")
+
+        assert isinstance(df, pd.DataFrame)
         assert "attr_description" in df.columns
