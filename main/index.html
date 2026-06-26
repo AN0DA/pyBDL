@@ -14,7 +14,7 @@
       
       
       
-        <link rel="next" href="main_client/">
+        <link rel="next" href="concepts/">
       
       
         
@@ -252,7 +252,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="main_client/" class="md-tabs__link">
+        <a href="concepts/" class="md-tabs__link">
           
   
   
@@ -530,6 +530,34 @@
   
   
     <li class="md-nav__item">
+      <a href="concepts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Concepts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="main_client/" class="md-nav__link">
         
   
@@ -678,6 +706,34 @@
     
   
     Rate limiting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Error handling
   
 
     
@@ -928,6 +984,29 @@
 
 
 <h1 id="pybdl-documentation">pyBDL documentation<a class="headerlink" href="#pybdl-documentation" title="Permanent link">&para;</a></h1>
+<details class="abstract">
+<summary>Quick-reference facts (LLM / tool context)</summary>
+<ul>
+<li><strong>Package</strong>: <code>pybdl</code>; public API: <code>from pybdl import BDL, BDLConfig</code></li>
+<li><strong>Two layers</strong>: <code>bdl.*</code> (access layer -&gt; <code>pd.DataFrame</code>),
+  <code>bdl.api.*</code> (API layer -&gt; <code>dict/list</code>)</li>
+<li><strong>All endpoints</strong>: <code>aggregates</code>, <code>attributes</code>, <code>data</code>, <code>levels</code>,
+  <code>measures</code>, <code>subjects</code>, <code>units</code>, <code>variables</code>, <code>years</code>
+  (+ <code>version</code> on API layer only)</li>
+<li><strong>Async prefix</strong>: every method has an <code>a</code> prefix async twin,
+  e.g. <code>bdl.data.aget_data_by_variable()</code></li>
+<li><strong>Session cleanup</strong>: use <code>with BDL() as bdl:</code> or call <code>bdl.close()</code></li>
+<li><strong>Rate limiting</strong>: automatic; default is <em>wait</em> for quota
+  (set <code>raise_on_rate_limit=True</code> to raise instead)</li>
+<li><strong>Caching</strong>: HTTP responses cached by default
+  (<code>cache_backend="file"</code>, 1-hour TTL)</li>
+<li><strong>Enrichment</strong>: pass <code>enrich=["units", "attributes", ...]</code> to join
+  human-readable reference columns</li>
+<li><strong>Pagination</strong>: <code>max_pages=None</code> (default) fetches all pages;
+  <code>max_pages=1</code> fetches one page</li>
+<li><strong>Exceptions base</strong>: <code>pybdl.api.exceptions.BDLError</code></li>
+</ul>
+</details>
 <h2 id="what-is-the-local-data-bank-bdl">What is the Local Data Bank (BDL)?<a class="headerlink" href="#what-is-the-local-data-bank-bdl" title="Permanent link">&para;</a></h2>
 <p>The Local Data Bank (BDL, Bank Danych Lokalnych) is Poland's official
 statistical data warehouse, maintained by Statistics Poland (GUS). It

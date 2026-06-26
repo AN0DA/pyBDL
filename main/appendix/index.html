@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://an0da.github.io/pybdl/main/appendix/">
       
       
-        <link rel="prev" href="../rate_limiting/">
+        <link rel="prev" href="../errors/">
       
       
         <link rel="next" href="../changelog/">
@@ -252,7 +252,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../main_client/" class="md-tabs__link">
+        <a href="../concepts/" class="md-tabs__link">
           
   
   
@@ -419,6 +419,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../concepts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Concepts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../main_client/" class="md-nav__link">
         
   
@@ -567,6 +595,34 @@
     
   
     Rate limiting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Error handling
   
 
     
@@ -1662,38 +1718,57 @@ periods:</p>
    limit)</li>
 </ol>
 <h3 id="time-handling">Time Handling<a class="headerlink" href="#time-handling" title="Permanent link">&para;</a></h3>
-<p>The rate limiter uses <code>time.monotonic()</code> instead of <code>time.time()</code> to
-ensure: - Clock adjustments (NTP, daylight saving) don't affect quota
-calculations - Accurate elapsed time measurements - Consistent behavior
-across different system clock configurations</p>
+<p>The rate limiter uses two clocks depending on whether persistent cache
+is enabled:</p>
+<ul>
+<li><strong><code>time.monotonic()</code></strong> when <code>quota_cache_enabled=False</code> (in-process
+  only). Monotonic time is immune to system clock adjustments (NTP,
+  daylight saving) and gives accurate elapsed-time measurements within
+  a single process.</li>
+<li><strong><code>time.time()</code></strong> (wall clock) when persistent cache is enabled.
+  Wall-clock timestamps are comparable across processes and survive
+  restarts, which is required for shared <code>quota_cache.json</code>.</li>
+</ul>
 <h3 id="thread-safety">Thread Safety<a class="headerlink" href="#thread-safety" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>RateLimiter</strong>: Uses <code>threading.Lock()</code> for thread-safe operations</li>
 <li><strong>AsyncRateLimiter</strong>: Uses <code>asyncio.Lock()</code> for async-safe operations</li>
-<li><strong>PersistentQuotaCache</strong>: Uses <code>threading.Lock()</code> for thread-safe
-  cache access</li>
+<li><strong>PersistentQuotaCache</strong>: Uses a two-level locking strategy:</li>
+<li><code>threading.Lock()</code> for in-process access to in-memory state</li>
+<li>File locking (<code>fcntl</code> on Unix, <code>msvcrt</code> on Windows) via
+    <code>quota_cache.lock</code> for cross-process coordination</li>
 </ul>
-<p>Both limiters can be safely used in concurrent environments.</p>
+<p>Both limiters can be safely used in concurrent environments. When
+persistent cache is enabled, parallel processes (for example
+<code>pytest-xdist</code> workers) share quota state through the cache file.</p>
 <h3 id="cache-implementation">Cache Implementation<a class="headerlink" href="#cache-implementation" title="Permanent link">&para;</a></h3>
-<p>The persistent cache uses atomic file writes:</p>
+<p>The persistent cache uses atomic file writes and cross-process locking:</p>
 <ol>
+<li>Acquire the interprocess file lock (<code>quota_cache.lock</code>)</li>
+<li>Reload the cache from disk when the file already exists</li>
+<li>Apply changes in memory</li>
 <li>Write quota data to a temporary file (<code>quota_cache.json.tmp</code>)</li>
-<li>Atomically rename temp file to final location (<code>quota_cache.json</code>)</li>
-<li>This ensures cache integrity even if the process crashes during
-   write</li>
+<li>Atomically rename the temp file to <code>quota_cache.json</code></li>
+<li>Release the file lock</li>
 </ol>
-<p>Cache keys are unified for sync and async limiters: - Anonymous users:
-<code>anon_&lt;period&gt;</code> - Registered users: <code>reg_&lt;period&gt;</code></p>
-<p>This allows sync and async limiters to share quota state.</p>
+<p>This ensures cache integrity during concurrent writes and even if a
+process crashes mid-write.</p>
+<p>Cache keys are unified for sync and async limiters:</p>
+<ul>
+<li>Anonymous users: <code>anon_&lt;period&gt;</code></li>
+<li>Registered users: <code>reg_&lt;period&gt;</code></li>
+</ul>
+<p>This allows sync and async limiters—and separate processes using the
+same cache path—to share quota state.</p>
 <h3 id="exception-hierarchy">Exception Hierarchy<a class="headerlink" href="#exception-hierarchy" title="Permanent link">&para;</a></h3>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>GUSBDLError (base exception)
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>└── RateLimitError
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    └── RateLimitDelayExceeded
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>BDLError (base exception)
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>└── BDLRateLimitError
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    └── BDLRateLimitDelayError
 </span></code></pre></div>
 <ul>
-<li><strong>GUSBDLError</strong>: Base exception for all GUS BDL API errors</li>
-<li><strong>RateLimitError</strong>: Raised when rate limit is exceeded</li>
-<li><strong>RateLimitDelayExceeded</strong>: Raised when required delay exceeds
+<li><strong>BDLError</strong>: Base exception for all pyBDL errors</li>
+<li><strong>BDLRateLimitError</strong>: Raised when rate limit is exceeded</li>
+<li><strong>BDLRateLimitDelayError</strong>: Raised when required delay exceeds
   <code>max_delay</code></li>
 </ul>
 <h3 id="rate-limiter-configuration-options">Rate Limiter Configuration Options<a class="headerlink" href="#rate-limiter-configuration-options" title="Permanent link">&para;</a></h3>
@@ -1886,8 +1961,8 @@ several steps:</p>
 </ol>
 <h3 id="error-handling">Error Handling<a class="headerlink" href="#error-handling" title="Permanent link">&para;</a></h3>
 <ul>
-<li>HTTP 4xx/5xx errors → <code>GUSBDLError</code> or subclasses</li>
-<li>Rate limit errors → <code>RateLimitError</code></li>
+<li>HTTP 4xx/5xx errors → <code>BDLError</code> or subclasses</li>
+<li>Rate limit errors → <code>BDLRateLimitError</code></li>
 <li>Network errors → Standard Python exceptions</li>
 <li>JSON parsing errors → <code>ValueError</code></li>
 </ul>
