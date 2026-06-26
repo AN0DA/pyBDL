@@ -60,10 +60,6 @@ class RateLimiterBase:
             else:
                 self.calls[period] = deque(cached)
 
-    def _load_from_cache(self, merge: bool = True) -> None:
-        """Backward-compatible alias for tests that still call the old helper."""
-        self._sync_from_cache(merge=merge)
-
     def _save_to_cache(self) -> None:
         if not self.cache or not self.cache.enabled:
             return

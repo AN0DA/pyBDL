@@ -1,6 +1,5 @@
 """Tests for PersistentQuotaCache functionality."""
 
-import json
 import multiprocessing
 import time
 from typing import Any
@@ -158,28 +157,6 @@ def test_cache_atomic_write(tmp_path: Any) -> None:
 def _cross_process_acquire(cache_file: str) -> None:
     cache = rate_limiter.PersistentQuotaCache(enabled=True, cache_file=cache_file)
     rate_limiter.RateLimiter({1: 3}, is_registered=False, cache=cache).acquire()
-
-
-@pytest.mark.unit
-def test_stale_monotonic_cache_entries_do_not_block(tmp_path: Any) -> None:
-    """Legacy monotonic timestamps must not stall new processes."""
-    cache_file = tmp_path / "quota_cache.json"
-    cache_file.write_text(
-        json.dumps({"reg_1": [70000.0 + index for index in range(10)], "reg_900": [70000.0] * 158}),
-        encoding="utf-8",
-    )
-
-    quotas: dict[int, int | tuple[Any, ...]] = {1: 10, 900: 500}
-    cache = rate_limiter.PersistentQuotaCache(enabled=True, cache_file=cache_file)
-    rl = rate_limiter.RateLimiter(quotas, is_registered=True, cache=cache, raise_on_limit=True)
-
-    started = time.monotonic()
-    rl.acquire()
-    elapsed = time.monotonic() - started
-
-    assert elapsed < 1.0
-    for key in ("reg_1", "reg_900", "reg_43200", "reg_604800"):
-        assert all(timestamp >= 1_000_000_000 for timestamp in cache.get(key))
 
 
 @pytest.mark.unit

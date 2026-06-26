@@ -43,9 +43,6 @@ is enabled:
   Wall-clock timestamps are comparable across processes and survive
   restarts, which is required for shared `quota_cache.json`.
 
-On startup, legacy cache entries written with `time.monotonic()` (values
-below `1_000_000_000`) are discarded automatically during migration.
-
 ### Thread Safety
 
 - **RateLimiter**: Uses `threading.Lock()` for thread-safe operations

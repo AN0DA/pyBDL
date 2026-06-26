@@ -53,7 +53,7 @@ def test_sync_async_share_quota_via_cache(tmp_path: Any) -> None:
 
     # Create new async limiter, load from cache, should see 3 calls
     async_limiter = rate_limiter.AsyncRateLimiter(quotas, is_registered=False, cache=cache)
-    async_limiter._load_from_cache()
+    async_limiter._sync_from_cache()
 
     async def run() -> None:
         # Should be able to make 2 more calls (3 + 2 = 5)

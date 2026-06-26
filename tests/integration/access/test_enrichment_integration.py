@@ -32,7 +32,7 @@ class TestEnrichmentIntegration:
         mock_api_client.list_subjects.return_value = subjects["list_subjects"]
 
         access = VariablesAccess(mock_api_client)
-        df = access.list_variables(enrich_levels=True, enrich_measures=True, enrich_subjects=True)
+        df = access.list_variables(enrich=["levels", "measures", "subjects"])
 
         assert isinstance(df, pd.DataFrame)
         assert "level_name" in df.columns
@@ -66,8 +66,7 @@ class TestEnrichmentIntegration:
         access = DataAccess(mock_api_client)
         df, metadata = access.get_data_by_variable(
             "3643",
-            enrich_units=True,
-            enrich_attributes=True,
+            enrich=["units", "attributes"],
             return_metadata=True,
         )
 

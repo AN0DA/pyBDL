@@ -75,7 +75,7 @@ class TestDataAccess:
     def test_get_data_by_unit_locality(self, data_access: DataAccess, mock_api_client: MagicMock) -> None:
         """Test get_data_by_unit_locality method."""
         mock_api_client.get_data_by_unit_locality.return_value = [{"id": "1", "value": 100}]
-        result = data_access.get_data_by_unit_locality("44", variable_id=[3643])
+        result = data_access.get_data_by_unit_locality("44", variable_ids=[3643])
         assert isinstance(result, pd.DataFrame)
         mock_api_client.get_data_by_unit_locality.assert_called_once()
 
@@ -141,7 +141,7 @@ class TestDataAccess:
         self, data_access: DataAccess, mock_api_client: MagicMock
     ) -> None:
         mock_api_client.get_data_by_unit_locality.return_value = ([{"id": "1"}], {"m": 4})
-        _, meta = data_access.get_data_by_unit_locality_with_metadata("44", variable_id=[3643])
+        _, meta = data_access.get_data_by_unit_locality_with_metadata("44", variable_ids=[3643])
         assert meta == {"m": 4}
         assert mock_api_client.get_data_by_unit_locality.call_args.kwargs.get("return_metadata") is True
 
@@ -177,5 +177,5 @@ class TestDataAccess:
         self, data_access: DataAccess, mock_api_client: MagicMock
     ) -> None:
         mock_api_client.aget_data_by_unit_locality = AsyncMock(return_value=([{"id": "1"}], {"m": 4}))
-        await data_access.aget_data_by_unit_locality_with_metadata("44", variable_id=[3643])
+        await data_access.aget_data_by_unit_locality_with_metadata("44", variable_ids=[3643])
         assert mock_api_client.aget_data_by_unit_locality.await_args.kwargs.get("return_metadata") is True

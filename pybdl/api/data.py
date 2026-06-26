@@ -28,14 +28,10 @@ class DataAPI(BaseAPIClient):
     @staticmethod
     def _normalize_variable_ids(
         variable_ids: Sequence[str | int] | str | int | None,
-        variable_id: Sequence[str | int] | str | int | None,
     ) -> list[int]:
-        if variable_ids is not None and variable_id is not None:
-            raise TypeError("Use either 'variable_ids' or the legacy 'variable_id' parameter, not both.")
-        resolved = variable_ids if variable_ids is not None else variable_id
-        if resolved is None:
+        if variable_ids is None:
             raise TypeError("'variable_ids' is required.")
-        raw_values = [resolved] if isinstance(resolved, (str, int)) else list(resolved)
+        raw_values = [variable_ids] if isinstance(variable_ids, (str, int)) else list(variable_ids)
         return [int(item) for item in raw_values]
 
     @staticmethod
@@ -65,13 +61,12 @@ class DataAPI(BaseAPIClient):
     def _data_by_unit_params(
         self,
         variable_ids: Sequence[str | int] | str | int | None,
-        variable_id: Sequence[str | int] | str | int | None,
         years: list[int] | None,
         aggregate_id: int | None,
         page: int | None,
         extra_query: dict[str, Any] | None,
     ) -> dict[str, Any]:
-        params: dict[str, Any] = {"var-id": self._normalize_variable_ids(variable_ids, variable_id)}
+        params: dict[str, Any] = {"var-id": self._normalize_variable_ids(variable_ids)}
         if years:
             params["year"] = years
         if aggregate_id is not None:
@@ -101,13 +96,12 @@ class DataAPI(BaseAPIClient):
     def _data_by_unit_locality_params(
         self,
         variable_ids: Sequence[str | int] | str | int | None,
-        variable_id: Sequence[str | int] | str | int | None,
         years: list[int] | None,
         aggregate_id: int | None,
         page: int | None,
         extra_query: dict[str, Any] | None,
     ) -> dict[str, Any]:
-        return self._data_by_unit_params(variable_ids, variable_id, years, aggregate_id, page, extra_query)
+        return self._data_by_unit_params(variable_ids, years, aggregate_id, page, extra_query)
 
     def _prepare_collection_request(
         self,
@@ -321,8 +315,6 @@ class DataAPI(BaseAPIClient):
         self,
         unit_id: str,
         variable_ids: Sequence[str | int] | str | int | None = None,
-        *,
-        variable_id: Sequence[str | int] | str | int | None = None,
         years: list[int] | None = None,
         aggregate_id: int | None = None,
         page: int | None = None,
@@ -336,7 +328,7 @@ class DataAPI(BaseAPIClient):
     ) -> _DataCollectionResult:
         endpoint = f"data/by-unit/{unit_id}"
         params, headers = self._prepare_collection_request(
-            extra_params=self._data_by_unit_params(variable_ids, variable_id, years, aggregate_id, page, extra_query),
+            extra_params=self._data_by_unit_params(variable_ids, years, aggregate_id, page, extra_query),
             format=format,
             lang=lang,
             if_none_match=if_none_match,
@@ -404,8 +396,6 @@ class DataAPI(BaseAPIClient):
         self,
         unit_id: str,
         variable_ids: Sequence[str | int] | str | int | None = None,
-        *,
-        variable_id: Sequence[str | int] | str | int | None = None,
         years: list[int] | None = None,
         aggregate_id: int | None = None,
         page: int | None = None,
@@ -422,7 +412,6 @@ class DataAPI(BaseAPIClient):
         params, headers = self._prepare_collection_request(
             extra_params=self._data_by_unit_locality_params(
                 variable_ids,
-                variable_id,
                 years,
                 aggregate_id,
                 page,
@@ -524,8 +513,6 @@ class DataAPI(BaseAPIClient):
         self,
         unit_id: str,
         variable_ids: Sequence[str | int] | str | int | None = None,
-        *,
-        variable_id: Sequence[str | int] | str | int | None = None,
         years: list[int] | None = None,
         aggregate_id: int | None = None,
         page: int | None = None,
@@ -539,7 +526,7 @@ class DataAPI(BaseAPIClient):
     ) -> _DataCollectionResult:
         endpoint = f"data/by-unit/{unit_id}"
         params, headers = self._prepare_collection_request(
-            extra_params=self._data_by_unit_params(variable_ids, variable_id, years, aggregate_id, page, extra_query),
+            extra_params=self._data_by_unit_params(variable_ids, years, aggregate_id, page, extra_query),
             format=format,
             lang=lang,
             if_none_match=if_none_match,
@@ -609,8 +596,6 @@ class DataAPI(BaseAPIClient):
         self,
         unit_id: str,
         variable_ids: Sequence[str | int] | str | int | None = None,
-        *,
-        variable_id: Sequence[str | int] | str | int | None = None,
         years: list[int] | None = None,
         aggregate_id: int | None = None,
         page: int | None = None,
@@ -627,7 +612,6 @@ class DataAPI(BaseAPIClient):
         params, headers = self._prepare_collection_request(
             extra_params=self._data_by_unit_locality_params(
                 variable_ids,
-                variable_id,
                 years,
                 aggregate_id,
                 page,

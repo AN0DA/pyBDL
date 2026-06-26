@@ -46,7 +46,7 @@ def test_enrichment_merges_and_renames() -> None:
         return _base_df()
 
     access = DummyAccess(MagicMock())
-    df = fetch(access, enrich_dummy=True)
+    df = fetch(access, enrich="dummy")
 
     assert "dummy_name" in df.columns
     assert df.loc[0, "dummy_name"] == "one"
@@ -69,7 +69,7 @@ def test_enrichment_preserves_metadata_tuple() -> None:
         return _base_df(), {"meta": 123}
 
     access = DummyAccess(MagicMock())
-    df, meta = fetch(access, enrich_dummy=True)
+    df, meta = fetch(access, enrich="dummy")
 
     assert "dummy_name" in df.columns
     assert meta == {"meta": 123}
@@ -93,15 +93,15 @@ def test_enrichment_uses_cache_once() -> None:
         return _base_df()
 
     access = DummyAccess(MagicMock())
-    fetch(access, enrich_dummy=True)
-    fetch(access, enrich_dummy=True)
+    fetch(access, enrich="dummy")
+    fetch(access, enrich="dummy")
 
     loader.assert_called_once()
 
 
 @pytest.mark.unit
-def test_signature_injected_keyword_flag() -> None:
-    """Decorator injects keyword-only enrich flag into signature."""
+def test_signature_injected_enrich_parameter() -> None:
+    """Decorator injects keyword-only enrich parameter into signature."""
     spec = EnrichmentSpec(
         flag="enrich_dummy",
         id_column="id",
@@ -115,10 +115,11 @@ def test_signature_injected_keyword_flag() -> None:
         return _base_df()
 
     sig = inspect.signature(fetch)
-    assert "enrich_dummy" in sig.parameters
-    param = sig.parameters["enrich_dummy"]
-    assert param.default is False
+    assert "enrich" in sig.parameters
+    param = sig.parameters["enrich"]
+    assert param.default is None
     assert param.kind == inspect.Parameter.KEYWORD_ONLY
+    assert "enrich_dummy" not in sig.parameters
 
 
 @pytest.mark.unit
@@ -140,7 +141,7 @@ async def test_async_enrichment_path() -> None:
         return _base_df()
 
     access = DummyAccess(MagicMock())
-    df = await afetch(access, enrich_dummy=True)
+    df = await afetch(access, enrich="dummy")
 
     async_loader.assert_awaited_once()
     assert "dummy_name" in df.columns
@@ -257,6 +258,6 @@ async def test_async_lookup_cache_hit_second_call() -> None:
         return _base_df()
 
     access = DummyAccess(MagicMock())
-    await afetch(access, enrich_dummy=True)
-    await afetch(access, enrich_dummy=True)
+    await afetch(access, enrich="dummy")
+    await afetch(access, enrich="dummy")
     assert async_loader.await_count == 1

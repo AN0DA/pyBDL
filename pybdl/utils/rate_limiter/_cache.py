@@ -12,9 +12,6 @@ from typing import Any
 
 from pybdl.utils.cache import resolve_cache_file_path
 
-# Timestamps below this value are legacy monotonic() readings, not Unix time.
-LEGACY_MONOTONIC_THRESHOLD = 1_000_000_000
-
 
 class PersistentQuotaCache:
     """Thread-safe persistent storage for rate limiter timestamps."""
@@ -39,7 +36,7 @@ class PersistentQuotaCache:
         if self.enabled:
             self._ensure_cache_dir()
             with self._interprocess_lock():
-                self._migrate_legacy_entries_unlocked()
+                pass
 
     def _cache_path(self) -> Path:
         return Path(self.cache_file)
@@ -62,9 +59,7 @@ class PersistentQuotaCache:
         cutoff = now - period
         upper_bound = now + buffer_seconds
         return sorted(
-            float(value)
-            for value in timestamps
-            if isinstance(value, int | float) and value >= LEGACY_MONOTONIC_THRESHOLD and cutoff < value <= upper_bound
+            float(value) for value in timestamps if isinstance(value, int | float) and cutoff < value <= upper_bound
         )
 
     @contextlib.contextmanager
@@ -108,33 +103,6 @@ class PersistentQuotaCache:
                     self._data = json.load(handle)
         except (json.JSONDecodeError, OSError):
             self._data = {}
-
-    def _migrate_legacy_entries_unlocked(self) -> None:
-        """Sanitize legacy monotonic timestamps; caller must hold the interprocess lock."""
-        if not self.enabled or not self._data:
-            return
-
-        import time
-
-        now = time.time()
-        changed = False
-        sanitized: dict[str, Any] = {}
-        for key, value in self._data.items():
-            if not isinstance(value, list):
-                sanitized[key] = value
-                continue
-            period = self._period_from_key(key)
-            if period is None:
-                sanitized[key] = [
-                    item for item in value if not isinstance(item, int | float) or item >= LEGACY_MONOTONIC_THRESHOLD
-                ]
-            else:
-                sanitized[key] = self.filter_valid_timestamps(value, now, period)
-            if sanitized[key] != value:
-                changed = True
-        if changed:
-            self._data = sanitized
-            self._save_unlocked()
 
     @staticmethod
     def _period_from_key(key: str) -> int | None:
@@ -206,15 +174,9 @@ class PersistentQuotaCache:
 
             cutoff = time.time() - effective_period
         else:
-            return [
-                value for value in current if isinstance(value, int | float) and value >= LEGACY_MONOTONIC_THRESHOLD
-            ]
+            return [float(value) for value in current if isinstance(value, int | float)]
 
-        return sorted(
-            float(value)
-            for value in current
-            if isinstance(value, int | float) and value >= LEGACY_MONOTONIC_THRESHOLD and value > cutoff
-        )
+        return sorted(float(value) for value in current if isinstance(value, int | float) and value > cutoff)
 
     def try_append_if_under_limit(
         self,

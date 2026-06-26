@@ -73,7 +73,7 @@ class TestVariablesAccessIntegration:
         mock_api_client.list_measures.return_value = measures_sample["list_measures"]
 
         access = VariablesAccess(mock_api_client)
-        result = access.list_variables(enrich_levels=True, enrich_measures=True)
+        result = access.list_variables(enrich=["levels", "measures"])
 
         assert "level_name" in result.columns
         assert result["level_name"].notna().any()

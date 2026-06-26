@@ -58,7 +58,7 @@ class TestAggregatesAccessIntegration:
         mock_api_client.list_levels.return_value = levels_sample["list_levels"]
 
         access = AggregatesAccess(mock_api_client)
-        result = access.list_aggregates(enrich_levels=True)
+        result = access.list_aggregates(enrich=["levels"])
 
         assert "level_name" in result.columns
         assert result["level_name"].notna().any()

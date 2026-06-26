@@ -1,6 +1,5 @@
 """Exceptions for pyBDL API client."""
 
-import warnings
 from typing import Any
 
 
@@ -84,20 +83,3 @@ class BDLRateLimitDelayError(BDLRateLimitError):
             limit_info=limit_info,
             message=message,
         )
-
-
-def __getattr__(name: str) -> type[Exception]:
-    deprecated = {
-        "GUSBDLError": ("BDLError", BDLError),
-        "RateLimitError": ("BDLRateLimitError", BDLRateLimitError),
-        "RateLimitDelayExceeded": ("BDLRateLimitDelayError", BDLRateLimitDelayError),
-    }
-    if name in deprecated:
-        replacement_name, replacement = deprecated[name]
-        warnings.warn(
-            f"{name} is deprecated; use {replacement_name} instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return replacement
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

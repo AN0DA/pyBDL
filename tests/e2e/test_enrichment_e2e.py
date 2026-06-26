@@ -20,8 +20,7 @@ class TestEnrichmentE2E:
         df = bdl_client.variables.list_variables(
             max_pages=1,
             page_size=E2E_PAGE_SIZE,
-            enrich_levels=True,
-            enrich_measures=True,
+            enrich=["levels", "measures"],
         )
         assert isinstance(df, pd.DataFrame)
         assert "level_name" in df.columns
@@ -34,7 +33,7 @@ class TestEnrichmentE2E:
                 STUDY_VARIABLE_ID,
                 max_pages=1,
                 page_size=E2E_PAGE_SIZE,
-                enrich_attributes=True,
+                enrich=["attributes"],
             )
         except (httpx.HTTPError, ValueError) as exc:
             pytest.skip(f"Variable ID may not exist or API unavailable: {exc}")

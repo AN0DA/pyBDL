@@ -442,23 +442,19 @@ This is automatic when using `BDLConfig`.
 ### Rate limiter waits for a long time
 
 If the client appears stuck waiting for quota despite few recent calls,
-the cache file may contain stale data from an older pyBDL version that
-stored `time.monotonic()` timestamps. Delete or rename
-`.cache/pybdl/quota_cache.json` (or your custom `quota_cache_file`).
-Current versions migrate legacy entries automatically on startup, but
-clearing the file is the fastest fix if migration did not run yet.
+delete or rename `.cache/pybdl/quota_cache.json` (or your custom
+`quota_cache_file`) to reset stale quota data.
 
 ### Rate limiter feels slow
 
 Consider using async operations or adjusting `max_delay`. Under normal
 conditions the rate limiter adds minimal overhead (\<1ms per call).
 
-### Corrupted or outdated cache file
+### Corrupted cache file
 
 If the cache file contains invalid JSON, it is ignored and recreated
 on the next write. Old quota data will be lost, but this is usually
-fine. Legacy monotonic timestamps are also removed automatically during
-startup migration.
+fine.
 
 !!! seealso
 

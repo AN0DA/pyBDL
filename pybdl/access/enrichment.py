@@ -324,7 +324,7 @@ def _resolve_enrichment_flags(specs: tuple[EnrichmentSpec, ...], kwargs: dict[st
     flags: dict[str, bool] = {}
     for spec in specs:
         short_name = spec.flag.removeprefix("enrich_")
-        flags[spec.flag] = bool(kwargs.pop(spec.flag, False) or short_name in requested or spec.flag in requested)
+        flags[spec.flag] = short_name in requested or spec.flag in requested
     return flags
 
 
@@ -332,7 +332,7 @@ def with_enrichment(*specs: EnrichmentSpec) -> Callable[[Callable[..., Any]], Ca
     """
     Decorator to enrich DataFrame results with reference metadata.
 
-    Adds boolean flags (e.g., enrich_levels) to the wrapped function's kwargs,
+    Adds an `enrich` keyword-only parameter to the wrapped function,
     fetches lookup tables once per access instance, and left-joins enriched columns.
     """
 
@@ -340,34 +340,21 @@ def with_enrichment(*specs: EnrichmentSpec) -> Callable[[Callable[..., Any]], Ca
         sig = inspect.signature(func)
         params = list(sig.parameters.values())
         existing = set(sig.parameters.keys())
+        if "enrich" in existing:
+            return sig
         insert_at = next(
             (index for index, param in enumerate(params) if param.kind is inspect.Parameter.VAR_KEYWORD),
             len(params),
         )
-        if "enrich" not in existing:
-            params.insert(
-                insert_at,
-                inspect.Parameter(
-                    "enrich",
-                    kind=inspect.Parameter.KEYWORD_ONLY,
-                    default=None,
-                    annotation=list[str] | str | None,
-                ),
-            )
-            insert_at += 1
-        for spec in specs:
-            if spec.flag in existing:
-                continue
-            params.insert(
-                insert_at,
-                inspect.Parameter(
-                    spec.flag,
-                    kind=inspect.Parameter.KEYWORD_ONLY,
-                    default=False,
-                    annotation=bool,
-                ),
-            )
-            insert_at += 1
+        params.insert(
+            insert_at,
+            inspect.Parameter(
+                "enrich",
+                kind=inspect.Parameter.KEYWORD_ONLY,
+                default=None,
+                annotation=list[str] | str | None,
+            ),
+        )
         return inspect.Signature(parameters=params, return_annotation=sig.return_annotation)
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:

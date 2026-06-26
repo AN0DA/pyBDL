@@ -49,7 +49,7 @@ class TestDataAccessIntegration:
         mock_api_client.list_attributes.return_value = attributes_sample["list_attributes"]
 
         access = DataAccess(mock_api_client)
-        result = access.get_data_by_variable("3643", enrich_units=True, enrich_attributes=True)
+        result = access.get_data_by_variable("3643", enrich=["units", "attributes"])
 
         assert "unit_level" in result.columns
         assert "unit_parent_id" in result.columns
@@ -128,7 +128,7 @@ class TestDataAccessIntegration:
         if "get_data_by_unit_locality" in samples:
             mock_api_client.get_data_by_unit_locality.return_value = samples["get_data_by_unit_locality"]
             access = DataAccess(mock_api_client)
-            result = access.get_data_by_unit_locality(unit_id="44", variable_id=[3643])
+            result = access.get_data_by_unit_locality(unit_id="44", variable_ids=[3643])
             assert isinstance(result, pd.DataFrame)
 
     @pytest.mark.asyncio
@@ -185,5 +185,5 @@ class TestDataAccessIntegration:
         if "get_data_by_unit_locality" in samples:
             mock_async_api_client.aget_data_by_unit_locality.return_value = samples["get_data_by_unit_locality"]
             access = DataAccess(mock_async_api_client)
-            result = await access.aget_data_by_unit_locality(unit_id="44", variable_id=[3643])
+            result = await access.aget_data_by_unit_locality(unit_id="44", variable_ids=[3643])
             assert isinstance(result, pd.DataFrame)

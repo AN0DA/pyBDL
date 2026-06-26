@@ -483,12 +483,6 @@ data = bdl.data.get_data_by_variable(
 )
 ```
 
-Individual `enrich_*` boolean flags are also accepted (legacy style):
-
-``` python
-data = bdl.data.get_data_by_variable("3643", years=[2021], enrich_attributes=True)
-```
-
 ### Supported Enrichment Dimensions
 
 The available enrichment dimensions depend on the endpoint:

@@ -45,7 +45,7 @@ class TestUnitsAccessIntegration:
         mock_api_client.list_levels.return_value = levels_sample["list_levels"]
 
         access = UnitsAccess(mock_api_client)
-        result = access.list_units(enrich_levels=True)
+        result = access.list_units(enrich=["levels"])
 
         assert "level_name" in result.columns
         assert result["level_name"].notna().any()

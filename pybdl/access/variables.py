@@ -30,8 +30,7 @@ class VariablesAccess(BaseAccess):
             years: Optional list of years to filter variables.
             page_size: Number of results per page (defaults to config.page_size or 100).
             max_pages: Maximum number of pages to fetch (None for all pages).
-            **kwargs: Additional parameters passed to API layer, including `enrich=["levels", ...]`
-                or legacy `enrich_levels=True`-style flags.
+            **kwargs: Additional parameters passed to API layer, including `enrich=["levels", ...]`.
 
         Returns:
             DataFrame with variables data.
@@ -60,8 +59,7 @@ class VariablesAccess(BaseAccess):
 
         Args:
             variable_id: Variable identifier.
-            **kwargs: Additional parameters passed to API layer, including `enrich=["levels", ...]`
-                or legacy `enrich_levels=True`-style flags.
+            **kwargs: Additional parameters passed to API layer, including `enrich=["levels", ...]`.
 
         Returns:
             DataFrame with variable metadata.
@@ -90,8 +88,7 @@ class VariablesAccess(BaseAccess):
             years: Optional list of years to filter variables.
             page_size: Number of results per page (defaults to config.page_size or 100).
             max_pages: Maximum number of pages to fetch (None for all pages).
-            **kwargs: Additional parameters passed to API layer, including `enrich=["levels", ...]`
-                or legacy `enrich_levels=True`-style flags.
+            **kwargs: Additional parameters passed to API layer, including `enrich=["levels", ...]`.
 
         Returns:
             DataFrame with matching variables.
@@ -129,8 +126,7 @@ class VariablesAccess(BaseAccess):
             years: Optional list of years to filter variables.
             page_size: Number of results per page (defaults to config.page_size or 100).
             max_pages: Maximum number of pages to fetch (None for all pages).
-            **kwargs: Additional parameters passed to API layer, including `enrich=["levels", ...]`
-                or legacy `enrich_levels=True`-style flags.
+            **kwargs: Additional parameters passed to API layer, including `enrich=["levels", ...]`.
 
         Returns:
             DataFrame with variables data.
@@ -159,8 +155,7 @@ class VariablesAccess(BaseAccess):
 
         Args:
             variable_id: Variable identifier.
-            **kwargs: Additional parameters passed to API layer, including `enrich=["levels", ...]`
-                or legacy `enrich_levels=True`-style flags.
+            **kwargs: Additional parameters passed to API layer, including `enrich=["levels", ...]`.
 
         Returns:
             DataFrame with variable metadata.
@@ -189,8 +184,7 @@ class VariablesAccess(BaseAccess):
             years: Optional list of years to filter variables.
             page_size: Number of results per page (defaults to config.page_size or 100).
             max_pages: Maximum number of pages to fetch (None for all pages).
-            **kwargs: Additional parameters passed to API layer, including `enrich=["levels", ...]`
-                or legacy `enrich_levels=True`-style flags.
+            **kwargs: Additional parameters passed to API layer, including `enrich=["levels", ...]`.
 
         Returns:
             DataFrame with matching variables.

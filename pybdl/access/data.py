@@ -38,15 +38,10 @@ class DataAccess(BaseAccess):
     @staticmethod
     def _normalize_variable_ids(
         variable_ids: Sequence[str | int] | str | int | None,
-        kwargs: dict[str, Any],
     ) -> list[int]:
-        legacy_value = kwargs.pop("variable_id", None)
-        if variable_ids is not None and legacy_value is not None:
-            raise TypeError("Use either 'variable_ids' or the legacy 'variable_id' parameter, not both.")
-        resolved = variable_ids if variable_ids is not None else legacy_value
-        if resolved is None:
+        if variable_ids is None:
             raise TypeError("'variable_ids' is required.")
-        items = [resolved] if isinstance(resolved, (str, int)) else list(resolved)
+        items = [variable_ids] if isinstance(variable_ids, (str, int)) else list(variable_ids)
         return [int(item) for item in items]
 
     def _normalize_variable_dataframe(self, data: list[dict[str, Any]]) -> pd.DataFrame:
@@ -108,8 +103,7 @@ class DataAccess(BaseAccess):
             page_size: Number of results per page (defaults to config.page_size or 100).
             max_pages: Maximum number of pages to fetch (None for all pages).
             return_metadata: If True, return tuple (DataFrame, metadata).
-            **kwargs: Additional parameters passed to API layer, including `enrich=["units", ...]`
-                or legacy `enrich_units=True`-style flags.
+            **kwargs: Additional parameters passed to API layer, including `enrich=["units", ...]`.
 
         Returns:
             DataFrame with normalized data, or tuple (DataFrame, metadata) if return_metadata is True.
@@ -154,13 +148,12 @@ class DataAccess(BaseAccess):
             years: Optional list of years to filter by.
             aggregate_id: Optional aggregate ID.
             return_metadata: If True, return tuple (DataFrame, metadata).
-            **kwargs: Additional parameters passed to API layer, including `enrich=["units", ...]`
-                or legacy `enrich_units=True`-style flags.
+            **kwargs: Additional parameters passed to API layer, including `enrich=["units", ...]`.
 
         Returns:
             DataFrame with data, or tuple (DataFrame, metadata) if return_metadata=True.
         """
-        variable_id_list = self._normalize_variable_ids(variable_ids, kwargs)
+        variable_id_list = self._normalize_variable_ids(variable_ids)
         explicit_params = {
             "unit_id": unit_id,
             "variable_ids": variable_id_list,
@@ -198,8 +191,7 @@ class DataAccess(BaseAccess):
             page_size: Number of results per page (defaults to config.page_size or 100).
             max_pages: Maximum number of pages to fetch (None for all pages).
             return_metadata: If True, return tuple (DataFrame, metadata).
-            **kwargs: Additional parameters passed to API layer, including `enrich=["units", ...]`
-                or legacy `enrich_units=True`-style flags.
+            **kwargs: Additional parameters passed to API layer, including `enrich=["units", ...]`.
 
         Returns:
             DataFrame with data, or tuple (DataFrame, metadata) if return_metadata=True.
@@ -248,15 +240,14 @@ class DataAccess(BaseAccess):
             page_size: Number of results per page (defaults to config.page_size or 100).
             max_pages: Maximum number of pages to fetch (None for all pages).
             return_metadata: If True, return tuple (DataFrame, metadata).
-            **kwargs: Additional parameters passed to API layer, including `enrich=["units", ...]`
-                or legacy `enrich_units=True`-style flags.
+            **kwargs: Additional parameters passed to API layer, including `enrich=["units", ...]`.
 
         Returns:
             DataFrame with data, or tuple (DataFrame, metadata) if return_metadata=True.
         """
         if page_size is None:
             page_size = self._get_default_page_size()
-        variable_id_list = self._normalize_variable_ids(variable_ids, kwargs)
+        variable_id_list = self._normalize_variable_ids(variable_ids)
         explicit_params = {
             "unit_id": unit_id,
             "variable_ids": variable_id_list,
@@ -301,8 +292,7 @@ class DataAccess(BaseAccess):
             page_size: Number of results per page (defaults to config.page_size or 100).
             max_pages: Maximum number of pages to fetch (None for all pages).
             return_metadata: If True, return tuple (DataFrame, metadata).
-            **kwargs: Additional parameters passed to API layer, including `enrich=["units", ...]`
-                or legacy `enrich_units=True`-style flags.
+            **kwargs: Additional parameters passed to API layer, including `enrich=["units", ...]`.
 
         Returns:
             DataFrame with normalized data, or tuple (DataFrame, metadata) if return_metadata is True.
@@ -349,13 +339,12 @@ class DataAccess(BaseAccess):
             years: Optional list of years to filter by.
             aggregate_id: Optional aggregate ID.
             return_metadata: If True, return tuple (DataFrame, metadata).
-            **kwargs: Additional parameters passed to API layer, including `enrich=["units", ...]`
-                or legacy `enrich_units=True`-style flags.
+            **kwargs: Additional parameters passed to API layer, including `enrich=["units", ...]`.
 
         Returns:
             DataFrame with data, or tuple (DataFrame, metadata) if return_metadata=True.
         """
-        variable_id_list = self._normalize_variable_ids(variable_ids, kwargs)
+        variable_id_list = self._normalize_variable_ids(variable_ids)
         explicit_params = {
             "unit_id": unit_id,
             "variable_ids": variable_id_list,
@@ -393,8 +382,7 @@ class DataAccess(BaseAccess):
             page_size: Number of results per page (defaults to config.page_size or 100).
             max_pages: Maximum number of pages to fetch (None for all pages).
             return_metadata: If True, return tuple (DataFrame, metadata).
-            **kwargs: Additional parameters passed to API layer, including `enrich=["units", ...]`
-                or legacy `enrich_units=True`-style flags.
+            **kwargs: Additional parameters passed to API layer, including `enrich=["units", ...]`.
 
         Returns:
             DataFrame with data, or tuple (DataFrame, metadata) if return_metadata=True.
@@ -443,15 +431,14 @@ class DataAccess(BaseAccess):
             page_size: Number of results per page (defaults to config.page_size or 100).
             max_pages: Maximum number of pages to fetch (None for all pages).
             return_metadata: If True, return tuple (DataFrame, metadata).
-            **kwargs: Additional parameters passed to API layer, including `enrich=["units", ...]`
-                or legacy `enrich_units=True`-style flags.
+            **kwargs: Additional parameters passed to API layer, including `enrich=["units", ...]`.
 
         Returns:
             DataFrame with data, or tuple (DataFrame, metadata) if return_metadata=True.
         """
         if page_size is None:
             page_size = self._get_default_page_size()
-        variable_id_list = self._normalize_variable_ids(variable_ids, kwargs)
+        variable_id_list = self._normalize_variable_ids(variable_ids)
         explicit_params = {
             "unit_id": unit_id,
             "variable_ids": variable_id_list,

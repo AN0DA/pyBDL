@@ -110,7 +110,7 @@ def test_get_data_by_unit_all_branches(data_api: DataAPI, api_url: str) -> None:
         return ([{"id": "A"}], {"meta": 1})
 
     data_api.fetch_single_result = mock_fetch_single_result_with_meta  # type: ignore[assignment]
-    result = data_api.get_data_by_unit(unit_id="1", variable_id=[1], return_metadata=True)
+    result = data_api.get_data_by_unit(unit_id="1", variable_ids=[1], return_metadata=True)
     assert result == ([{"id": "A"}], {"meta": 1})
 
     # return_metadata False
@@ -118,7 +118,7 @@ def test_get_data_by_unit_all_branches(data_api: DataAPI, api_url: str) -> None:
         return [{"id": "B"}]
 
     data_api.fetch_single_result = mock_fetch_single_result_no_meta  # type: ignore[assignment]
-    result_no_meta = data_api.get_data_by_unit(unit_id="1", variable_id=[1], return_metadata=False)
+    result_no_meta = data_api.get_data_by_unit(unit_id="1", variable_ids=[1], return_metadata=False)
     assert result_no_meta == [{"id": "B"}]
 
 
@@ -168,7 +168,7 @@ def test_get_data_by_unit_locality_all_branches(data_api: DataAPI, api_url: str)
         return ([{"id": "A"}], {"meta": 1})
 
     data_api.fetch_all_results = mock_fetch_all_results_with_meta  # type: ignore[assignment]
-    result = data_api.get_data_by_unit_locality(unit_id="u", variable_id=[1], return_metadata=True)
+    result = data_api.get_data_by_unit_locality(unit_id="u", variable_ids=[1], return_metadata=True)
     assert result == ([{"id": "A"}], {"meta": 1})
 
     # all_pages True, return_metadata False
@@ -176,7 +176,7 @@ def test_get_data_by_unit_locality_all_branches(data_api: DataAPI, api_url: str)
         return [{"id": "B"}]
 
     data_api.fetch_all_results = mock_fetch_all_results_no_meta  # type: ignore[assignment]
-    result_no_meta = data_api.get_data_by_unit_locality(unit_id="u", variable_id=[1], return_metadata=False)
+    result_no_meta = data_api.get_data_by_unit_locality(unit_id="u", variable_ids=[1], return_metadata=False)
     assert result_no_meta == [{"id": "B"}]
 
     # all_pages False, return_metadata True
@@ -185,7 +185,7 @@ def test_get_data_by_unit_locality_all_branches(data_api: DataAPI, api_url: str)
 
     data_api.fetch_single_result = mock_fetch_single_result_with_meta  # type: ignore[assignment]
     result_single_meta = data_api.get_data_by_unit_locality(
-        unit_id="u", variable_id=[1], max_pages=1, return_metadata=True
+        unit_id="u", variable_ids=[1], max_pages=1, return_metadata=True
     )
     assert result_single_meta == ([{"id": "C"}], {"meta": 2})
 
@@ -195,7 +195,7 @@ def test_get_data_by_unit_locality_all_branches(data_api: DataAPI, api_url: str)
 
     data_api.fetch_single_result = mock_fetch_single_result_no_meta  # type: ignore[assignment]
     result_single_no_meta = data_api.get_data_by_unit_locality(
-        unit_id="u", variable_id=[1], max_pages=1, return_metadata=False
+        unit_id="u", variable_ids=[1], max_pages=1, return_metadata=False
     )
     assert result_single_no_meta == [{"id": "D"}]
 
@@ -236,7 +236,7 @@ def test_get_data_by_unit_params(data_api: DataAPI, api_url: str) -> None:
     data_api.fetch_single_result = mock_fetch_single_result  # type: ignore[assignment]
     result = data_api.get_data_by_unit(
         unit_id="u",
-        variable_id=[1],
+        variable_ids=[1],
         years=[2021],
         format="csv",
         extra_query={"bar": "baz"},
@@ -280,7 +280,7 @@ def test_get_data_by_unit_locality_params(data_api: DataAPI, api_url: str) -> No
     data_api.fetch_all_results = mock_fetch_all_results  # type: ignore[assignment]
     result, meta = data_api.get_data_by_unit_locality(
         unit_id="u",
-        variable_id=[1],
+        variable_ids=[1],
         years=[2023],
         format="csv",
         extra_query={"qux": "quux"},
@@ -320,7 +320,7 @@ def test_get_data_by_unit_locality_edge_cases(data_api: DataAPI, api_url: str) -
         return ([], {"meta": 1})
 
     data_api.fetch_all_results = mock_fetch_all_results_empty  # type: ignore[assignment]
-    result = data_api.get_data_by_unit_locality(unit_id="u", variable_id=[1], return_metadata=True)
+    result = data_api.get_data_by_unit_locality(unit_id="u", variable_ids=[1], return_metadata=True)
     assert result == ([], {"meta": 1})
 
     # Missing metadata
@@ -328,7 +328,7 @@ def test_get_data_by_unit_locality_edge_cases(data_api: DataAPI, api_url: str) -
         return ([{"id": 1}], None)
 
     data_api.fetch_all_results = mock_fetch_all_results_no_meta  # type: ignore[assignment]
-    result_no_meta = data_api.get_data_by_unit_locality(unit_id="u", variable_id=[1], return_metadata=True)
+    result_no_meta = data_api.get_data_by_unit_locality(unit_id="u", variable_ids=[1], return_metadata=True)
     # Check each element of the tuple separately to avoid type issues
     assert result_no_meta[0] == [{"id": 1}]
     assert result_no_meta[1] is None
@@ -359,7 +359,7 @@ async def test_async_get_data_by_variable_error(afetch_all_results: AsyncMock, d
 async def test_async_get_data_by_unit_error(afetch_single_result: AsyncMock, data_api: DataAPI) -> None:
     afetch_single_result.side_effect = DummyException("fail")
     with pytest.raises(DummyException):
-        await data_api.aget_data_by_unit(unit_id="u", variable_id=[1], return_metadata=True)
+        await data_api.aget_data_by_unit(unit_id="u", variable_ids=[1], return_metadata=True)
 
 
 @pytest.mark.unit
@@ -379,7 +379,7 @@ def test_get_data_by_unit_error(data_api: DataAPI) -> None:
 
     data_api.fetch_single_result = raise_exc  # type: ignore[assignment]
     with pytest.raises(DummyException):
-        data_api.get_data_by_unit(unit_id="u", variable_id=[1], return_metadata=True)
+        data_api.get_data_by_unit(unit_id="u", variable_ids=[1], return_metadata=True)
 
 
 @pytest.mark.unit
@@ -399,7 +399,7 @@ def test_get_data_by_unit_locality_error(data_api: DataAPI) -> None:
 
     data_api.fetch_all_results = raise_exc  # type: ignore[assignment]
     with pytest.raises(DummyException):
-        data_api.get_data_by_unit_locality(unit_id="u", variable_id=[1], return_metadata=True)
+        data_api.get_data_by_unit_locality(unit_id="u", variable_ids=[1], return_metadata=True)
 
 
 @pytest.mark.asyncio
@@ -415,7 +415,7 @@ async def test_async_get_data_by_variable_locality_error(afetch_all_results: Asy
 async def test_async_get_data_by_unit_locality_error(afetch_all_results: AsyncMock, data_api: DataAPI) -> None:
     afetch_all_results.side_effect = DummyException("fail")
     with pytest.raises(DummyException):
-        await data_api.aget_data_by_unit_locality(unit_id="u", variable_id=[1], return_metadata=True)
+        await data_api.aget_data_by_unit_locality(unit_id="u", variable_ids=[1], return_metadata=True)
 
 
 @pytest.mark.unit
@@ -448,26 +448,20 @@ async def test_async_get_data_by_variable_pagination(afetch_all_results: AsyncMo
 
 
 @pytest.mark.unit
-def test_normalize_variable_ids_both_parameters_rejected() -> None:
-    with pytest.raises(TypeError, match="not both"):
-        DataAPI._normalize_variable_ids([1], [2])  # type: ignore[arg-type]
-
-
-@pytest.mark.unit
-def test_normalize_variable_ids_neither_parameter_rejected() -> None:
+def test_normalize_variable_ids_missing_parameter_rejected() -> None:
     with pytest.raises(TypeError, match="required"):
-        DataAPI._normalize_variable_ids(None, None)
+        DataAPI._normalize_variable_ids(None)
 
 
 @pytest.mark.unit
 def test_normalize_variable_ids_single_int_and_string() -> None:
-    assert DataAPI._normalize_variable_ids(42, None) == [42]
-    assert DataAPI._normalize_variable_ids("99", None) == [99]
+    assert DataAPI._normalize_variable_ids(42) == [42]
+    assert DataAPI._normalize_variable_ids("99") == [99]
 
 
 @pytest.mark.unit
 def test_normalize_variable_ids_sequence() -> None:
-    assert DataAPI._normalize_variable_ids([1, "2"], None) == [1, 2]
+    assert DataAPI._normalize_variable_ids([1, "2"]) == [1, 2]
 
 
 @pytest.mark.unit
