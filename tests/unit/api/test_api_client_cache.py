@@ -164,8 +164,7 @@ def test_try_append_cleanup_drops_stale_timestamps(tmp_path: Path) -> None:
     cache.set(key, [1.0, 2.0, 100.0])
     # After cleanup (keep only > 50), two entries remain; max_length=2 allows one more
     assert cache.try_append_if_under_limit(key, 200.0, max_length=2, cleanup_older_than=50.0) is True
-    with cache._lock:
-        assert 200.0 in cache._data[key]
+    assert 200.0 in cache.get(key)
 
 
 @pytest.mark.unit
@@ -175,8 +174,7 @@ def test_remove_last_if_matches_found_and_not_found(tmp_path: Path) -> None:
     key = "k2"
     cache.set(key, [1.0, 2.0, 3.0])
     assert cache.remove_last_if_matches(key, 2.0) is True
-    with cache._lock:
-        assert cache._data[key] == [1.0, 3.0]
+    assert cache.get(key) == [1.0, 3.0]
     assert cache.remove_last_if_matches(key, 99.0) is False
 
 

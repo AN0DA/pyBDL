@@ -1,7 +1,6 @@
 """Asynchronous rate limiter."""
 
 import asyncio
-import time
 from typing import Any, Literal
 
 from pybdl.utils.rate_limiter._base import RateLimiterBase
@@ -39,7 +38,7 @@ class AsyncRateLimiter(RateLimiterBase):
             async with self.lock:
                 if self.cache and self.cache.enabled:
                     self._sync_from_cache()
-                now = time.monotonic()
+                now = self._now()
                 self._cleanup_expired(now)
                 wait_time = self._compute_wait(now)
                 if wait_time <= 0 and self._try_record(now):
@@ -57,18 +56,19 @@ class AsyncRateLimiter(RateLimiterBase):
 
     def get_remaining_quota(self) -> dict[int, int]:
         """Return a snapshot without mutating state or awaiting a lock."""
-        now = time.monotonic()
+        now = self._now()
         if self.cache and self.cache.enabled:
             return {
                 period: max(
                     0,
                     self._get_limit(period)
                     - len(
-                        [
-                            value
-                            for value in self.cache.get(f"{self.cache_key}_{period}")
-                            if isinstance(value, int | float) and value > now - period
-                        ]
+                        self.cache.get_valid_timestamps(
+                            f"{self.cache_key}_{period}",
+                            now,
+                            period,
+                            buffer_seconds=self.buffer_seconds,
+                        )
                     ),
                 )
                 for period in self.quotas
@@ -86,13 +86,13 @@ class AsyncRateLimiter(RateLimiterBase):
         async with self.lock:
             if self.cache and self.cache.enabled:
                 self._sync_from_cache()
-            return self._get_remaining(time.monotonic())
+            return self._get_remaining(self._now())
 
     async def seconds_until_available(self) -> float:
         async with self.lock:
             if self.cache and self.cache.enabled:
                 self._sync_from_cache()
-            return self._seconds_until_available_at(time.monotonic())
+            return self._seconds_until_available_at(self._now())
 
     def reset(self) -> None:
         """Synchronous convenience helper for non-concurrent contexts."""

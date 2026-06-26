@@ -1,5 +1,8 @@
 """Tests for PersistentQuotaCache functionality."""
 
+import json
+import multiprocessing
+import time
 from typing import Any
 
 import pytest
@@ -13,7 +16,13 @@ class DummyCache(rate_limiter.PersistentQuotaCache):
         self._data = {}
         self.saved = False
 
+    def _load(self) -> None:
+        """Keep in-memory test state; do not reload from the default cache file."""
+
     def _save(self) -> None:
+        self.saved = True
+
+    def _save_unlocked(self) -> None:
         self.saved = True
 
 
@@ -144,6 +153,65 @@ def test_cache_atomic_write(tmp_path: Any) -> None:
     assert cache_file.exists()
     temp_file = cache_file.with_suffix(".tmp")
     assert not temp_file.exists(), "Temp file should be cleaned up after atomic write"
+
+
+def _cross_process_acquire(cache_file: str) -> None:
+    cache = rate_limiter.PersistentQuotaCache(enabled=True, cache_file=cache_file)
+    rate_limiter.RateLimiter({1: 3}, is_registered=False, cache=cache).acquire()
+
+
+@pytest.mark.unit
+def test_stale_monotonic_cache_entries_do_not_block(tmp_path: Any) -> None:
+    """Legacy monotonic timestamps must not stall new processes."""
+    cache_file = tmp_path / "quota_cache.json"
+    cache_file.write_text(
+        json.dumps({"reg_1": [70000.0 + index for index in range(10)], "reg_900": [70000.0] * 158}),
+        encoding="utf-8",
+    )
+
+    quotas: dict[int, int | tuple[Any, ...]] = {1: 10, 900: 500}
+    cache = rate_limiter.PersistentQuotaCache(enabled=True, cache_file=cache_file)
+    rl = rate_limiter.RateLimiter(quotas, is_registered=True, cache=cache, raise_on_limit=True)
+
+    started = time.monotonic()
+    rl.acquire()
+    elapsed = time.monotonic() - started
+
+    assert elapsed < 1.0
+    for key in ("reg_1", "reg_900", "reg_43200", "reg_604800"):
+        assert all(timestamp >= 1_000_000_000 for timestamp in cache.get(key))
+
+
+@pytest.mark.unit
+def test_cross_process_quota_records_are_shared(tmp_path: Any) -> None:
+    """Parallel processes must share quota state through the cache file."""
+    cache_file = tmp_path / "cross_process_quota.json"
+    processes = [multiprocessing.Process(target=_cross_process_acquire, args=(str(cache_file),)) for _ in range(3)]
+    for process in processes:
+        process.start()
+    for process in processes:
+        process.join()
+        assert process.exitcode == 0
+
+    shared_cache = rate_limiter.PersistentQuotaCache(enabled=True, cache_file=cache_file)
+    rl = rate_limiter.RateLimiter({1: 3}, is_registered=False, cache=shared_cache)
+    with pytest.raises(rate_limiter.BDLRateLimitError):
+        rl.acquire()
+
+
+@pytest.mark.unit
+def test_clean_list_uses_fresh_time_after_lock(tmp_path: Any) -> None:
+    """Live cleanup must not drop entries that look future relative to stale pre-lock time."""
+    cache_file = tmp_path / "quota_cache.json"
+    cache = rate_limiter.PersistentQuotaCache(enabled=True, cache_file=cache_file)
+    key = "anon_1"
+    fresh_now = time.time()
+    cache._data[key] = [fresh_now - 0.01]
+
+    with cache._interprocess_lock():
+        cleaned = cache._clean_list(key, period=1)
+
+    assert cleaned == [fresh_now - 0.01]
 
 
 @pytest.mark.unit

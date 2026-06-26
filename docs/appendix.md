@@ -32,33 +32,54 @@ periods:
 
 ### Time Handling
 
-The rate limiter uses `time.monotonic()` instead of `time.time()` to
-ensure: - Clock adjustments (NTP, daylight saving) don't affect quota
-calculations - Accurate elapsed time measurements - Consistent behavior
-across different system clock configurations
+The rate limiter uses two clocks depending on whether persistent cache
+is enabled:
+
+- **`time.monotonic()`** when `quota_cache_enabled=False` (in-process
+  only). Monotonic time is immune to system clock adjustments (NTP,
+  daylight saving) and gives accurate elapsed-time measurements within
+  a single process.
+- **`time.time()`** (wall clock) when persistent cache is enabled.
+  Wall-clock timestamps are comparable across processes and survive
+  restarts, which is required for shared `quota_cache.json`.
+
+On startup, legacy cache entries written with `time.monotonic()` (values
+below `1_000_000_000`) are discarded automatically during migration.
 
 ### Thread Safety
 
 - **RateLimiter**: Uses `threading.Lock()` for thread-safe operations
 - **AsyncRateLimiter**: Uses `asyncio.Lock()` for async-safe operations
-- **PersistentQuotaCache**: Uses `threading.Lock()` for thread-safe
-  cache access
+- **PersistentQuotaCache**: Uses a two-level locking strategy:
+  - `threading.Lock()` for in-process access to in-memory state
+  - File locking (`fcntl` on Unix, `msvcrt` on Windows) via
+    `quota_cache.lock` for cross-process coordination
 
-Both limiters can be safely used in concurrent environments.
+Both limiters can be safely used in concurrent environments. When
+persistent cache is enabled, parallel processes (for example
+`pytest-xdist` workers) share quota state through the cache file.
 
 ### Cache Implementation
 
-The persistent cache uses atomic file writes:
+The persistent cache uses atomic file writes and cross-process locking:
 
-1. Write quota data to a temporary file (`quota_cache.json.tmp`)
-2. Atomically rename temp file to final location (`quota_cache.json`)
-3. This ensures cache integrity even if the process crashes during
-   write
+1. Acquire the interprocess file lock (`quota_cache.lock`)
+2. Reload the cache from disk when the file already exists
+3. Apply changes in memory
+4. Write quota data to a temporary file (`quota_cache.json.tmp`)
+5. Atomically rename the temp file to `quota_cache.json`
+6. Release the file lock
 
-Cache keys are unified for sync and async limiters: - Anonymous users:
-`anon_<period>` - Registered users: `reg_<period>`
+This ensures cache integrity during concurrent writes and even if a
+process crashes mid-write.
 
-This allows sync and async limiters to share quota state.
+Cache keys are unified for sync and async limiters:
+
+- Anonymous users: `anon_<period>`
+- Registered users: `reg_<period>`
+
+This allows sync and async limiters—and separate processes using the
+same cache path—to share quota state.
 
 ### Exception Hierarchy
 

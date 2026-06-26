@@ -286,11 +286,19 @@ export BDL_QUOTAS='{"1": 20, "900": 500}'
 ### Persistent Cache
 
 The rate limiter uses a persistent cache to track quota usage across
-process restarts. The cache is stored in:
+process restarts and between parallel processes that share the same
+cache path. The cache is stored in:
 
 - **Project-local**: `.cache/pybdl/quota_cache.json` (default)
 - **Global**: Platform-specific cache directory (e.g.,
   `~/.cache/pybdl/quota_cache.json` on Linux)
+
+A companion lock file (`quota_cache.lock`) coordinates concurrent
+access when multiple processes write to the same cache (for example
+parallel test workers or CLI scripts).
+
+Timestamps in the cache file use wall-clock time (`time.time()`), not
+`time.monotonic()`, so quota state remains comparable across processes.
 
 You can disable persistent caching:
 
@@ -301,6 +309,9 @@ config = BDLConfig(api_key="your-api-key", quota_cache_enabled=False)
 bdl = BDL(config)
 ```
 
+When cache is disabled, the limiter uses `time.monotonic()` internally
+and quota is not shared across process restarts.
+
 ### Sync and Async Sharing
 
 Both synchronous and asynchronous rate limiters share the same quota
@@ -309,6 +320,7 @@ state via the persistent cache. This means:
 - Sync and async API calls count toward the same limits
 - Quota usage persists across different execution contexts
 - Process restarts maintain quota state
+- Parallel processes using the same cache file share the same limits
 
 ## Technical Details
 
@@ -427,15 +439,26 @@ quota or clearing the cache file.
 Ensure both limiters share the same `PersistentQuotaCache` instance.
 This is automatic when using `BDLConfig`.
 
+### Rate limiter waits for a long time
+
+If the client appears stuck waiting for quota despite few recent calls,
+the cache file may contain stale data from an older pyBDL version that
+stored `time.monotonic()` timestamps. Delete or rename
+`.cache/pybdl/quota_cache.json` (or your custom `quota_cache_file`).
+Current versions migrate legacy entries automatically on startup, but
+clearing the file is the fastest fix if migration did not run yet.
+
 ### Rate limiter feels slow
 
-Consider using async operations or adjusting `max_delay`. The rate
-limiter adds minimal overhead (\<1ms per call).
+Consider using async operations or adjusting `max_delay`. Under normal
+conditions the rate limiter adds minimal overhead (\<1ms per call).
 
-### Corrupted cache file
+### Corrupted or outdated cache file
 
-The cache file is automatically recreated if corrupted. Old quota
-data will be lost, but this is usually fine.
+If the cache file contains invalid JSON, it is ignored and recreated
+on the next write. Old quota data will be lost, but this is usually
+fine. Legacy monotonic timestamps are also removed automatically during
+startup migration.
 
 !!! seealso
 

@@ -1,5 +1,6 @@
 """Shared business logic for sync and async rate limiters."""
 
+import time
 from collections import deque
 from typing import Any
 
@@ -30,6 +31,12 @@ class RateLimiterBase:
         if self.cache and self.cache.enabled:
             self._sync_from_cache()
 
+    def _now(self) -> float:
+        """Return a clock comparable across processes when using persistent cache."""
+        if self.cache and self.cache.enabled:
+            return time.time()
+        return time.monotonic()
+
     def _get_limit(self, period: int) -> int:
         limit_value = self.quotas[period]
         if isinstance(limit_value, tuple):
@@ -39,10 +46,16 @@ class RateLimiterBase:
     def _sync_from_cache(self, merge: bool = True) -> None:
         if self.cache is None:
             return
+        now = self._now()
         for period in self.quotas:
-            cached = self.cache.get(f"{self.cache_key}_{period}")
+            cached = self.cache.get_valid_timestamps(
+                f"{self.cache_key}_{period}",
+                now,
+                period,
+                buffer_seconds=self.buffer_seconds,
+            )
             if merge:
-                merged = sorted(set(self.calls[period]) | set(cached))
+                merged = sorted(set(self._valid_local_timestamps(self.calls[period], now, period)) | set(cached))
                 self.calls[period] = deque(merged)
             else:
                 self.calls[period] = deque(cached)
@@ -57,10 +70,25 @@ class RateLimiterBase:
         for period in self.quotas:
             self.cache.set(f"{self.cache_key}_{period}", list(self.calls[period]))
 
+    def _valid_local_timestamps(self, timestamps: deque[float], now: float, period: int) -> list[float]:
+        if self.cache and self.cache.enabled:
+            return PersistentQuotaCache.filter_valid_timestamps(
+                list(timestamps),
+                now,
+                period,
+                buffer_seconds=self.buffer_seconds,
+            )
+        return sorted(value for value in timestamps if value > now - period)
+
     def _cleanup_expired(self, now: float) -> None:
         for period, q in self.calls.items():
-            while q and q[0] <= now - period:
-                q.popleft()
+            if self.cache and self.cache.enabled:
+                valid = self._valid_local_timestamps(q, now, period)
+            else:
+                while q and q[0] <= now - period:
+                    q.popleft()
+                valid = list(q)
+            self.calls[period] = deque(valid)
 
     def _compute_wait(self, now: float) -> float:
         max_wait = 0.0
@@ -94,15 +122,15 @@ class RateLimiterBase:
             )
         return wait_time
 
-    def _cache_period_configs(self, now: float) -> list[tuple[str, int, float]]:
-        return [(f"{self.cache_key}_{period}", self._get_limit(period), now - period) for period in self.quotas]
+    def _cache_period_configs(self) -> list[tuple[str, int, int]]:
+        return [(f"{self.cache_key}_{period}", self._get_limit(period), period) for period in self.quotas]
 
     def _cache_keys(self) -> list[str]:
         return [f"{self.cache_key}_{period}" for period in self.quotas]
 
     def _try_record(self, now: float) -> bool:
         if self.cache and self.cache.enabled:
-            success = self.cache.try_record_all_periods(self._cache_period_configs(now), now)
+            success = self.cache.try_record_all_periods(self._cache_period_configs(), now)
             self._sync_from_cache(merge=False)
             self._cleanup_expired(now)
             return success
